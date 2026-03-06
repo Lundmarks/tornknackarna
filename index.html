@@ -10,29 +10,29 @@
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --bg:           #fafafa;
-    --white:        #ffffff;
-    --ink:          #0a0a0a;
-    --ink-2:        #3a3a3a;
-    --ink-3:        #777777;
-    --ink-4:        #aaaaaa;
-    --line:         #e8e8e8;
-    --line-2:       #f0f0f0;
-    --accent:       #0066cc;
-    --win:          #1a7a4a;
-    --win-bg:       #edf7f2;
-    --loss:         #b33a2a;
-    --loss-bg:      #fdf0ee;
-    --upcoming:     #5a3fa0;
-    --upcoming-bg:  #f2effe;
-    --ban-high:     #9b1c1c;
-    --ban-med:      #92400e;
-    --mono:         'DM Mono', monospace;
-    --sans:         'DM Sans', sans-serif;
-    --radius:       12px;
-    --radius-sm:    6px;
-    --shadow-hover: 0 2px 8px rgba(0,0,0,.08), 0 8px 32px rgba(0,0,0,.08);
-    --tr:           0.18s cubic-bezier(0.4,0,0.2,1);
+    --bg:          #fafafa;
+    --white:       #ffffff;
+    --ink:         #0a0a0a;
+    --ink-2:       #3a3a3a;
+    --ink-3:       #777777;
+    --ink-4:       #aaaaaa;
+    --line:        #e8e8e8;
+    --line-2:      #f0f0f0;
+    --accent:      #0066cc;
+    --win:         #1a7a4a;
+    --win-bg:      #edf7f2;
+    --loss:        #b33a2a;
+    --loss-bg:     #fdf0ee;
+    --upcoming:    #5a3fa0;
+    --upcoming-bg: #f2effe;
+    --ban-high:    #9b1c1c;
+    --ban-med:     #92400e;
+    --mono:        'DM Mono', monospace;
+    --sans:        'DM Sans', sans-serif;
+    --radius:      12px;
+    --radius-sm:   6px;
+    --shadow-h:    0 2px 8px rgba(0,0,0,.08), 0 8px 32px rgba(0,0,0,.08);
+    --tr:          0.18s cubic-bezier(0.4,0,0.2,1);
   }
 
   html { scroll-behavior: smooth; }
@@ -40,7 +40,7 @@
 
   .shell { display: grid; grid-template-columns: 272px 1fr; min-height: 100vh; }
 
-  /* ── Sidebar ───────────────────────────────────────────── */
+  /* ── Sidebar ──────────────────────────────────────────── */
   aside { background: var(--white); border-right: 1px solid var(--line); display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
   .sidebar-top { padding: 28px 22px 20px; border-bottom: 1px solid var(--line-2); }
   .team-name { font-size: 13px; font-weight: 600; letter-spacing: .04em; color: var(--ink); display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
@@ -59,9 +59,8 @@
   .badge-win      { background: var(--win-bg);      color: var(--win); }
   .badge-loss     { background: var(--loss-bg);      color: var(--loss); }
 
-  /* ── Main ──────────────────────────────────────────────── */
+  /* ── Main ─────────────────────────────────────────────── */
   main { padding: 44px 52px 80px; max-width: 1120px; }
-
   .match-header { margin-bottom: 40px; opacity: 0; transform: translateY(12px); animation: fadeUp .38s cubic-bezier(0.4,0,0.2,1) .04s forwards; }
   @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
   .match-title { font-size: 30px; font-weight: 300; letter-spacing: -.02em; color: var(--ink); line-height: 1.2; margin-bottom: 8px; }
@@ -70,72 +69,77 @@
   .notice { font-size: 11px; padding: 7px 12px; border-radius: 6px; display: inline-block; margin-top: 4px; }
   .notice-live     { background: var(--upcoming-bg); color: var(--upcoming); }
   .notice-snapshot { background: var(--line-2);      color: var(--ink-4); }
-
   .section-title { font-size: 10.5px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-4); margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
 
-  /* ── Ban cards ─────────────────────────────────────────── */
+  /* ── Ban cards ────────────────────────────────────────── */
   .ban-section { margin-bottom: 44px; }
   .ban-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-  .ban-card { background: var(--white); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; display: flex; align-items: flex-start; gap: 12px; transition: box-shadow var(--tr), transform var(--tr); opacity: 0; animation: fadeUp .35s cubic-bezier(0.4,0,0.2,1) forwards; }
+  .ban-card { background: var(--white); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; display: flex; align-items: flex-start; gap: 10px; transition: box-shadow var(--tr), transform var(--tr); opacity: 0; animation: fadeUp .35s cubic-bezier(0.4,0,0.2,1) forwards; }
   .ban-card:nth-child(1){animation-delay:.06s}.ban-card:nth-child(2){animation-delay:.10s}.ban-card:nth-child(3){animation-delay:.14s}
   .ban-card:nth-child(4){animation-delay:.18s}.ban-card:nth-child(5){animation-delay:.22s}.ban-card:nth-child(6){animation-delay:.26s}
-  .ban-card:hover { box-shadow: var(--shadow-hover); transform: translateY(-2px); }
-  .ban-priority-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; margin-top: 6px; }
+  .ban-card:hover { box-shadow: var(--shadow-h); transform: translateY(-2px); }
+  .ban-priority-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 6px; }
   .priority-high .ban-priority-dot { background: var(--ban-high); }
   .priority-med  .ban-priority-dot { background: var(--ban-med); }
   .priority-low  .ban-priority-dot { background: #9ca3af; }
 
-  /* Hero minimap icon in ban card */
-  .ban-hero-img {
-    width: 36px; height: 36px;
-    border-radius: 6px;
-    object-fit: cover;
+  /* Hero icon in ban card — small square, no crop */
+  .ban-hero-icon {
+    width: 32px; height: 32px;
+    border-radius: 5px;
     flex-shrink: 0;
     background: var(--line-2);
+    overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .ban-hero-icon img {
+    width: 100%; height: 100%;
+    object-fit: contain;
   }
 
   .ban-body { flex: 1; min-width: 0; }
-  .ban-hero-name { font-size: 13.5px; font-weight: 600; color: var(--ink); margin-bottom: 1px; }
-  .ban-owner { font-size: 11px; color: var(--ink-3); margin-bottom: 6px; }
-  .ban-stats { display: flex; gap: 5px; flex-wrap: wrap; }
-  .ban-stat { font-size: 10px; font-family: var(--mono); color: var(--ink-3); background: var(--line-2); padding: 2px 6px; border-radius: 4px; }
-  .ban-reason { font-size: 10.5px; color: var(--ink-4); margin-top: 6px; line-height: 1.45; }
-  .ban-score-bar { height: 3px; background: var(--line); border-radius: 2px; margin-top: 9px; overflow: hidden; }
+  .ban-hero-name { font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ban-owner { font-size: 10.5px; color: var(--ink-3); margin-bottom: 6px; }
+  .ban-stats { display: flex; gap: 4px; flex-wrap: wrap; }
+  .ban-stat { font-size: 10px; font-family: var(--mono); color: var(--ink-3); background: var(--line-2); padding: 1px 5px; border-radius: 3px; }
+  .ban-reason { font-size: 10px; color: var(--ink-4); margin-top: 5px; line-height: 1.45; }
+  .ban-score-bar { height: 3px; background: var(--line); border-radius: 2px; margin-top: 8px; overflow: hidden; }
   .ban-score-fill { height: 100%; border-radius: 2px; }
   .priority-high .ban-score-fill { background: var(--ban-high); }
   .priority-med  .ban-score-fill { background: var(--ban-med); }
   .priority-low  .ban-score-fill { background: #9ca3af; }
 
-  /* ── Player grid ───────────────────────────────────────── */
+  /* ── Player grid ──────────────────────────────────────── */
   .player-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 16px; margin-bottom: 48px; }
   .player-card { background: var(--white); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; transition: box-shadow var(--tr), transform var(--tr), border-color var(--tr); opacity: 0; animation: fadeUp .35s cubic-bezier(0.4,0,0.2,1) forwards; }
   .player-card:nth-child(1){animation-delay:.10s}.player-card:nth-child(2){animation-delay:.15s}.player-card:nth-child(3){animation-delay:.20s}
   .player-card:nth-child(4){animation-delay:.25s}.player-card:nth-child(5){animation-delay:.30s}
-  .player-card:hover { box-shadow: var(--shadow-hover); transform: translateY(-2px); border-color: #d4d4d4; }
+  .player-card:hover { box-shadow: var(--shadow-h); transform: translateY(-2px); border-color: #d4d4d4; }
 
   .player-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
   .player-name { font-size: 15px; font-weight: 600; color: var(--ink); margin-bottom: 5px; }
   .player-meta { display: flex; flex-direction: column; gap: 5px; }
 
-  /* Rank badge with actual medal image */
+  /* CSS-drawn rank badge */
   .rank-badge {
     display: inline-flex;
     align-items: center;
     gap: 6px;
     font-size: 11px;
     font-weight: 500;
-    padding: 3px 8px 3px 4px;
+    padding: 3px 8px 3px 3px;
     border-radius: 5px;
     width: fit-content;
   }
-  .rank-medal-img {
-    width: 22px; height: 22px;
-    object-fit: contain;
+
+  /* Medal drawn entirely in SVG inline — no external fetch */
+  .rank-medal {
+    width: 22px;
+    height: 22px;
     flex-shrink: 0;
   }
 
   .lane-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10.5px; font-weight: 500; color: var(--ink-3); background: var(--line-2); padding: 2px 8px; border-radius: 4px; width: fit-content; }
-
   .player-wr { text-align: right; flex-shrink: 0; }
   .wr-number { font-size: 22px; font-weight: 300; color: var(--ink); letter-spacing: -.02em; line-height: 1; }
   .wr-label  { font-size: 10px; color: var(--ink-4); margin-top: 1px; }
@@ -143,31 +147,41 @@
   /* Hero rows */
   .hero-section { margin-bottom: 12px; }
   .hero-section-label { font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-4); margin-bottom: 7px; }
-  .hero-row { display: flex; align-items: center; gap: 9px; padding: 5px 0; border-bottom: 1px solid var(--line-2); }
+  .hero-row { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid var(--line-2); }
   .hero-row:last-child { border-bottom: none; }
 
-  /* Actual minimap icon */
-  .hero-minimap {
-    width: 28px; height: 20px;
-    border-radius: 4px;
-    object-fit: cover;
+  /* Hero minimap icon — contain, never cropped */
+  .hero-icon-wrap {
+    width: 24px;
+    height: 24px;
     flex-shrink: 0;
+    border-radius: 4px;
     background: var(--line-2);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .hero-icon-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
   }
 
-  .hero-name { font-size: 12.5px; font-weight: 500; color: var(--ink); flex: 1; }
-  .hero-games { font-size: 11px; color: var(--ink-4); font-family: var(--mono); }
-  .hero-wr-bar { width: 44px; height: 3px; background: var(--line); border-radius: 2px; overflow: hidden; }
+  .hero-name { font-size: 12px; font-weight: 500; color: var(--ink); flex: 1; }
+  .hero-games { font-size: 10.5px; color: var(--ink-4); font-family: var(--mono); white-space: nowrap; }
+  .hero-wr-bar { width: 40px; height: 3px; background: var(--line); border-radius: 2px; overflow: hidden; flex-shrink: 0; }
   .hero-wr-fill { height: 100%; border-radius: 2px; background: var(--accent); }
   .hero-wr-fill.high { background: var(--win); }
   .hero-wr-fill.low  { background: var(--loss); }
-  .hero-wr-pct { font-size: 10.5px; font-family: var(--mono); color: var(--ink-3); width: 30px; text-align: right; }
-  .key-pick-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ban-high); flex-shrink: 0; }
+  .hero-wr-pct { font-size: 10px; font-family: var(--mono); color: var(--ink-3); width: 28px; text-align: right; }
+  .key-pick-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ban-high); flex-shrink: 0; }
 
   /* Form */
   .form-row { display: flex; align-items: center; gap: 3px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line-2); }
   .form-label { font-size: 10px; color: var(--ink-4); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; margin-right: 4px; white-space: nowrap; }
-  .form-pip { width: 16px; height: 16px; border-radius: 3px; font-size: 8px; font-weight: 700; display: flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0; }
+  .form-pip { width: 15px; height: 15px; border-radius: 3px; font-size: 8px; font-weight: 700; display: flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0; }
   .form-pip.w { background: var(--win); }
   .form-pip.l { background: var(--loss); }
 
@@ -175,18 +189,19 @@
   .player-link { font-size: 11px; font-weight: 500; color: var(--accent); text-decoration: none; padding: 3px 10px; border: 1px solid #cce0ff; border-radius: 20px; transition: background var(--tr), border-color var(--tr); }
   .player-link:hover { background: #edf2ff; border-color: var(--accent); }
 
-  /* ── History ───────────────────────────────────────────── */
+  /* ── History ──────────────────────────────────────────── */
   .history-section { margin-bottom: 48px; }
   .history-table { width: 100%; border-collapse: collapse; font-size: 13px; }
   .history-table th { text-align: left; font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-4); padding: 0 12px 10px; border-bottom: 1px solid var(--line); }
-  .history-table td { padding: 11px 12px; border-bottom: 1px solid var(--line-2); color: var(--ink-2); vertical-align: middle; }
+  .history-table td { padding: 10px 12px; border-bottom: 1px solid var(--line-2); color: var(--ink-2); vertical-align: middle; }
   .history-table tr:last-child td { border-bottom: none; }
   .history-table tr:hover td { background: var(--line-2); }
   .result-badge { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px; letter-spacing: .04em; }
   .result-badge.win  { background: var(--win-bg);  color: var(--win); }
   .result-badge.loss { background: var(--loss-bg); color: var(--loss); }
-  .hero-chip { display: inline-flex; align-items: center; gap: 5px; background: var(--line-2); border-radius: 4px; padding: 2px 7px 2px 3px; font-size: 11px; color: var(--ink-2); margin: 1px; }
-  .hero-chip-img { width: 20px; height: 14px; object-fit: cover; border-radius: 2px; background: var(--line); }
+  .hero-chip { display: inline-flex; align-items: center; gap: 4px; background: var(--line-2); border-radius: 4px; padding: 2px 6px 2px 3px; font-size: 11px; color: var(--ink-2); margin: 1px; }
+  .hero-chip-icon { width: 18px; height: 18px; border-radius: 2px; overflow: hidden; background: var(--line); flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+  .hero-chip-icon img { width: 100%; height: 100%; object-fit: contain; }
   .mono { font-family: var(--mono); font-size: 11.5px; color: var(--ink-3); }
 
   ::-webkit-scrollbar { width: 5px; }
@@ -203,7 +218,6 @@
 </head>
 <body>
 <div class="shell">
-
   <aside>
     <div class="sidebar-top">
       <div class="team-name"><span class="team-dot"></span>Tornknäckarna</div>
@@ -212,8 +226,7 @@
     <div class="sidebar-section">
       <div class="sidebar-label">Upcoming</div>
       <button class="match-item" onclick="showMatch('match-upcoming-1',this)">
-        <div class="mi-date">12 Apr 2026 · 19:00</div>
-        <div class="mi-opponent">Stackade Gubbar</div>
+        <div class="mi-date">12 Apr 2026 · 19:00</div><div class="mi-opponent">Stackade Gubbar</div>
         <span class="mi-badge badge-upcoming">Upcoming</span>
       </button>
     </div>
@@ -243,14 +256,12 @@
 </div>
 
 <script>
-// ── Hero slug map ─────────────────────────────────────────────────────────────
-// Maps display name → Dota 2 CDN slug (npc_dota_hero_ prefix stripped)
+// ── Hero slug map ──────────────────────────────────────────────────────────────
 const HERO_SLUG = {
   'Anti-Mage':          'antimage',
   'Axe':                'axe',
   'Beastmaster':        'beastmaster',
   'Bristleback':        'bristleback',
-  'Centaur Warrunner':  'centaur',
   'Centaur':            'centaur',
   'Chen':               'chen',
   'Clockwerk':          'rattletrap',
@@ -266,10 +277,8 @@ const HERO_SLUG = {
   'Lycan':              'lycan',
   'Magnus':             'magnataur',
   'Medusa':             'medusa',
-  'Morphling':          'morphling',
   'Naga Siren':         'naga_siren',
   "Nature's Prophet":   'furion',
-  'Outworld Destroyer': 'obsidian_destroyer',
   'OD':                 'obsidian_destroyer',
   'Phantom Assassin':   'phantom_assassin',
   'Phantom Lancer':     'phantom_lancer',
@@ -290,63 +299,88 @@ const HERO_SLUG = {
   'Wraith King':        'skeleton_king',
 };
 
-// Portrait format: _sb = small horizontal banner (234×130 crop), good for icons
-// Icon format (minimap square): dota_react/heroes/icons/{slug}.png
+// Minimap square icon — this URL format is confirmed working
 function heroIconUrl(name) {
   const slug = HERO_SLUG[name];
-  if (!slug) return '';
+  if (!slug) return null;
   return `https://cdn.dota2.com/apps/dota2/images/dota_react/heroes/icons/${slug}.png`;
 }
 
-function heroBannerUrl(name) {
-  const slug = HERO_SLUG[name];
-  if (!slug) return '';
-  return `https://cdn.dota2.com/apps/dota2/images/heroes/${slug}_sb.png`;
-}
+// ── Rank medals drawn as inline SVG ───────────────────────────────────────────
+// No external fetch — always renders correctly.
+// Shield shape coloured per rank, star pips for tier.
+const RANK_CONFIG = [
+  { name:'Herald',   tier:1, body:'#6e7f8a', shine:'#a0b0bb', star:'#c8d8e0', label:'Herald',   min:0    },
+  { name:'Guardian', tier:2, body:'#3d7a4e', shine:'#5aaa6e', star:'#90d4a0', label:'Guardian',  min:770  },
+  { name:'Crusader', tier:3, body:'#7a5a20', shine:'#b08030', star:'#e0b060', label:'Crusader',  min:1540 },
+  { name:'Archon',   tier:4, body:'#8a3a18', shine:'#c05828', star:'#f0a060', label:'Archon',    min:2310 },
+  { name:'Legend',   tier:5, body:'#6a1a2a', shine:'#a02040', star:'#e06080', label:'Legend',    min:3080 },
+  { name:'Ancient',  tier:6, body:'#3a1a70', shine:'#6030b0', star:'#a870f0', label:'Ancient',   min:3850 },
+  { name:'Divine',   tier:7, body:'#7a5a00', shine:'#c09010', star:'#f0d040', label:'Divine',    min:4620 },
+  { name:'Immortal', tier:8, body:'#0a5a6a', shine:'#10a0b8', star:'#40d8f0', label:'Immortal',  min:5420 },
+];
 
-// ── Rank config with real medal images ────────────────────────────────────────
-// Medal images from the Dota 2 Wiki / community CDN
-const MEDAL_IMG = {
-  'Herald':   'https://www.dotabuff.com/assets/medals/medal_1-da5c671eda3d4c6a22ea7c41dca47b0db38f46fd0d03ec1d1f3a3de9e618c04f.png',
-  'Guardian': 'https://www.dotabuff.com/assets/medals/medal_2-6e04f6e7a6c2b56db1a37ed67f0b8c8ad8d8c48e46e1a68ee9d5f71e0fb88f0.png',
-  'Crusader': 'https://www.dotabuff.com/assets/medals/medal_3-e48f8bb7fcd7f6c1f41ea0f5b1b6a2b2a7c9e62cfe3c0c8ef9b7a1e0c2d7e4f.png',
-  'Archon':   'https://www.dotabuff.com/assets/medals/medal_4-0be31a2f73e2bcf5e8e24ee7bd4e1c6b3f8a2d9c1e3f5b7d9a0c8e2f4g6h8i.png',
-  'Legend':   'https://www.dotabuff.com/assets/medals/medal_5-1cf42b3g74f3cdg6f9f35ff8ce5f2d7c4g9b3e0d2f4g6h8i0j2k4l6m8n0o.png',
-  'Ancient':  'https://www.dotabuff.com/assets/medals/medal_6-2dg53c4h85g4deh7g0g46gg9df6g3e8d5h0c4g5h7i9j1k3l5m7n9o1p3q.png',
-  'Divine':   'https://www.dotabuff.com/assets/medals/medal_7-3eh64d5i96h5efi8h1h57hh0eg7h4f9e6i1d6i6j8k0l2m4n6o8p0q2r.png',
-  'Immortal': 'https://www.dotabuff.com/assets/medals/medal_8-4fi75e6j07i6fgj9i2i68ii1fh8i5g0f7j2e7j7k9l1m3n5o7p9q1r3s.png',
-};
-
-// Use Dota 2 wiki for rank medals — reliably hosted PNGs
-const RANK_IMG_BASE = 'https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/icons/medals/';
-
-const RANKS = [
-  { name:'Herald',   slug:'seasonal_rank_1', color:'#6b7280', bg:'#f3f4f6',  min:0    },
-  { name:'Guardian', slug:'seasonal_rank_2', color:'#15803d', bg:'#f0fdf4',  min:770  },
-  { name:'Crusader', slug:'seasonal_rank_3', color:'#b45309', bg:'#fffbeb',  min:1540 },
-  { name:'Archon',   slug:'seasonal_rank_4', color:'#c2410c', bg:'#fff7ed',  min:2310 },
-  { name:'Legend',   slug:'seasonal_rank_5', color:'#9f1239', bg:'#fff1f2',  min:3080 },
-  { name:'Ancient',  slug:'seasonal_rank_6', color:'#6d28d9', bg:'#f5f3ff',  min:3850 },
-  { name:'Divine',   slug:'seasonal_rank_7', color:'#b45309', bg:'#fefce8',  min:4620 },
-  { name:'Immortal', slug:'seasonal_rank_8', color:'#0e7490', bg:'#ecfeff',  min:5420 },
+// Rank badge colour theming
+const RANK_STYLE = [
+  { bg:'#f3f4f6', color:'#374151' }, // Herald
+  { bg:'#f0fdf4', color:'#166534' }, // Guardian
+  { bg:'#fffbeb', color:'#92400e' }, // Crusader
+  { bg:'#fff7ed', color:'#9a3412' }, // Archon
+  { bg:'#fff1f2', color:'#9f1239' }, // Legend
+  { bg:'#f5f3ff', color:'#6d28d9' }, // Ancient
+  { bg:'#fefce8', color:'#854d0e' }, // Divine
+  { bg:'#ecfeff', color:'#0e7490' }, // Immortal
 ];
 
 function rankFromMMR(mmr) {
-  let r = RANKS[0];
-  for (const rank of RANKS) { if (mmr >= rank.min) r = rank; }
-  const starsMax  = r.name === 'Immortal' ? 0 : 5;
+  let idx = 0;
+  for (let i = 0; i < RANK_CONFIG.length; i++) {
+    if (mmr >= RANK_CONFIG[i].min) idx = i;
+  }
+  const r = RANK_CONFIG[idx];
+  const s = RANK_STYLE[idx];
   const tierRange = 770 / 5;
-  const stars     = starsMax ? Math.min(5, Math.floor((mmr - r.min) / tierRange) + 1) : 0;
-  const label     = r.name + (stars ? ' ' + ['I','II','III','IV','V'][stars-1] : '');
-  // Medal image: Valve CDN uses e.g. seasonal_rank_1_1.png through seasonal_rank_7_5.png
-  const starSuffix = stars ? `_${stars}` : '_1';
-  const imgUrl = `${RANK_IMG_BASE}${r.slug}${starSuffix}.png`;
-  return { ...r, label, imgUrl };
+  const stars = r.name === 'Immortal' ? 0 : Math.min(5, Math.floor((mmr - r.min) / tierRange) + 1);
+  const romanMap = ['I','II','III','IV','V'];
+  const label = r.name + (stars ? ' ' + romanMap[stars - 1] : '');
+  return { ...r, ...s, stars, label };
+}
+
+// Draw an SVG medal badge — shield outline with star pips at bottom
+function medalSVG(rank) {
+  const { body, shine, star, stars, name } = rank;
+
+  // Star pips along the bottom — up to 5
+  let pips = '';
+  const totalPips = name === 'Immortal' ? 0 : 5;
+  const spacing = 4.5;
+  const startX = 11 - ((totalPips - 1) * spacing) / 2;
+  for (let i = 0; i < totalPips; i++) {
+    const filled = i < stars;
+    const cx = startX + i * spacing;
+    pips += `<circle cx="${cx}" cy="19.5" r="1.8" fill="${filled ? star : 'rgba(255,255,255,0.18)'}"/>`;
+  }
+
+  // Crown gem for Immortal
+  const immortalGem = name === 'Immortal'
+    ? `<polygon points="11,14 13.5,11 11,8 8.5,11" fill="${star}" opacity="0.9"/>`
+    : '';
+
+  return `<svg class="rank-medal" viewBox="0 0 22 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Shield body -->
+    <path d="M11 1L2 4.5V13C2 17.5 6 21.5 11 23C16 21.5 20 17.5 20 13V4.5L11 1Z"
+          fill="${body}" stroke="${shine}" stroke-width="0.8"/>
+    <!-- Shine overlay -->
+    <path d="M11 2.5L3.5 5.5V13C3.5 13 4 14 5 15"
+          stroke="${shine}" stroke-width="0.6" stroke-linecap="round" opacity="0.5"/>
+    ${immortalGem}
+    ${pips}
+  </svg>`;
 }
 
 const LANE_ICONS = { 'Safe Lane':'🛡️', 'Mid Lane':'⚡', 'Off Lane':'💥', 'Roamer':'🌀', 'Support':'💚' };
 
-// ── Key pick score ─────────────────────────────────────────────────────────────
+// ── Key pick scoring ───────────────────────────────────────────────────────────
 function keyPickScore(h) {
   if (!h.tournamentGames) return 0;
   const delta     = Math.max(0, h.tournamentWR - h.pubWR);
@@ -355,21 +389,19 @@ function keyPickScore(h) {
   return (h.tournamentWR / 100) * Math.log(h.tournamentGames + 1) * deltaMult * recency;
 }
 
-function priorityLabel(score) {
-  return score >= 2.0 ? 'high' : score >= 1.2 ? 'med' : 'low';
-}
+function priorityLabel(score) { return score >= 2.0 ? 'high' : score >= 1.2 ? 'med' : 'low'; }
 
 function banReason(score, h) {
   const delta = Math.max(0, h.tournamentWR - h.pubWR);
   const parts = [];
   if (h.tournamentGames >= 6) parts.push(`${h.tournamentGames} CM games`);
   if (h.tournamentWR >= 65)   parts.push(`${h.tournamentWR}% CM wr`);
-  if (delta >= 15)             parts.push(`+${delta}pp vs pub wr — CM comfort`);
+  if (delta >= 15)             parts.push(`+${delta}pp vs pub wr`);
   if (h.recentSeason)         parts.push('active this season');
-  return parts.join(' · ') || 'Moderate threat based on pick frequency';
+  return parts.join(' · ') || 'Moderate threat';
 }
 
-// ── Match data ────────────────────────────────────────────────────────────────
+// ── Match data ─────────────────────────────────────────────────────────────────
 const MATCHES = {
   'match-upcoming-1': {
     date:'Saturday 12 April 2026 · 19:00', opponent:'Stackade Gubbar',
@@ -430,14 +462,14 @@ const MATCHES = {
       { name:'Hooked', mmr:2500, steamId:'76561198056789012', lane:'Roamer', winrate:52,
         form:['w','l','w','w','w','l','w','l','w','w'],
         tournamentHeroes:[
-          {name:'Pudge',           tournamentGames:11,tournamentWR:64,pubWR:55,pubGames:88,recentSeason:true},
-          {name:'Clockwerk',       tournamentGames:4, tournamentWR:50,pubWR:50,pubGames:20,recentSeason:true},
-          {name:'Vengeful Spirit', tournamentGames:2, tournamentWR:100,pubWR:52,pubGames:15,recentSeason:false},
+          {name:'Pudge',          tournamentGames:11,tournamentWR:64,pubWR:55,pubGames:88,recentSeason:true},
+          {name:'Clockwerk',      tournamentGames:4, tournamentWR:50,pubWR:50,pubGames:20,recentSeason:true},
+          {name:'Vengeful Spirit',tournamentGames:2, tournamentWR:100,pubWR:52,pubGames:15,recentSeason:false},
         ],
         pubHeroes:[
-          {name:'Pudge',       games:88,wr:55},
-          {name:'Bristleback', games:29,wr:48},
-          {name:'Clockwerk',   games:20,wr:50},
+          {name:'Pudge',      games:88,wr:55},
+          {name:'Bristleback',games:29,wr:48},
+          {name:'Clockwerk',  games:20,wr:50},
         ],
       },
     ],
@@ -474,9 +506,9 @@ const MATCHES = {
       },
     ],
     history:[
-      {matchId:'7812340001',date:'15 Mar 2026',opponent:'Team Alpha',    result:'win', heroes:['Invoker','Lina'],          duration:'38:22',kda:'8/3/12'},
-      {matchId:'7812330002',date:'08 Mar 2026',opponent:'Stack Boys',    result:'loss',heroes:['Anti-Mage','Storm Spirit'],duration:'52:10',kda:'4/8/6'},
-      {matchId:'7812320003',date:'01 Mar 2026',opponent:'Nattens Söner', result:'win', heroes:['Pudge','Earthshaker'],      duration:'41:05',kda:'6/4/18'},
+      {matchId:'7812340001',date:'15 Mar 2026',opponent:'Team Alpha',   result:'win', heroes:['Invoker','Lina'],          duration:'38:22',kda:'8/3/12'},
+      {matchId:'7812330002',date:'08 Mar 2026',opponent:'Stack Boys',   result:'loss',heroes:['Anti-Mage','Storm Spirit'],duration:'52:10',kda:'4/8/6'},
+      {matchId:'7812320003',date:'01 Mar 2026',opponent:'Nattens Söner',result:'win', heroes:['Pudge','Earthshaker'],      duration:'41:05',kda:'6/4/18'},
     ],
   },
 
@@ -498,9 +530,9 @@ const MATCHES = {
       },
     ],
     history:[
-      {matchId:'7811110001',date:'01 Mar 2026',opponent:'Tornknäckarna',result:'win', heroes:['Tinker','Enigma'],  duration:'29:45',kda:'10/1/8'},
-      {matchId:'7811100002',date:'22 Feb 2026',opponent:'Team Kricka',  result:'win', heroes:['Invoker','Lina'],   duration:'44:12',kda:'7/3/14'},
-      {matchId:'7811090003',date:'15 Feb 2026',opponent:'Stack Boys',   result:'loss',heroes:['Tinker','Rubick'],  duration:'55:30',kda:'5/9/7'},
+      {matchId:'7811110001',date:'01 Mar 2026',opponent:'Tornknäckarna',result:'win', heroes:['Tinker','Enigma'], duration:'29:45',kda:'10/1/8'},
+      {matchId:'7811100002',date:'22 Feb 2026',opponent:'Team Kricka',  result:'win', heroes:['Invoker','Lina'],  duration:'44:12',kda:'7/3/14'},
+      {matchId:'7811090003',date:'15 Feb 2026',opponent:'Stack Boys',   result:'loss',heroes:['Tinker','Rubick'], duration:'55:30',kda:'5/9/7'},
     ],
   },
 
@@ -522,13 +554,13 @@ const MATCHES = {
       },
     ],
     history:[
-      {matchId:'7810000001',date:'15 Feb 2026',opponent:'GG Pionjärer', result:'loss',heroes:['Beastmaster','OD'],duration:'34:10',kda:'3/7/8'},
+      {matchId:'7810000001',date:'15 Feb 2026',opponent:'GG Pionjärer', result:'loss',heroes:['Beastmaster','OD'],  duration:'34:10',kda:'3/7/8'},
       {matchId:'7809990002',date:'08 Feb 2026',opponent:'Nattens Söner',result:'win', heroes:['Lycan','Beastmaster'],duration:'28:55',kda:'6/4/10'},
     ],
   },
 };
 
-// ── Bans ──────────────────────────────────────────────────────────────────────
+// ── Compute bans ───────────────────────────────────────────────────────────────
 function computeBans(players) {
   const candidates = [];
   for (const p of players) {
@@ -539,40 +571,40 @@ function computeBans(players) {
   }
   candidates.sort((a,b) => b.score - a.score);
   const seen = new Set();
-  return candidates.filter(c => { if (seen.has(c.hero.name)) return false; seen.add(c.hero.name); return true; }).slice(0,6);
+  return candidates.filter(c => {
+    if (seen.has(c.hero.name)) return false;
+    seen.add(c.hero.name);
+    return true;
+  }).slice(0, 6);
 }
 
-// ── Render ────────────────────────────────────────────────────────────────────
-function wrClass(wr) { return wr>=60?'high':wr<45?'low':''; }
+// ── Render helpers ─────────────────────────────────────────────────────────────
+function wrClass(wr) { return wr >= 60 ? 'high' : wr < 45 ? 'low' : ''; }
 
-function heroImgTag(name, cls, w, h) {
+function heroIconTag(name, wrapClass) {
   const url = heroIconUrl(name);
-  if (!url) return `<span style="width:${w}px;height:${h}px;background:var(--line-2);border-radius:4px;display:inline-block"></span>`;
-  return `<img src="${url}" class="${cls}" width="${w}" height="${h}" alt="${name}" onerror="this.style.display='none'">`;
+  const inner = url
+    ? `<img src="${url}" alt="${name}" loading="lazy" onerror="this.parentElement.style.opacity='0.3'">`
+    : '';
+  return `<div class="${wrapClass}">${inner}</div>`;
 }
 
 function renderBanSection(players) {
   const bans = computeBans(players);
   if (!bans.length) return '';
-
   const cards = bans.map(b => {
-    const norm = Math.min(100,(b.score/3.5)*100).toFixed(0);
-    const imgUrl = heroIconUrl(b.hero.name);
-    const imgTag = imgUrl
-      ? `<img src="${imgUrl}" class="ban-hero-img" alt="${b.hero.name}" onerror="this.style.display='none'">`
-      : `<div class="ban-hero-img" style="background:var(--line-2)"></div>`;
-
+    const norm = Math.min(100, (b.score / 3.5) * 100).toFixed(0);
     return `
       <div class="ban-card priority-${b.priority}">
         <div class="ban-priority-dot"></div>
-        ${imgTag}
+        ${heroIconTag(b.hero.name, 'ban-hero-icon')}
         <div class="ban-body">
           <div class="ban-hero-name">${b.hero.name}</div>
           <div class="ban-owner">${b.player}</div>
           <div class="ban-stats">
             <span class="ban-stat">${b.hero.tournamentGames} CM</span>
-            <span class="ban-stat">${b.hero.tournamentWR}% CM wr</span>
-            <span class="ban-stat">${b.hero.pubWR}% pub wr</span>
+            <span class="ban-stat">${b.hero.tournamentWR}% CM</span>
+            <span class="ban-stat">${b.hero.pubWR}% pub</span>
           </div>
           <div class="ban-reason">${b.reason}</div>
           <div class="ban-score-bar"><div class="ban-score-fill" style="width:${norm}%"></div></div>
@@ -598,27 +630,22 @@ function renderHeroRows(heroes, isTournament) {
     const wr    = isTournament ? h.tournamentWR : h.wr;
     const games = isTournament ? h.tournamentGames : h.games;
     const isKey = isTournament && keyPickScore(h) >= 1.2;
-    const iconUrl = heroIconUrl(h.name);
-    const iconTag = iconUrl
-      ? `<img src="${iconUrl}" class="hero-minimap" alt="${h.name}" onerror="this.style.background='var(--line-2)'">`
-      : `<div class="hero-minimap"></div>`;
-
     return `
       <div class="hero-row">
-        ${iconTag}
+        ${heroIconTag(h.name, 'hero-icon-wrap')}
         <div class="hero-name">${h.name}</div>
         <div class="hero-games">${games}g</div>
         <div class="hero-wr-bar"><div class="hero-wr-fill ${wrClass(wr)}" style="width:${wr}%"></div></div>
         <div class="hero-wr-pct">${wr}%</div>
-        ${isKey ? '<div class="key-pick-dot" title="Ban candidate"></div>' : '<div style="width:7px"></div>'}
+        ${isKey ? '<div class="key-pick-dot" title="Ban candidate"></div>' : '<div style="width:6px"></div>'}
       </div>`;
   }).join('');
 }
 
 function renderPlayerCard(p) {
-  const rank  = rankFromMMR(p.mmr);
-  const pips  = p.form.map(r=>`<div class="form-pip ${r}">${r.toUpperCase()}</div>`).join('');
-  const dbId  = BigInt(p.steamId) - 76561197960265728n;
+  const rank = rankFromMMR(p.mmr);
+  const pips = p.form.map(r => `<div class="form-pip ${r}">${r.toUpperCase()}</div>`).join('');
+  const dbId = BigInt(p.steamId) - 76561197960265728n;
   const laneI = LANE_ICONS[p.lane] || '❓';
 
   return `
@@ -627,8 +654,7 @@ function renderPlayerCard(p) {
         <div class="player-meta">
           <div class="player-name">${p.name}</div>
           <div class="rank-badge" style="background:${rank.bg};color:${rank.color}">
-            <img src="${rank.imgUrl}" class="rank-medal-img" alt="${rank.name}"
-                 onerror="this.style.display='none'">
+            ${medalSVG(rank)}
             ${rank.label}
           </div>
           <div class="lane-badge">${laneI} ${p.lane}</div>
@@ -640,8 +666,7 @@ function renderPlayerCard(p) {
       </div>
 
       <div class="hero-section">
-        <div class="hero-section-label">
-          CM picks (E-Sparven)
+        <div class="hero-section-label">CM picks (E-Sparven)
           <span style="font-size:9px;color:var(--ban-high);margin-left:4px">● ban candidate</span>
         </div>
         ${renderHeroRows(p.tournamentHeroes, true)}
@@ -665,18 +690,17 @@ function renderHistory(rows) {
   if (!rows || !rows.length) return '';
   const trs = rows.map(r => {
     const chips = r.heroes.map(h => {
-      const iconUrl = heroIconUrl(h);
-      const iconTag = iconUrl
-        ? `<img src="${iconUrl}" class="hero-chip-img" alt="${h}" onerror="this.style.display='none'">`
+      const url = heroIconUrl(h);
+      const iconHtml = url
+        ? `<div class="hero-chip-icon"><img src="${url}" alt="${h}" loading="lazy" onerror="this.style.display='none'"></div>`
         : '';
-      return `<span class="hero-chip">${iconTag}${h}</span>`;
+      return `<span class="hero-chip">${iconHtml}${h}</span>`;
     }).join('');
-
     return `
       <tr>
         <td class="mono">${r.date}</td>
         <td style="font-size:13px;color:var(--ink-2)">${r.opponent}</td>
-        <td><span class="result-badge ${r.result}">${r.result==='win'?'Win':'Loss'}</span></td>
+        <td><span class="result-badge ${r.result}">${r.result === 'win' ? 'Win' : 'Loss'}</span></td>
         <td>${chips}</td>
         <td class="mono">${r.duration}</td>
         <td class="mono">${r.kda}</td>
@@ -694,14 +718,15 @@ function renderHistory(rows) {
     </div>`;
 }
 
+// ── Show match ─────────────────────────────────────────────────────────────────
 function showMatch(id, btn) {
   const m = MATCHES[id];
   if (!m) return;
-  document.querySelectorAll('.match-item').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.match-item').forEach(el => el.classList.remove('active'));
   if (btn) btn.classList.add('active');
 
-  const statusColor = {upcoming:'badge-upcoming',win:'badge-win',loss:'badge-loss'}[m.status];
-  const statusLabel = {upcoming:'Upcoming',win:`Win · ${m.result}`,loss:`Loss · ${m.result}`}[m.status];
+  const statusColor = { upcoming:'badge-upcoming', win:'badge-win', loss:'badge-loss' }[m.status];
+  const statusLabel = { upcoming:'Upcoming', win:`Win · ${m.result}`, loss:`Loss · ${m.result}` }[m.status];
   const notice = m.snapshotDate
     ? `<div class="notice notice-snapshot">Snapshot captured ${m.snapshotDate} — data frozen at match time</div>`
     : `<div class="notice notice-live">Live data · refreshed daily until match day</div>`;
@@ -713,7 +738,7 @@ function showMatch(id, btn) {
       <div class="match-meta"><span>📅 ${m.date}</span><span>🎮 Dota 2 · Captain's Mode</span></div>
       ${notice}
     </div>
-    ${m.status==='upcoming' ? renderBanSection(m.players) : ''}
+    ${m.status === 'upcoming' ? renderBanSection(m.players) : ''}
     <div class="section-title" style="margin-bottom:16px">Opponent roster</div>
     <div class="player-grid">${m.players.map(renderPlayerCard).join('')}</div>
     ${renderHistory(m.history)}`;
