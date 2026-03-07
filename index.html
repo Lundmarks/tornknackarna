@@ -4,7 +4,6 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Tornknäckarna · Scouting</title>
-<link rel="icon" type="image/x-icon" href="/images/favicon.ico">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -224,27 +223,8 @@
       <div class="team-name"><span class="team-dot"></span>Tornknäckarna</div>
       <div class="team-sub">Dota 2 · Captain's Mode · E-Sparven</div>
     </div>
-    <div class="sidebar-section">
-      <div class="sidebar-label">Upcoming</div>
-      <button class="match-item" onclick="showMatch('match-upcoming-1',this)">
-        <div class="mi-date">12 Apr 2026 · 19:00</div><div class="mi-opponent">Stackade Gubbar</div>
-        <span class="mi-badge badge-upcoming">Upcoming</span>
-      </button>
-    </div>
-    <div class="sidebar-section">
-      <div class="sidebar-label">Past matches</div>
-      <button class="match-item" onclick="showMatch('match-past-1',this)">
-        <div class="mi-date">22 Mar 2026</div><div class="mi-opponent">Nattens Söner</div>
-        <span class="mi-badge badge-win">Win · 2–0</span>
-      </button>
-      <button class="match-item" onclick="showMatch('match-past-2',this)">
-        <div class="mi-date">08 Mar 2026</div><div class="mi-opponent">GG Pionjärer</div>
-        <span class="mi-badge badge-loss">Loss · 0–2</span>
-      </button>
-      <button class="match-item" onclick="showMatch('match-past-3',this)">
-        <div class="mi-date">22 Feb 2026</div><div class="mi-opponent">Team Kricka</div>
-        <span class="mi-badge badge-win">Win · 2–1</span>
-      </button>
+    <div id="sidebar-content">
+      <div style="padding:28px 22px;color:var(--ink-4);font-size:13px">Loading matches…</div>
     </div>
   </aside>
 
@@ -257,320 +237,144 @@
 </div>
 
 <script>
-// ── Hero slug map ──────────────────────────────────────────────────────────────
-const HERO_SLUG = {
-  'Anti-Mage':          'antimage',
-  'Axe':                'axe',
-  'Beastmaster':        'beastmaster',
-  'Bristleback':        'bristleback',
-  'Centaur':            'centaur',
-  'Chen':               'chen',
-  'Clockwerk':          'rattletrap',
-  'Crystal Maiden':     'crystal_maiden',
-  'Earthshaker':        'earthshaker',
-  'Ember Spirit':       'ember_spirit',
-  'Enigma':             'enigma',
-  'Invoker':            'invoker',
-  'Juggernaut':         'juggernaut',
-  'Leshrac':            'leshrac',
-  'Lina':               'lina',
-  'Lion':               'lion',
-  'Lycan':              'lycan',
-  'Magnus':             'magnataur',
-  'Medusa':             'medusa',
-  'Naga Siren':         'naga_siren',
-  "Nature's Prophet":   'furion',
-  'OD':                 'obsidian_destroyer',
-  'Phantom Assassin':   'phantom_assassin',
-  'Phantom Lancer':     'phantom_lancer',
-  'Pudge':              'pudge',
-  'Puck':               'puck',
-  'Queen of Pain':      'queenofpain',
-  'Rubick':             'rubick',
-  'Shadow Fiend':       'nevermore',
-  'Shadow Shaman':      'shadow_shaman',
-  'Spectre':            'spectre',
-  'Storm Spirit':       'storm_spirit',
-  'Templar Assassin':   'templar_assassin',
-  'Tidehunter':         'tidehunter',
-  'Tinker':             'tinker',
-  'Ursa':               'ursa',
-  'Vengeful Spirit':    'vengefulspirit',
-  'Witch Doctor':       'witch_doctor',
-  'Wraith King':        'skeleton_king',
+// ─────────────────────────────────────────────────────────────────────────────
+// CONFIG — update INDEX_BIN_ID whenever the bot creates a new index bin
+// ─────────────────────────────────────────────────────────────────────────────
+const INDEX_BIN_ID = '69ac477043b1c97be9bdefcc';
+const JSONBIN_BASE = 'https://api.jsonbin.io/v3/b';
+
+async function fetchBin(binId) {
+  const r = await fetch(`${JSONBIN_BASE}/${binId}/latest`);
+  if (!r.ok) throw new Error(`JSONbin ${r.status} for ${binId}`);
+  const j = await r.json();
+  return j.record;
+}
+
+// ── Steam ID helpers ──────────────────────────────────────────────────────────
+// Bot stores Steam32 (accountId). Dotabuff/OpenDota links need Steam32 directly.
+// Steam64 = Steam32 + 76561197960265728 — only needed for display if wanted.
+function profileLinks(accountId) {
+  if (!accountId) return '';
+  return `
+    <div class="player-links">
+      <a class="player-link" href="https://www.dotabuff.com/players/${accountId}" target="_blank">Dotabuff ↗</a>
+      <a class="player-link" href="https://www.opendota.com/players/${accountId}" target="_blank">OpenDota ↗</a>
+    </div>`;
+}
+
+// ── Rank rendering ────────────────────────────────────────────────────────────
+// Bot provides rankMedal (string) and rankStars (int 0-5) directly.
+const RANK_CONFIG = {
+  'Herald':   { body:'#6e7f8a', shine:'#a0b0bb', star:'#c8d8e0', bg:'#f3f4f6', color:'#374151' },
+  'Guardian': { body:'#3d7a4e', shine:'#5aaa6e', star:'#90d4a0', bg:'#f0fdf4', color:'#166534' },
+  'Crusader': { body:'#7a5a20', shine:'#b08030', star:'#e0b060', bg:'#fffbeb', color:'#92400e' },
+  'Archon':   { body:'#8a3a18', shine:'#c05828', star:'#f0a060', bg:'#fff7ed', color:'#9a3412' },
+  'Legend':   { body:'#6a1a2a', shine:'#a02040', star:'#e06080', bg:'#fff1f2', color:'#9f1239' },
+  'Ancient':  { body:'#3a1a70', shine:'#6030b0', star:'#a870f0', bg:'#f5f3ff', color:'#6d28d9' },
+  'Divine':   { body:'#7a5a00', shine:'#c09010', star:'#f0d040', bg:'#fefce8', color:'#854d0e' },
+  'Immortal': { body:'#0a5a6a', shine:'#10a0b8', star:'#40d8f0', bg:'#ecfeff', color:'#0e7490' },
+  'Unknown':  { body:'#888',    shine:'#aaa',    star:'#ccc',    bg:'#f3f4f6', color:'#6b7280' },
 };
 
-// Minimap square icon — this URL format is confirmed working
-function heroIconUrl(name) {
-  const slug = HERO_SLUG[name];
-  if (!slug) return null;
-  return `https://cdn.dota2.com/apps/dota2/images/dota_react/heroes/icons/${slug}.png`;
-}
-
-// ── Rank medals drawn as inline SVG ───────────────────────────────────────────
-// No external fetch — always renders correctly.
-// Shield shape coloured per rank, star pips for tier.
-const RANK_CONFIG = [
-  { name:'Herald',   tier:1, body:'#6e7f8a', shine:'#a0b0bb', star:'#c8d8e0', label:'Herald',   min:0    },
-  { name:'Guardian', tier:2, body:'#3d7a4e', shine:'#5aaa6e', star:'#90d4a0', label:'Guardian',  min:770  },
-  { name:'Crusader', tier:3, body:'#7a5a20', shine:'#b08030', star:'#e0b060', label:'Crusader',  min:1540 },
-  { name:'Archon',   tier:4, body:'#8a3a18', shine:'#c05828', star:'#f0a060', label:'Archon',    min:2310 },
-  { name:'Legend',   tier:5, body:'#6a1a2a', shine:'#a02040', star:'#e06080', label:'Legend',    min:3080 },
-  { name:'Ancient',  tier:6, body:'#3a1a70', shine:'#6030b0', star:'#a870f0', label:'Ancient',   min:3850 },
-  { name:'Divine',   tier:7, body:'#7a5a00', shine:'#c09010', star:'#f0d040', label:'Divine',    min:4620 },
-  { name:'Immortal', tier:8, body:'#0a5a6a', shine:'#10a0b8', star:'#40d8f0', label:'Immortal',  min:5420 },
-];
-
-// Rank badge colour theming
-const RANK_STYLE = [
-  { bg:'#f3f4f6', color:'#374151' }, // Herald
-  { bg:'#f0fdf4', color:'#166534' }, // Guardian
-  { bg:'#fffbeb', color:'#92400e' }, // Crusader
-  { bg:'#fff7ed', color:'#9a3412' }, // Archon
-  { bg:'#fff1f2', color:'#9f1239' }, // Legend
-  { bg:'#f5f3ff', color:'#6d28d9' }, // Ancient
-  { bg:'#fefce8', color:'#854d0e' }, // Divine
-  { bg:'#ecfeff', color:'#0e7490' }, // Immortal
-];
-
-function rankFromMMR(mmr) {
-  let idx = 0;
-  for (let i = 0; i < RANK_CONFIG.length; i++) {
-    if (mmr >= RANK_CONFIG[i].min) idx = i;
-  }
-  const r = RANK_CONFIG[idx];
-  const s = RANK_STYLE[idx];
-  const tierRange = 770 / 5;
-  const stars = r.name === 'Immortal' ? 0 : Math.min(5, Math.floor((mmr - r.min) / tierRange) + 1);
-  const romanMap = ['I','II','III','IV','V'];
-  const label = r.name + (stars ? ' ' + romanMap[stars - 1] : '');
-  return { ...r, ...s, stars, label };
-}
-
-// Draw an SVG medal badge — shield outline with star pips at bottom
-function medalSVG(rank) {
-  const { body, shine, star, stars, name } = rank;
-
-  // Star pips along the bottom — up to 5
-  let pips = '';
-  const totalPips = name === 'Immortal' ? 0 : 5;
+function medalSVG(medalName, stars) {
+  const r = RANK_CONFIG[medalName] || RANK_CONFIG['Unknown'];
+  const { body, shine, star } = r;
+  const totalPips = medalName === 'Immortal' ? 0 : 5;
   const spacing = 4.5;
   const startX = 11 - ((totalPips - 1) * spacing) / 2;
+  let pips = '';
   for (let i = 0; i < totalPips; i++) {
-    const filled = i < stars;
     const cx = startX + i * spacing;
-    pips += `<circle cx="${cx}" cy="19.5" r="1.8" fill="${filled ? star : 'rgba(255,255,255,0.18)'}"/>`;
+    pips += `<circle cx="${cx}" cy="19.5" r="1.8" fill="${i < stars ? star : 'rgba(255,255,255,0.18)'}"/>`;
   }
-
-  // Crown gem for Immortal
-  const immortalGem = name === 'Immortal'
+  const gem = medalName === 'Immortal'
     ? `<polygon points="11,14 13.5,11 11,8 8.5,11" fill="${star}" opacity="0.9"/>`
     : '';
-
-  return `<svg class="rank-medal" viewBox="0 0 22 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <!-- Shield body -->
-    <path d="M11 1L2 4.5V13C2 17.5 6 21.5 11 23C16 21.5 20 17.5 20 13V4.5L11 1Z"
-          fill="${body}" stroke="${shine}" stroke-width="0.8"/>
-    <!-- Shine overlay -->
-    <path d="M11 2.5L3.5 5.5V13C3.5 13 4 14 5 15"
-          stroke="${shine}" stroke-width="0.6" stroke-linecap="round" opacity="0.5"/>
-    ${immortalGem}
-    ${pips}
+  return `<svg class="rank-medal" viewBox="0 0 22 24" fill="none">
+    <path d="M11 1L2 4.5V13C2 17.5 6 21.5 11 23C16 21.5 20 17.5 20 13V4.5L11 1Z" fill="${body}" stroke="${shine}" stroke-width="0.8"/>
+    <path d="M11 2.5L3.5 5.5V13C3.5 13 4 14 5 15" stroke="${shine}" stroke-width="0.6" stroke-linecap="round" opacity="0.5"/>
+    ${gem}${pips}
   </svg>`;
 }
 
-const LANE_ICONS = { 'Safe Lane':'🛡️', 'Mid Lane':'⚡', 'Off Lane':'💥', 'Roamer':'🌀', 'Support':'💚' };
+function rankBadgeHTML(rankMedal, rankLabel) {
+  const r = RANK_CONFIG[rankMedal] || RANK_CONFIG['Unknown'];
+  const stars = rankLabel ? (rankLabel.match(/[IVX]+$/) || [''])[0] : '';
+  const starCount = { 'I':1,'II':2,'III':3,'IV':4,'V':5 }[stars] || 0;
+  return `<div class="rank-badge" style="background:${r.bg};color:${r.color}">
+    ${medalSVG(rankMedal, starCount)}
+    ${rankLabel || 'Unknown'}
+  </div>`;
+}
 
-// ── Key pick scoring ───────────────────────────────────────────────────────────
+// ── Hero icon ─────────────────────────────────────────────────────────────────
+// Bot provides iconUrl directly on tournamentHeroes — use it.
+// For pubHeroes (no iconUrl from bot), fall back to CDN slug lookup.
+const HERO_SLUG = {
+  'Anti-Mage':'antimage','Axe':'axe','Beastmaster':'beastmaster','Bristleback':'bristleback',
+  'Centaur':'centaur','Chen':'chen','Clockwerk':'rattletrap','Crystal Maiden':'crystal_maiden',
+  'Dark Willow':'dark_willow','Death Prophet':'death_prophet','Dragon Knight':'dragon_knight',
+  'Drow Ranger':'drow_ranger','Earth Spirit':'earth_spirit','Earthshaker':'earthshaker',
+  'Ember Spirit':'ember_spirit','Enigma':'enigma','Huskar':'huskar','Invoker':'invoker',
+  'Jakiro':'jakiro','Juggernaut':'juggernaut','Leshrac':'leshrac','Lina':'lina','Lion':'lion',
+  'Lycan':'lycan','Magnus':'magnataur','Mars':'mars','Medusa':'medusa','Muerta':'muerta',
+  'Naga Siren':'naga_siren',"Nature's Prophet":'furion','Omniknight':'omniknight',
+  'Phantom Assassin':'phantom_assassin','Phantom Lancer':'phantom_lancer','Phoenix':'phoenix',
+  'Pudge':'pudge','Puck':'puck','Queen of Pain':'queenofpain','Razor':'razor','Rubick':'rubick',
+  'Shadow Demon':'shadow_demon','Shadow Fiend':'nevermore','Shadow Shaman':'shadow_shaman',
+  'Slardar':'slardar','Snapfire':'snapfire','Spectre':'spectre','Spirit Breaker':'spirit_breaker',
+  'Storm Spirit':'storm_spirit','Techies':'techies','Templar Assassin':'templar_assassin',
+  'Timbersaw':'shredder','Tinker':'tinker','Tidehunter':'tidehunter','Troll Warlord':'troll_warlord',
+  'Ursa':'ursa','Vengeful Spirit':'vengefulspirit','Viper':'viper','Void Spirit':'void_spirit',
+  'Warlock':'warlock','Weaver':'weaver','Winter Wyvern':'winter_wyvern','Witch Doctor':'witch_doctor',
+  'Wraith King':'skeleton_king','Clinkz':'clinkz','Disruptor':'disruptor','Gyrocopter':'gyrocopter',
+  'Clockwerk':'rattletrap','Skywrath Mage':'skywrath_mage','Tiny':'tiny','Pugna':'pugna',
+  'Lich':'lich','Windranger':'windrunner','Axe':'axe','Sven':'sven',
+};
+
+function heroIconUrl(name, directUrl) {
+  if (directUrl) {
+    // Bot provides relative URLs like /apps/dota2/images/... — make absolute
+    return directUrl.startsWith('http') ? directUrl : `https://www.steampowered.com${directUrl}`;
+  }
+  const slug = HERO_SLUG[name];
+  return slug ? `https://cdn.dota2.com/apps/dota2/images/dota_react/heroes/icons/${slug}.png` : null;
+}
+
+function heroIconTag(name, wrapClass, directUrl) {
+  const url = heroIconUrl(name, directUrl);
+  return `<div class="${wrapClass}">${url ? `<img src="${url}" alt="${name}" loading="lazy" onerror="this.parentElement.style.opacity='0.3'">` : ''}</div>`;
+}
+
+// ── Ban scoring ───────────────────────────────────────────────────────────────
 function keyPickScore(h) {
   if (!h.tournamentGames) return 0;
-  const delta     = Math.max(0, h.tournamentWR - h.pubWR);
+  const delta     = Math.max(0, h.tournamentWR - (h.pubWR || h.tournamentWR));
   const deltaMult = 1 + (delta / 50);
-  const recency   = h.recentSeason ? 1.25 : 1.0;
-  return (h.tournamentWR / 100) * Math.log(h.tournamentGames + 1) * deltaMult * recency;
+  return (h.tournamentWR / 100) * Math.log(h.tournamentGames + 1) * deltaMult;
 }
 
 function priorityLabel(score) { return score >= 2.0 ? 'high' : score >= 1.2 ? 'med' : 'low'; }
 
-function banReason(score, h) {
-  const delta = Math.max(0, h.tournamentWR - h.pubWR);
+function banReason(h) {
+  const delta = Math.max(0, h.tournamentWR - (h.pubWR || h.tournamentWR));
   const parts = [];
-  if (h.tournamentGames >= 6) parts.push(`${h.tournamentGames} CM games`);
+  if (h.tournamentGames >= 4) parts.push(`${h.tournamentGames} CM games`);
   if (h.tournamentWR >= 65)   parts.push(`${h.tournamentWR}% CM wr`);
-  if (delta >= 15)             parts.push(`+${delta}pp vs pub wr`);
-  if (h.recentSeason)         parts.push('active this season');
+  if (delta >= 15)             parts.push(`+${delta}pp vs pub`);
   return parts.join(' · ') || 'Moderate threat';
 }
 
-// ── Match data ─────────────────────────────────────────────────────────────────
-const MATCHES = {
-  'match-upcoming-1': {
-    date:'Saturday 12 April 2026 · 19:00', opponent:'Stackade Gubbar',
-    status:'upcoming', result:null, snapshotDate:null,
-    players:[
-      { name:'Zephyrix', mmr:3850, steamId:'76561198012345678', lane:'Mid Lane', winrate:54,
-        form:['w','w','l','w','w','l','w','w','l','w'],
-        tournamentHeroes:[
-          {name:'Invoker',     tournamentGames:8, tournamentWR:75, pubWR:55, pubGames:28, recentSeason:true},
-          {name:'Lina',        tournamentGames:5, tournamentWR:60, pubWR:51, pubGames:20, recentSeason:true},
-          {name:'Storm Spirit',tournamentGames:3, tournamentWR:67, pubWR:52, pubGames:15, recentSeason:false},
-        ],
-        pubHeroes:[
-          {name:'Phantom Assassin',games:42,wr:61},
-          {name:'Invoker',         games:28,wr:55},
-          {name:'Anti-Mage',       games:19,wr:53},
-        ],
-      },
-      { name:'kr0w', mmr:2800, steamId:'76561198023456789', lane:'Off Lane', winrate:51,
-        form:['l','w','l','l','w','w','l','w','w','l'],
-        tournamentHeroes:[
-          {name:'Earthshaker',tournamentGames:6, tournamentWR:83, pubWR:59, pubGames:22, recentSeason:true},
-          {name:'Magnus',     tournamentGames:4, tournamentWR:50, pubWR:50, pubGames:14, recentSeason:true},
-          {name:'Tidehunter', tournamentGames:2, tournamentWR:50, pubWR:47, pubGames:10, recentSeason:false},
-        ],
-        pubHeroes:[
-          {name:'Axe',        games:35,wr:54},
-          {name:'Earthshaker',games:22,wr:59},
-          {name:'Centaur',    games:14,wr:57},
-        ],
-      },
-      { name:'Solvarg', mmr:4450, steamId:'76561198034567890', lane:'Safe Lane', winrate:57,
-        form:['w','w','w','l','w','w','w','l','w','w'],
-        tournamentHeroes:[
-          {name:'Templar Assassin',tournamentGames:9,tournamentWR:67,pubWR:65,pubGames:51,recentSeason:true},
-          {name:'Queen of Pain',   tournamentGames:5,tournamentWR:60,pubWR:48,pubGames:20,recentSeason:true},
-          {name:'Puck',            tournamentGames:3,tournamentWR:67,pubWR:50,pubGames:12,recentSeason:false},
-        ],
-        pubHeroes:[
-          {name:'Templar Assassin',games:51,wr:65},
-          {name:'Ember Spirit',    games:30,wr:57},
-          {name:'Leshrac',         games:18,wr:44},
-        ],
-      },
-      { name:'Pellmans', mmr:3100, steamId:'76561198045678901', lane:'Support', winrate:49,
-        form:['l','l','w','w','l','w','l','w','l','w'],
-        tournamentHeroes:[
-          {name:'Witch Doctor',  tournamentGames:4,tournamentWR:75,pubWR:50,pubGames:18,recentSeason:true},
-          {name:'Crystal Maiden',tournamentGames:7,tournamentWR:57,pubWR:52,pubGames:25,recentSeason:true},
-          {name:'Shadow Shaman', tournamentGames:2,tournamentWR:50,pubWR:46,pubGames:12,recentSeason:false},
-        ],
-        pubHeroes:[
-          {name:'Rubick',        games:38,wr:50},
-          {name:'Crystal Maiden',games:25,wr:52},
-          {name:'Lion',          games:17,wr:47},
-        ],
-      },
-      { name:'Hooked', mmr:2500, steamId:'76561198056789012', lane:'Roamer', winrate:52,
-        form:['w','l','w','w','w','l','w','l','w','w'],
-        tournamentHeroes:[
-          {name:'Pudge',          tournamentGames:11,tournamentWR:64,pubWR:55,pubGames:88,recentSeason:true},
-          {name:'Clockwerk',      tournamentGames:4, tournamentWR:50,pubWR:50,pubGames:20,recentSeason:true},
-          {name:'Vengeful Spirit',tournamentGames:2, tournamentWR:100,pubWR:52,pubGames:15,recentSeason:false},
-        ],
-        pubHeroes:[
-          {name:'Pudge',      games:88,wr:55},
-          {name:'Bristleback',games:29,wr:48},
-          {name:'Clockwerk',  games:20,wr:50},
-        ],
-      },
-    ],
-    history:[],
-  },
-
-  'match-past-1': {
-    date:'Sunday 22 March 2026', opponent:'Nattens Söner',
-    status:'win', result:'2 – 0', snapshotDate:'22 Mar 2026',
-    players:[
-      { name:'Mörkvarg', mmr:3450, steamId:'76561198067890123', lane:'Safe Lane', winrate:53,
-        form:['w','w','l','w','l','w','w','l','w','w'],
-        tournamentHeroes:[
-          {name:'Ursa',      tournamentGames:4,tournamentWR:75,pubWR:64,pubGames:22,recentSeason:true},
-          {name:'Juggernaut',tournamentGames:6,tournamentWR:50,pubWR:54,pubGames:44,recentSeason:false},
-        ],
-        pubHeroes:[
-          {name:'Juggernaut', games:44,wr:54},
-          {name:'Wraith King', games:31,wr:58},
-          {name:'Ursa',       games:22,wr:64},
-        ],
-      },
-      { name:'Skuggspel', mmr:2650, steamId:'76561198078901234', lane:'Mid Lane', winrate:50,
-        form:['l','w','l','w','w','l','w','w','l','l'],
-        tournamentHeroes:[
-          {name:'Naga Siren',    tournamentGames:3,tournamentWR:67,pubWR:52,pubGames:18,recentSeason:true},
-          {name:'Phantom Lancer',tournamentGames:5,tournamentWR:40,pubWR:49,pubGames:55,recentSeason:false},
-        ],
-        pubHeroes:[
-          {name:'Phantom Lancer',games:55,wr:49},
-          {name:'Spectre',       games:33,wr:52},
-          {name:'Medusa',        games:18,wr:44},
-        ],
-      },
-    ],
-    history:[
-      {matchId:'7812340001',date:'15 Mar 2026',opponent:'Team Alpha',   result:'win', heroes:['Invoker','Lina'],          duration:'38:22',kda:'8/3/12'},
-      {matchId:'7812330002',date:'08 Mar 2026',opponent:'Stack Boys',   result:'loss',heroes:['Anti-Mage','Storm Spirit'],duration:'52:10',kda:'4/8/6'},
-      {matchId:'7812320003',date:'01 Mar 2026',opponent:'Nattens Söner',result:'win', heroes:['Pudge','Earthshaker'],      duration:'41:05',kda:'6/4/18'},
-    ],
-  },
-
-  'match-past-2': {
-    date:'Sunday 8 March 2026', opponent:'GG Pionjärer',
-    status:'loss', result:'0 – 2', snapshotDate:'08 Mar 2026',
-    players:[
-      { name:'Grymfader', mmr:4800, steamId:'76561198089012345', lane:'Mid Lane', winrate:58,
-        form:['w','w','w','w','l','w','w','w','l','w'],
-        tournamentHeroes:[
-          {name:'Tinker',      tournamentGames:7,tournamentWR:86,pubWR:62,pubGames:60,recentSeason:true},
-          {name:'Shadow Fiend',tournamentGames:4,tournamentWR:75,pubWR:58,pubGames:40,recentSeason:true},
-        ],
-        pubHeroes:[
-          {name:'Tinker',      games:60,wr:62},
-          {name:'Shadow Fiend',games:40,wr:58},
-          {name:'Puck',        games:25,wr:56},
-        ],
-      },
-    ],
-    history:[
-      {matchId:'7811110001',date:'01 Mar 2026',opponent:'Tornknäckarna',result:'win', heroes:['Tinker','Enigma'], duration:'29:45',kda:'10/1/8'},
-      {matchId:'7811100002',date:'22 Feb 2026',opponent:'Team Kricka',  result:'win', heroes:['Invoker','Lina'],  duration:'44:12',kda:'7/3/14'},
-      {matchId:'7811090003',date:'15 Feb 2026',opponent:'Stack Boys',   result:'loss',heroes:['Tinker','Rubick'], duration:'55:30',kda:'5/9/7'},
-    ],
-  },
-
-  'match-past-3': {
-    date:'Sunday 22 February 2026', opponent:'Team Kricka',
-    status:'win', result:'2 – 1', snapshotDate:'22 Feb 2026',
-    players:[
-      { name:'Kricksson', mmr:2100, steamId:'76561198100123456', lane:'Off Lane', winrate:50,
-        form:['l','w','l','l','w','l','w','l','l','w'],
-        tournamentHeroes:[
-          {name:'Beastmaster',    tournamentGames:5,tournamentWR:40,pubWR:46,pubGames:48,recentSeason:false},
-          {name:"Nature's Prophet",tournamentGames:3,tournamentWR:33,pubWR:44,pubGames:20,recentSeason:false},
-        ],
-        pubHeroes:[
-          {name:'Beastmaster',games:48,wr:46},
-          {name:'Lycan',      games:30,wr:50},
-          {name:'Chen',       games:12,wr:42},
-        ],
-      },
-    ],
-    history:[
-      {matchId:'7810000001',date:'15 Feb 2026',opponent:'GG Pionjärer', result:'loss',heroes:['Beastmaster','OD'],  duration:'34:10',kda:'3/7/8'},
-      {matchId:'7809990002',date:'08 Feb 2026',opponent:'Nattens Söner',result:'win', heroes:['Lycan','Beastmaster'],duration:'28:55',kda:'6/4/10'},
-    ],
-  },
-};
-
-// ── Compute bans ───────────────────────────────────────────────────────────────
 function computeBans(players) {
   const candidates = [];
   for (const p of players) {
-    for (const h of p.tournamentHeroes) {
+    for (const h of (p.tournamentHeroes || [])) {
       const score = keyPickScore(h);
-      candidates.push({ hero:h, player:p.name, score, priority:priorityLabel(score), reason:banReason(score,h) });
+      if (!score) continue;
+      candidates.push({ hero: h, player: p.name, score, priority: priorityLabel(score) });
     }
   }
-  candidates.sort((a,b) => b.score - a.score);
+  candidates.sort((a, b) => b.score - a.score);
   const seen = new Set();
   return candidates.filter(c => {
     if (seen.has(c.hero.name)) return false;
@@ -579,46 +383,37 @@ function computeBans(players) {
   }).slice(0, 6);
 }
 
-// ── Render helpers ─────────────────────────────────────────────────────────────
+// ── Render helpers ────────────────────────────────────────────────────────────
 function wrClass(wr) { return wr >= 60 ? 'high' : wr < 45 ? 'low' : ''; }
-
-function heroIconTag(name, wrapClass) {
-  const url = heroIconUrl(name);
-  const inner = url
-    ? `<img src="${url}" alt="${name}" loading="lazy" onerror="this.parentElement.style.opacity='0.3'">`
-    : '';
-  return `<div class="${wrapClass}">${inner}</div>`;
-}
 
 function renderBanSection(players) {
   const bans = computeBans(players);
-  if (!bans.length) return '';
+  if (!bans.length) return '<div style="color:var(--ink-4);font-size:13px;margin-bottom:32px">No CM data yet — ban suggestions will appear after the opponent plays their first match.</div>';
   const cards = bans.map(b => {
     const norm = Math.min(100, (b.score / 3.5) * 100).toFixed(0);
     return `
       <div class="ban-card priority-${b.priority}">
         <div class="ban-priority-dot"></div>
-        ${heroIconTag(b.hero.name, 'ban-hero-icon')}
+        ${heroIconTag(b.hero.name, 'ban-hero-icon', b.hero.iconUrl)}
         <div class="ban-body">
           <div class="ban-hero-name">${b.hero.name}</div>
           <div class="ban-owner">${b.player}</div>
           <div class="ban-stats">
             <span class="ban-stat">${b.hero.tournamentGames} CM</span>
-            <span class="ban-stat">${b.hero.tournamentWR}% CM</span>
-            <span class="ban-stat">${b.hero.pubWR}% pub</span>
+            <span class="ban-stat">${b.hero.tournamentWR}% CM wr</span>
+            ${b.hero.pubWR ? `<span class="ban-stat">${b.hero.pubWR}% pub</span>` : ''}
           </div>
-          <div class="ban-reason">${b.reason}</div>
+          <div class="ban-reason">${banReason(b.hero)}</div>
           <div class="ban-score-bar"><div class="ban-score-fill" style="width:${norm}%"></div></div>
         </div>
       </div>`;
   }).join('');
-
   return `
     <div class="ban-section">
       <div class="section-title">Suggested bans — ranked by threat score</div>
       <div class="ban-grid">${cards}</div>
       <div style="font-size:11px;color:var(--ink-4);margin-top:10px;line-height:1.5">
-        Score = CM wr × log(CM games) × CM-vs-pub delta × recency.&ensp;
+        Score = CM wr × log(CM games) × CM-vs-pub delta.&ensp;
         <span style="color:var(--ban-high);font-weight:600">●</span> High &nbsp;
         <span style="color:var(--ban-med);font-weight:600">●</span> Moderate &nbsp;
         <span style="color:#9ca3af;font-weight:600">●</span> Situational
@@ -627,13 +422,14 @@ function renderBanSection(players) {
 }
 
 function renderHeroRows(heroes, isTournament) {
+  if (!heroes || !heroes.length) return '<div style="font-size:12px;color:var(--ink-4);padding:4px 0">No data</div>';
   return heroes.map(h => {
     const wr    = isTournament ? h.tournamentWR : h.wr;
     const games = isTournament ? h.tournamentGames : h.games;
     const isKey = isTournament && keyPickScore(h) >= 1.2;
     return `
       <div class="hero-row">
-        ${heroIconTag(h.name, 'hero-icon-wrap')}
+        ${heroIconTag(h.name, 'hero-icon-wrap', h.iconUrl)}
         <div class="hero-name">${h.name}</div>
         <div class="hero-games">${games}g</div>
         <div class="hero-wr-bar"><div class="hero-wr-fill ${wrClass(wr)}" style="width:${wr}%"></div></div>
@@ -644,25 +440,20 @@ function renderHeroRows(heroes, isTournament) {
 }
 
 function renderPlayerCard(p) {
-  const rank = rankFromMMR(p.mmr);
-  const pips = p.form.map(r => `<div class="form-pip ${r}">${r.toUpperCase()}</div>`).join('');
-  const dbId = BigInt(p.steamId) - 76561197960265728n;
-  const laneI = LANE_ICONS[p.lane] || '❓';
+  const form = (p.form || []).map(r => `<div class="form-pip ${r}">${r.toUpperCase()}</div>`).join('');
+  const unconfirmedTag = p.confirmed === false && p.accountId
+    ? `<span style="font-size:9px;color:var(--ban-med);margin-left:6px;font-weight:600">ID unconfirmed</span>`
+    : '';
 
   return `
     <div class="player-card">
       <div class="player-card-top">
         <div class="player-meta">
-          <div class="player-name">${p.name}</div>
-          <div class="rank-badge" style="background:${rank.bg};color:${rank.color}">
-            ${medalSVG(rank)}
-            ${rank.label}
-          </div>
-          <div class="lane-badge">${laneI} ${p.lane}</div>
+          <div class="player-name">${p.name}${unconfirmedTag}</div>
+          ${rankBadgeHTML(p.rankMedal || 'Unknown', p.rankLabel)}
         </div>
         <div class="player-wr">
-          <div class="wr-number">${p.winrate}%</div>
-          <div class="wr-label">pub wr</div>
+          ${p.winrate != null ? `<div class="wr-number">${p.winrate}%</div><div class="wr-label">pub wr</div>` : '<div class="wr-number" style="font-size:14px;color:var(--ink-4)">—</div>'}
         </div>
       </div>
 
@@ -674,76 +465,157 @@ function renderPlayerCard(p) {
       </div>
 
       <div class="hero-section">
-        <div class="hero-section-label">Pub pool (3 months)</div>
+        <div class="hero-section-label">Pub pool</div>
         ${renderHeroRows(p.pubHeroes, false)}
       </div>
 
-      <div class="form-row"><div class="form-label">Form</div>${pips}</div>
-
-      <div class="player-links">
-        <a class="player-link" href="https://www.dotabuff.com/players/${dbId}" target="_blank">Dotabuff ↗</a>
-        <a class="player-link" href="https://www.opendota.com/players/${dbId}" target="_blank">OpenDota ↗</a>
-      </div>
+      ${form ? `<div class="form-row"><div class="form-label">Form</div>${form}</div>` : ''}
+      ${profileLinks(p.accountId)}
     </div>`;
 }
 
-function renderHistory(rows) {
-  if (!rows || !rows.length) return '';
-  const trs = rows.map(r => {
-    const chips = r.heroes.map(h => {
-      const url = heroIconUrl(h);
-      const iconHtml = url
-        ? `<div class="hero-chip-icon"><img src="${url}" alt="${h}" loading="lazy" onerror="this.style.display='none'"></div>`
-        : '';
-      return `<span class="hero-chip">${iconHtml}${h}</span>`;
+function renderHistory(history) {
+  if (!history || !history.length) return '';
+  const rows = history.map(m => {
+    const picks = (m.picks || []).map(pk => {
+      const url = heroIconUrl(pk.heroName, pk.iconUrl);
+      return `<span class="hero-chip">
+        <div class="hero-chip-icon">${url ? `<img src="${url}" alt="${pk.heroName}" loading="lazy">` : ''}</div>
+        ${pk.heroName}
+      </span>`;
     }).join('');
-    return `
-      <tr>
-        <td class="mono">${r.date}</td>
-        <td style="font-size:13px;color:var(--ink-2)">${r.opponent}</td>
-        <td><span class="result-badge ${r.result}">${r.result === 'win' ? 'Win' : 'Loss'}</span></td>
-        <td>${chips}</td>
-        <td class="mono">${r.duration}</td>
-        <td class="mono">${r.kda}</td>
-        <td><a class="player-link" href="https://www.opendota.com/matches/${r.matchId}" target="_blank" style="font-size:10.5px;padding:2px 8px">↗</a></td>
-      </tr>`;
+    const matchUrl = `https://www.opendota.com/matches/${m.matchId}`;
+    return `<tr>
+      <td class="mono">${m.duration || '—'}</td>
+      <td>${picks}</td>
+      <td class="mono" style="color:var(--ink-4)">${m.patch ? `patch ${m.patch}` : ''}</td>
+      <td><a class="player-link" href="${matchUrl}" target="_blank" style="font-size:10.5px;padding:2px 8px">↗</a></td>
+    </tr>`;
   }).join('');
 
   return `
     <div class="history-section">
-      <div class="section-title">Opponent's E-Sparven match history</div>
+      <div class="section-title">Opponent's E-Sparven match history this season</div>
       <table class="history-table">
-        <thead><tr><th>Date</th><th>Vs</th><th>Result</th><th>Heroes picked</th><th>Duration</th><th>KDA</th><th></th></tr></thead>
-        <tbody>${trs}</tbody>
+        <thead><tr><th>Duration</th><th>Picks</th><th>Patch</th><th></th></tr></thead>
+        <tbody>${rows}</tbody>
       </table>
     </div>`;
 }
 
-// ── Show match ─────────────────────────────────────────────────────────────────
-function showMatch(id, btn) {
-  const m = MATCHES[id];
-  if (!m) return;
+// ── Date formatting ───────────────────────────────────────────────────────────
+function fmtDate(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleDateString('sv-SE', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
+}
+
+// ── Sidebar ───────────────────────────────────────────────────────────────────
+function buildSidebar(matches) {
+  const upcoming = matches.filter(m => m.status === 'upcoming');
+  const past     = matches.filter(m => m.status !== 'upcoming').reverse();
+
+  function matchItem(m) {
+    const badgeClass = { upcoming:'badge-upcoming', win:'badge-win', loss:'badge-loss', tie:'badge-loss' }[m.status] || 'badge-upcoming';
+    const badgeText  = { upcoming:'Upcoming', win:'Win', loss:'Loss', tie:'Tie' }[m.status] || m.status;
+    return `<button class="match-item" data-bin="${m.binId}" onclick="loadMatch('${m.binId}',this)">
+      <div class="mi-date">${fmtDate(m.date)}</div>
+      <div class="mi-opponent">${m.opponent}</div>
+      <span class="mi-badge ${badgeClass}">${badgeText}</span>
+    </button>`;
+  }
+
+  let html = '';
+  if (upcoming.length) {
+    html += `<div class="sidebar-section">
+      <div class="sidebar-label">Upcoming</div>
+      ${upcoming.map(matchItem).join('')}
+    </div>`;
+  }
+  if (past.length) {
+    html += `<div class="sidebar-section">
+      <div class="sidebar-label">Past matches</div>
+      ${past.map(matchItem).join('')}
+    </div>`;
+  }
+  if (!html) {
+    html = '<div style="padding:20px 22px;font-size:13px;color:var(--ink-4)">No matches found.</div>';
+  }
+
+  document.getElementById('sidebar-content').innerHTML = html;
+}
+
+// ── Show match ────────────────────────────────────────────────────────────────
+function setMainLoading(opponent) {
+  document.getElementById('main-panel').innerHTML = `
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:70vh;color:var(--ink-4);gap:10px">
+      <div style="font-size:14px">Loading scouting report for <strong>${opponent}</strong>…</div>
+    </div>`;
+}
+
+function setMainError(msg) {
+  document.getElementById('main-panel').innerHTML = `
+    <div style="padding:44px 52px;color:var(--loss)">
+      <strong>Error:</strong> ${msg}
+    </div>`;
+}
+
+async function loadMatch(binId, btn) {
   document.querySelectorAll('.match-item').forEach(el => el.classList.remove('active'));
   if (btn) btn.classList.add('active');
 
-  const statusColor = { upcoming:'badge-upcoming', win:'badge-win', loss:'badge-loss' }[m.status];
-  const statusLabel = { upcoming:'Upcoming', win:`Win · ${m.result}`, loss:`Loss · ${m.result}` }[m.status];
-  const notice = m.snapshotDate
-    ? `<div class="notice notice-snapshot">Snapshot captured ${m.snapshotDate} — data frozen at match time</div>`
-    : `<div class="notice notice-live">Live data · refreshed daily until match day</div>`;
+  const opponent = btn ? btn.querySelector('.mi-opponent').textContent : '…';
+  setMainLoading(opponent);
+
+  let data;
+  try {
+    data = await fetchBin(binId);
+  } catch(e) {
+    setMainError(`Could not load bin ${binId}: ${e.message}`);
+    return;
+  }
+
+  const status      = data.status || 'upcoming';
+  const badgeClass  = { upcoming:'badge-upcoming', win:'badge-win', loss:'badge-loss', tie:'badge-loss' }[status] || 'badge-upcoming';
+  const badgeText   = { upcoming:'Upcoming', win:'Win', loss:'Loss', tie:'Tie' }[status] || status;
+  const notice      = status === 'upcoming'
+    ? `<div class="notice notice-live">Live data · refreshed daily until match day</div>`
+    : `<div class="notice notice-snapshot">Snapshot · ${fmtDate(data.snapshotAt)}</div>`;
 
   document.getElementById('main-panel').innerHTML = `
     <div class="match-header">
-      <div style="margin-bottom:10px"><span class="mi-badge ${statusColor}" style="font-size:11px">${statusLabel}</span></div>
-      <div class="match-title">vs <strong>${m.opponent}</strong></div>
-      <div class="match-meta"><span>📅 ${m.date}</span><span>🎮 Dota 2 · Captain's Mode</span></div>
+      <div style="margin-bottom:10px"><span class="mi-badge ${badgeClass}" style="font-size:11px">${badgeText}</span></div>
+      <div class="match-title">vs <strong>${data.opponent}</strong></div>
+      <div class="match-meta"><span>📅 ${fmtDate(data.date)}</span><span>🎮 Dota 2 · Captain's Mode</span></div>
       ${notice}
     </div>
-    ${m.status === 'upcoming' ? renderBanSection(m.players) : ''}
+    ${status === 'upcoming' ? renderBanSection(data.players || []) : ''}
     <div class="section-title" style="margin-bottom:16px">Opponent roster</div>
-    <div class="player-grid">${m.players.map(renderPlayerCard).join('')}</div>
-    ${renderHistory(m.history)}`;
+    <div class="player-grid">${(data.players || []).map(renderPlayerCard).join('')}</div>
+    ${renderHistory(data.history)}`;
 }
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+(async () => {
+  let index;
+  try {
+    index = await fetchBin(INDEX_BIN_ID);
+  } catch(e) {
+    document.getElementById('sidebar-content').innerHTML =
+      `<div style="padding:20px 22px;color:var(--loss);font-size:13px">Failed to load index: ${e.message}</div>`;
+    return;
+  }
+
+  const matches = index.matches || [];
+  buildSidebar(matches);
+
+  // Auto-open first upcoming match, or first match if none upcoming
+  const first = matches.find(m => m.status === 'upcoming') || matches[0];
+  if (first) {
+    const btn = document.querySelector(`[data-bin="${first.binId}"]`);
+    loadMatch(first.binId, btn);
+  }
+})();
 </script>
 </body>
 </html>
