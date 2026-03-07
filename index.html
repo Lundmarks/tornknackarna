@@ -48,10 +48,14 @@
   .team-sub { font-size: 11.5px; color: var(--ink-4); padding-left: 16px; }
   .sidebar-section { padding: 18px 22px 8px; }
   .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-4); margin-bottom: 6px; }
-  .match-item { display: block; padding: 10px 12px; border-radius: var(--radius-sm); cursor: pointer; transition: background var(--tr); border: none; background: none; width: 100%; text-align: left; margin-bottom: 2px; }
+  .match-item { display: block; padding: 10px 12px 10px 14px; border-radius: var(--radius-sm); cursor: pointer; transition: background var(--tr), border-color var(--tr); border: none; border-left: 3px solid transparent; background: none; width: 100%; text-align: left; margin-bottom: 2px; }
   .match-item:hover { background: var(--line-2); }
-  .match-item.active { background: #edf2ff; }
+  .match-item.active { background: #edf2ff; border-left-color: var(--accent); }
   .match-item.active .mi-opponent { color: var(--accent); }
+  .match-item.status-upcoming { border-left-color: #c4b5fd; }
+  .match-item.status-win  { border-left-color: #6ee7b7; }
+  .match-item.status-loss { border-left-color: #fca5a5; }
+  .match-item.status-tie  { border-left-color: #fcd34d; }
   .mi-date { font-size: 10.5px; color: var(--ink-4); font-family: var(--mono); margin-bottom: 2px; }
   .mi-opponent { font-size: 13px; font-weight: 500; color: var(--ink); transition: color var(--tr); }
   .mi-badge { display: inline-block; font-size: 9.5px; font-weight: 600; letter-spacing: .04em; padding: 2px 7px; border-radius: 20px; margin-top: 4px; }
@@ -70,6 +74,10 @@
   .notice-live     { background: var(--upcoming-bg); color: var(--upcoming); }
   .notice-snapshot { background: var(--line-2);      color: var(--ink-4); }
   .section-title { font-size: 10.5px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-4); margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+  .page-section { padding: 28px 32px; border-radius: 14px; margin-bottom: 28px; }
+  .page-section-bans    { background: #fdf8f3; border: 1px solid #f0e0cc; }
+  .page-section-roster  { background: #f5f8ff; border: 1px solid #dce6f8; }
+  .page-section-history { background: #f6faf7; border: 1px solid #cce8d4; }
 
   /* ── Ban cards ────────────────────────────────────────── */
   .ban-section { margin-bottom: 44px; }
@@ -257,8 +265,8 @@ function profileLinks(accountId) {
   if (!accountId) return '';
   return `
     <div class="player-links">
-      <a class="player-link" href="https://www.dotabuff.com/players/${accountId}" target="_blank">Dotabuff ↗</a>
-      <a class="player-link" href="https://www.opendota.com/players/${accountId}" target="_blank">OpenDota ↗</a>
+      <a class="player-link" href="https://www.dotabuff.com/players/${accountId}" target="_blank">Dotabuff</a>
+      <a class="player-link" href="https://www.opendota.com/players/${accountId}" target="_blank">OpenDota</a>
     </div>`;
 }
 
@@ -329,13 +337,30 @@ const HERO_SLUG = {
   'Warlock':'warlock','Weaver':'weaver','Winter Wyvern':'winter_wyvern','Witch Doctor':'witch_doctor',
   'Wraith King':'skeleton_king','Clinkz':'clinkz','Disruptor':'disruptor','Gyrocopter':'gyrocopter',
   'Clockwerk':'rattletrap','Skywrath Mage':'skywrath_mage','Tiny':'tiny','Pugna':'pugna',
-  'Lich':'lich','Windranger':'windrunner','Axe':'axe','Sven':'sven',
+  'Lich':'lich','Windranger':'windrunner','Sven':'sven',
+  'Bounty Hunter':'bounty_hunter','Legion Commander':'legion_commander',
+  'Centaur Warrunner':'centaur','Mirana':'mirana','Hoodwink':'hoodwink',
+  'Bane':'bane','Dazzle':'dazzle','Abaddon':'abaddon','Alchemist':'alchemist',
+  'Ancient Apparition':'ancient_apparition','Arc Warden':'arc_warden',
+  'Batrider':'batrider','Bloodseeker':'bloodseeker','Brewmaster':'brewmaster',
+  'Broodmother':'broodmother','Chaos Knight':'chaos_knight','Doom':'doom',
+  'Elder Titan':'elder_titan','Faceless Void':'faceless_void','Grimstroke':'grimstroke',
+  'Io':'wisp','Keeper of the Light':'keeper_of_the_light','Kunkka':'kunkka',
+  'Leshrac':'leshrac','Lifestealer':'life_stealer','Lone Druid':'lone_druid',
+  'Marci':'marci','Medusa':'medusa','Meepo':'meepo','Monkey King':'monkey_king',
+  'Morphling':'morphling','Night Stalker':'night_stalker','Nyx Assassin':'nyx_assassin',
+  'Ogre Magi':'ogre_magi','Oracle':'oracle','Outworld Destroyer':'obsidian_destroyer',
+  'Pangolier':'pangolier','Primal Beast':'primal_beast','Riki':'riki',
+  'Sand King':'sand_king','Silencer':'silencer','Slark':'slark',
+  'Terrorblade':'terrorblade','Treant Protector':'treant','Tusk':'tusk',
+  'Underlord':'underlord','Undying':'undying','Vengeful Spirit':'vengefulspirit',
+  'Venomancer':'venomancer','Visage':'visage','Zeus':'zuus',
 };
 
 function heroIconUrl(name, directUrl) {
   if (directUrl) {
     // Bot provides relative URLs like /apps/dota2/images/... — make absolute
-    return directUrl.startsWith('http') ? directUrl : `https://www.steampowered.com${directUrl}`;
+    return directUrl.startsWith('http') ? directUrl : `https://steamcdn-a.akamaihd.net${directUrl}`;
   }
   const slug = HERO_SLUG[name];
   return slug ? `https://cdn.dota2.com/apps/dota2/images/dota_react/heroes/icons/${slug}.png` : null;
@@ -350,11 +375,14 @@ function heroIconTag(name, wrapClass, directUrl) {
 function keyPickScore(h) {
   if (!h.tournamentGames) return 0;
   const delta     = Math.max(0, h.tournamentWR - (h.pubWR || h.tournamentWR));
-  const deltaMult = 1 + (delta / 50);
-  return (h.tournamentWR / 100) * Math.log(h.tournamentGames + 1) * deltaMult;
+  const deltaMult = 1 + (delta / 40);
+  const recency   = h.recentSeason ? 1.2 : 1.0;
+  return (h.tournamentWR / 100) * Math.log(h.tournamentGames + 1) * deltaMult * recency;
 }
 
-function priorityLabel(score) { return score >= 2.0 ? 'high' : score >= 1.2 ? 'med' : 'low'; }
+// Thresholds calibrated: Invoker 8g/75%/+20pp ~2.8 = high, Pudge 11g/64%/+9pp ~2.0 = med,
+// Lina 5g/60%/+9pp ~1.3 = low, Magnus 4g/50%/0pp ~0.8 = no dot
+function priorityLabel(score) { return score >= 2.4 ? 'high' : score >= 1.6 ? 'med' : 'low'; }
 
 function banReason(h) {
   const delta = Math.max(0, h.tournamentWR - (h.pubWR || h.tournamentWR));
@@ -388,9 +416,12 @@ function wrClass(wr) { return wr >= 60 ? 'high' : wr < 45 ? 'low' : ''; }
 
 function renderBanSection(players) {
   const bans = computeBans(players);
-  if (!bans.length) return '<div style="color:var(--ink-4);font-size:13px;margin-bottom:32px">No CM data yet — ban suggestions will appear after the opponent plays their first match.</div>';
-  const cards = bans.map(b => {
-    const norm = Math.min(100, (b.score / 3.5) * 100).toFixed(0);
+  if (!bans.length) return '<div style="color:var(--ink-4);font-size:13px;margin-bottom:32px">No CM data yet - ban suggestions will appear after the opponent plays their first match.</div>';
+
+  const maxScore = bans[0]?.score || 1;
+
+  function banCard(b) {
+    const norm = Math.min(100, (b.score / maxScore) * 100).toFixed(0);
     return `
       <div class="ban-card priority-${b.priority}">
         <div class="ban-priority-dot"></div>
@@ -399,24 +430,41 @@ function renderBanSection(players) {
           <div class="ban-hero-name">${b.hero.name}</div>
           <div class="ban-owner">${b.player}</div>
           <div class="ban-stats">
-            <span class="ban-stat">${b.hero.tournamentGames} CM</span>
+            <span class="ban-stat">${b.hero.tournamentGames} CM games</span>
             <span class="ban-stat">${b.hero.tournamentWR}% CM wr</span>
-            ${b.hero.pubWR ? `<span class="ban-stat">${b.hero.pubWR}% pub</span>` : ''}
+            ${b.hero.pubWR ? `<span class="ban-stat">${b.hero.pubWR}% pub wr</span>` : ''}
           </div>
           <div class="ban-reason">${banReason(b.hero)}</div>
           <div class="ban-score-bar"><div class="ban-score-fill" style="width:${norm}%"></div></div>
         </div>
       </div>`;
-  }).join('');
+  }
+
+  const high = bans.filter(b => b.priority === 'high');
+  const med  = bans.filter(b => b.priority === 'med');
+  const low  = bans.filter(b => b.priority === 'low');
+
+  function tierBlock(label, color, items) {
+    if (!items.length) return '';
+    return `
+      <div style="margin-bottom:20px">
+        <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+                    color:${color};margin-bottom:8px;display:flex;align-items:center;gap:6px">
+          <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${color}"></span>
+          ${label}
+        </div>
+        <div class="ban-grid">${items.map(banCard).join('')}</div>
+      </div>`;
+  }
+
   return `
     <div class="ban-section">
-      <div class="section-title">Suggested bans — ranked by threat score</div>
-      <div class="ban-grid">${cards}</div>
-      <div style="font-size:11px;color:var(--ink-4);margin-top:10px;line-height:1.5">
-        Score = CM wr × log(CM games) × CM-vs-pub delta.&ensp;
-        <span style="color:var(--ban-high);font-weight:600">●</span> High &nbsp;
-        <span style="color:var(--ban-med);font-weight:600">●</span> Moderate &nbsp;
-        <span style="color:#9ca3af;font-weight:600">●</span> Situational
+      <div class="section-title">Suggested bans</div>
+      ${tierBlock('Priority bans', 'var(--ban-high)', high)}
+      ${tierBlock('Moderate threats', 'var(--ban-med)', med)}
+      ${tierBlock('Situational', '#9ca3af', low)}
+      <div style="font-size:11px;color:var(--ink-4);margin-top:4px;line-height:1.5">
+        Scored by CM winrate, games played, delta vs pub winrate, and recency.
       </div>
     </div>`;
 }
@@ -426,7 +474,7 @@ function renderHeroRows(heroes, isTournament) {
   return heroes.map(h => {
     const wr    = isTournament ? h.tournamentWR : h.wr;
     const games = isTournament ? h.tournamentGames : h.games;
-    const isKey = isTournament && keyPickScore(h) >= 1.2;
+    const isKey = isTournament && keyPickScore(h) >= 2.4 && h.tournamentGames >= 3;
     return `
       <div class="hero-row">
         ${heroIconTag(h.name, 'hero-icon-wrap', h.iconUrl)}
@@ -441,8 +489,8 @@ function renderHeroRows(heroes, isTournament) {
 
 function renderPlayerCard(p) {
   const form = (p.form || []).map(r => `<div class="form-pip ${r}">${r.toUpperCase()}</div>`).join('');
-  const unconfirmedTag = p.confirmed === false && p.accountId
-    ? `<span style="font-size:9px;color:var(--ban-med);margin-left:6px;font-weight:600">ID unconfirmed</span>`
+  const unconfirmedTag = !p.accountId
+    ? `<span style="font-size:9px;color:var(--ink-4);margin-left:6px;font-weight:600">no ID</span>`
     : '';
 
   return `
@@ -476,28 +524,48 @@ function renderPlayerCard(p) {
 
 function renderHistory(history) {
   if (!history || !history.length) return '';
-  const rows = history.map(m => {
-    const picks = (m.picks || []).map(pk => {
+  function chipGroup(picks, team) {
+    return (picks || []).filter(pk => pk.team === team).map(pk => {
       const url = heroIconUrl(pk.heroName, pk.iconUrl);
       return `<span class="hero-chip">
         <div class="hero-chip-icon">${url ? `<img src="${url}" alt="${pk.heroName}" loading="lazy">` : ''}</div>
         ${pk.heroName}
       </span>`;
-    }).join('');
+    }).join('') || '<span style="font-size:11px;color:var(--ink-4)">—</span>';
+  }
+  const rows = history.map(m => {
     const matchUrl = `https://www.opendota.com/matches/${m.matchId}`;
+    // opponentTeam: 0 = opponent was Radiant, 1 = opponent was Dire
+    // If not set, fall back to showing both columns unlabelled
+    const oppTeam  = m.opponentTeam;  // 0, 1, or undefined
+    const oppWon   = m.opponentWon;   // true/false or undefined
+    const resultBadge = oppWon === true
+      ? `<span class="result-badge win">W</span>`
+      : oppWon === false
+        ? `<span class="result-badge loss">L</span>`
+        : '';
+    // Side label pill
+    function sideLabel(team) {
+      if (oppTeam === undefined) return '';
+      const isOpp = (team === oppTeam);
+      return isOpp
+        ? `<span style="font-size:9px;font-weight:700;letter-spacing:.05em;color:var(--upcoming);background:var(--upcoming-bg);padding:1px 5px;border-radius:3px;margin-right:4px">OPP</span>`
+        : `<span style="font-size:9px;color:var(--ink-4);background:var(--line-2);padding:1px 5px;border-radius:3px;margin-right:4px">vs</span>`;
+    }
     return `<tr>
       <td class="mono">${m.duration || '—'}</td>
-      <td>${picks}</td>
+      <td>${resultBadge ? `<span style="margin-right:6px">${resultBadge}</span>` : ''}${sideLabel(0)}${chipGroup(m.picks, 0)}</td>
+      <td>${sideLabel(1)}${chipGroup(m.picks, 1)}</td>
       <td class="mono" style="color:var(--ink-4)">${m.patch ? `patch ${m.patch}` : ''}</td>
-      <td><a class="player-link" href="${matchUrl}" target="_blank" style="font-size:10.5px;padding:2px 8px">↗</a></td>
+      <td style="white-space:nowrap"><a class="player-link" href="${matchUrl}" target="_blank" style="font-size:10.5px;padding:2px 8px">Match</a></td>
     </tr>`;
   }).join('');
 
   return `
-    <div class="history-section">
+    <div class="page-section page-section-history history-section">
       <div class="section-title">Opponent's E-Sparven match history this season</div>
       <table class="history-table">
-        <thead><tr><th>Duration</th><th>Picks</th><th>Patch</th><th></th></tr></thead>
+        <thead><tr><th>Duration</th><th>Radiant</th><th>Dire</th><th>Patch</th><th></th></tr></thead>
         <tbody>${rows}</tbody>
       </table>
     </div>`;
@@ -518,7 +586,7 @@ function buildSidebar(matches) {
   function matchItem(m) {
     const badgeClass = { upcoming:'badge-upcoming', win:'badge-win', loss:'badge-loss', tie:'badge-loss' }[m.status] || 'badge-upcoming';
     const badgeText  = { upcoming:'Upcoming', win:'Win', loss:'Loss', tie:'Tie' }[m.status] || m.status;
-    return `<button class="match-item" data-bin="${m.binId}" onclick="loadMatch('${m.binId}',this)">
+    return `<button class="match-item status-${m.status}" data-bin="${m.binId}" onclick="loadMatch('${m.binId}','${m.meetingId||''}',this)">
       <div class="mi-date">${fmtDate(m.date)}</div>
       <div class="mi-opponent">${m.opponent}</div>
       <span class="mi-badge ${badgeClass}">${badgeText}</span>
@@ -560,12 +628,13 @@ function setMainError(msg) {
     </div>`;
 }
 
-async function loadMatch(binId, btn) {
+async function loadMatch(binId, meetingId, btn) {
   document.querySelectorAll('.match-item').forEach(el => el.classList.remove('active'));
   if (btn) btn.classList.add('active');
 
   const opponent = btn ? btn.querySelector('.mi-opponent').textContent : '…';
   setMainLoading(opponent);
+  const esparvenUrl = meetingId ? `https://esparven.se/none/Meeting/Details/${meetingId}` : null;
 
   let data;
   try {
@@ -586,12 +655,14 @@ async function loadMatch(binId, btn) {
     <div class="match-header">
       <div style="margin-bottom:10px"><span class="mi-badge ${badgeClass}" style="font-size:11px">${badgeText}</span></div>
       <div class="match-title">vs <strong>${data.opponent}</strong></div>
-      <div class="match-meta"><span>📅 ${fmtDate(data.date)}</span><span>🎮 Dota 2 · Captain's Mode</span></div>
+      <div class="match-meta"><span>${fmtDate(data.date)}</span><span>Dota 2 · Captain's Mode</span>${esparvenUrl ? `<a href="${esparvenUrl}" target="_blank" style="color:var(--accent);text-decoration:none;font-size:13px">E-Sparven</a>` : ''}</div>
       ${notice}
     </div>
-    ${status === 'upcoming' ? renderBanSection(data.players || []) : ''}
-    <div class="section-title" style="margin-bottom:16px">Opponent roster</div>
-    <div class="player-grid">${(data.players || []).map(renderPlayerCard).join('')}</div>
+    ${status === 'upcoming' ? `<div class="page-section page-section-bans">${renderBanSection(data.players || [])}</div>` : ''}
+    <div class="page-section page-section-roster">
+      <div class="section-title" style="margin-bottom:16px">Opponent roster</div>
+      <div class="player-grid">${(data.players || []).map(renderPlayerCard).join('')}</div>
+    </div>
     ${renderHistory(data.history)}`;
 }
 
@@ -613,7 +684,7 @@ async function loadMatch(binId, btn) {
   const first = matches.find(m => m.status === 'upcoming') || matches[0];
   if (first) {
     const btn = document.querySelector(`[data-bin="${first.binId}"]`);
-    loadMatch(first.binId, btn);
+    loadMatch(first.binId, first.meetingId || '', btn);
   }
 })();
 </script>
