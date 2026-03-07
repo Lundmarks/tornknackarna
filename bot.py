@@ -1,17 +1,645 @@
-import httpx
+"""
+bot.py
+------
+Main orchestration loop for the Tornknäckarna scouting bot.
 
-JSONBIN_KEY = os.environ["JSONBIN_KEY"]
-HEADERS = {"X-Master-Key": JSONBIN_KEY, "Content-Type": "application/json"}
-BASE = "https://api.jsonbin.io/v3"
+Run once manually to test:   python bot.py --run-once
+Run on a schedule (Docker):  python bot.py
 
-def create_bin(data: dict, name: str) -> str:
-    """Create a new bin, return its ID."""
-    r = httpx.post(f"{BASE}/b", json=data,
-                   headers={**HEADERS, "X-Bin-Name": name, "X-Bin-Private": "false"})
-    r.raise_for_status()
-    return r.json()["metadata"]["id"]
+Flow per cycle:
+  1. Fetch upcoming meetings from E-Sparven
+  2. For each meeting, identify the opponent team
+  3. Scrape or look up Steam IDs for opponent members
+  4. Fetch player pub stats from OpenDota
+  5. Parse tournament match data directly from E-Sparven jsonMatchData
+  6. Write scouting JSON to JSONbin
+  7. Update the index bin (list of all meetings + their bin IDs)
+"""
 
-def update_bin(bin_id: str, data: dict):
-    """Overwrite an existing bin."""
-    r = httpx.put(f"{BASE}/b/{bin_id}", json=data, headers=HEADERS)
-    r.raise_for_status()
+import argparse
+import json
+import logging
+import os
+import time
+from datetime import datetime, timezone
+from pathlib import Path
+
+import schedule
+from dotenv import load_dotenv
+from rich.console import Console
+from rich.logging import RichHandler
+from rich.theme import Theme
+
+import opendota
+import player_map
+import steam
+from esparven import EsparvenClient
+from jsonbin import JSONBinClient
+
+load_dotenv()
+
+# Console logging colours and themes
+console = Console(theme=Theme({
+    "logging.level.info":    "cyan",
+    "logging.level.warning": "yellow bold",
+    "logging.level.error":   "red bold",
+}))
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(message)s",
+    datefmt="%H:%M:%S",
+    handlers=[RichHandler(
+        console=console,
+        rich_tracebacks=True,
+        tracebacks_show_locals=False,
+        show_path=False,
+        markup=True,
+    )]
+)
+log = logging.getLogger("bot")
+
+# Suppress httpx request noise
+logging.getLogger("httpx").setLevel(logging.WARNING)
+
+# ── Config ─────────────────────────────────────────────────────────────────────
+
+ESPARVEN_KEY      = os.environ["ESPARVEN_KEY"]
+ESPARVEN_TEAM_ID  = int(os.environ["ESPARVEN_TEAM_ID"])   # 67 = Tornknäckarna
+JSONBIN_KEY       = os.environ["JSONBIN_KEY"]
+INDEX_BIN_ID      = os.environ.get("JSONBIN_INDEX_BIN_ID") or None
+CURRENT_SEASON_ID = 67  # update each season
+
+STATE_PATH     = Path(__file__).parent / "state.json"
+OUR_TEAM_ID    = ESPARVEN_TEAM_ID
+COMPETITION    = "dota2cm"
+RUN_AT         = "06:00"   # daily schedule time (server local time)
+OPENDOTA_DELAY = 2.5       # seconds between OpenDota requests
+
+
+# ── State ──────────────────────────────────────────────────────────────────────
+
+def load_state() -> dict:
+    if STATE_PATH.exists():
+        with open(STATE_PATH) as f:
+            return json.load(f)
+    return {"meetings": {}, "index_bin_id": None}
+
+
+def save_state(state: dict) -> None:
+    with open(STATE_PATH, "w") as f:
+        json.dump(state, f, indent=2)
+
+
+# ── Display helpers ────────────────────────────────────────────────────────────
+
+def _print_banner():
+    console.print("\n[bold cyan]╔══════════════════════════════════════╗[/]")
+    console.print("[bold cyan]║[/]  [bold white]Tornknackarna Scouting Bot[/]          [bold cyan]║[/]")
+    console.print("[bold cyan]╚══════════════════════════════════════╝[/]\n")
+
+def _section(label: str) -> None:
+    """Print a visual section divider."""
+    pad = max(0, 38 - len(label))
+    console.print(f"\n[bold white]── {label} [/][dim]{'─' * pad}[/]")
+
+
+def _step(icon: str, msg: str) -> None:
+    """Print a single indented step line — used inside player/meeting loops."""
+    console.print(f"   {icon} {msg}")
+
+
+# ── Main run ───────────────────────────────────────────────────────────────────
+
+def run():
+    _print_banner()
+    log.info("[bold]Starting bot cycle[/]")
+    state  = load_state()
+    esp    = EsparvenClient(ESPARVEN_KEY)
+    jb     = JSONBinClient(JSONBIN_KEY)
+
+    _section("OpenDota: hero list")
+    heroes = opendota.get_heroes()
+    log.info(f"Loaded [bold]{len(heroes)}[/] heroes")
+
+    _section("E-Sparven: upcoming meetings")
+    try:
+        upcoming = esp.get_upcoming_meetings(COMPETITION)
+    except Exception as e:
+        log.error(f"Failed to fetch upcoming meetings: {e}")
+        return
+
+    our_meetings = [
+        m for m in upcoming
+        if any(c["id"] == OUR_TEAM_ID for c in m.get("meetingContenders", []))
+    ]
+    log.info(f"Found [bold]{len(our_meetings)}[/] upcoming meeting(s) for Tornknäckarna (of {len(upcoming)} total)")
+
+    index_entries = []
+
+    for meeting in our_meetings:
+        meeting_id   = meeting["id"]
+        meeting_date = meeting.get("matches", [{}])[0].get("matchDate", "")
+
+        opponent = _find_opponent(meeting, OUR_TEAM_ID)
+        if not opponent:
+            log.warning(f"Meeting {meeting_id}: could not identify opponent, skipping")
+            continue
+
+        opponent_name = opponent["name"]
+        opponent_id   = opponent["id"]
+
+        _section(f"Upcoming: vs {opponent_name}")
+        members = opponent.get("members", [])
+        _resolve_steam_ids(esp, meeting_id, opponent_id, members)
+
+        scout = build_scout_data(meeting, opponent, members, heroes, status="upcoming", esp=esp)
+
+        _step("↑", f"Writing bin for [yellow]{opponent_name}[/] (upcoming)...")
+        bin_id = state["meetings"].get(str(meeting_id), {}).get("bin_id")
+        bin_id = jb.create_or_update(bin_id, scout, name=f"{opponent_name} (upcoming)")
+        _step("[green]✓[/]", f"Bin ready: [dim]{bin_id}[/]")
+
+        state["meetings"].setdefault(str(meeting_id), {})["bin_id"] = bin_id
+        state["meetings"][str(meeting_id)]["opponent"] = opponent_name
+        state["meetings"][str(meeting_id)]["frozen"]   = False
+
+        index_entries.append({
+            "meetingId": meeting_id,
+            "binId":     bin_id,
+            "opponent":  opponent_name,
+            "date":      meeting_date,
+            "status":    "upcoming",
+        })
+
+    _process_past_meetings(esp, jb, state, heroes, index_entries)
+
+    _section("JSONbin: writing index")
+    index_data = {"updatedAt": datetime.now(timezone.utc).isoformat(), "matches": index_entries}
+    idx_bin    = state.get("index_bin_id") or INDEX_BIN_ID
+    idx_bin    = jb.create_or_update(idx_bin, index_data, name="tornknackarna-index")
+    state["index_bin_id"] = idx_bin
+    _step("[green]✓[/]", f"Index bin: [dim]{idx_bin}[/]")
+
+    save_state(state)
+    console.print(f"\n[bold green]✓ Cycle complete.[/] Index bin: [cyan]{idx_bin}[/]\n")
+    if not INDEX_BIN_ID:
+        console.print(f"[yellow]Add to .env:[/] [bold]JSONBIN_INDEX_BIN_ID={idx_bin}[/]\n")
+
+
+def _process_past_meetings(esp, jb, state, heroes, index_entries):
+    _section("E-Sparven: past meetings")
+    try:
+        past = esp.get_team_past_meetings(OUR_TEAM_ID, COMPETITION)
+    except Exception as e:
+        log.error(f"Failed to fetch past meetings: {e}")
+        return
+
+    past = [m for m in past if m.get("seasonID") == CURRENT_SEASON_ID]
+    log.info(f"Found [bold]{len(past)}[/] past meeting(s) this season")
+
+    for meeting in past:
+        meeting_id  = meeting["id"]
+        meeting_ref = state["meetings"].get(str(meeting_id), {})
+
+        if meeting_ref.get("frozen") and meeting_ref.get("bin_id"):
+            opponent_name = meeting_ref.get("opponent", "Unknown")
+            result        = _get_result(meeting, OUR_TEAM_ID)
+            meeting_date  = meeting.get("matches", [{}])[0].get("matchDate", "")
+            _step("[dim]~[/]", f"[dim]Skipping frozen: vs {opponent_name} ({result})[/]")
+            index_entries.append({
+                "meetingId": meeting_id,
+                "binId":     meeting_ref["bin_id"],
+                "opponent":  opponent_name,
+                "date":      meeting_date,
+                "status":    result,
+            })
+            continue
+
+        opponent = _find_opponent(meeting, OUR_TEAM_ID)
+        if not opponent:
+            continue
+
+        opponent_name = opponent["name"]
+        opponent_id   = opponent["id"]
+        members       = opponent.get("members", [])
+        result        = _get_result(meeting, OUR_TEAM_ID)
+
+        _section(f"Past: vs {opponent_name} ({result})")
+        _resolve_steam_ids(esp, meeting_id, opponent_id, members)
+
+        scout = build_scout_data(meeting, opponent, members, heroes, status=result, esp=esp)
+
+        _step("↑", f"Writing bin for [yellow]{opponent_name}[/] ({result})...")
+        bin_id = meeting_ref.get("bin_id")
+        bin_id = jb.create_or_update(bin_id, scout, name=f"{opponent_name} ({result})")
+        _step("[green]✓[/]", f"Bin frozen: [dim]{bin_id}[/]")
+
+        meeting_date = meeting.get("matches", [{}])[0].get("matchDate", "")
+        state["meetings"][str(meeting_id)] = {
+            "bin_id":   bin_id,
+            "opponent": opponent_name,
+            "frozen":   True,
+        }
+        index_entries.append({
+            "meetingId": meeting_id,
+            "binId":     bin_id,
+            "opponent":  opponent_name,
+            "date":      meeting_date,
+            "status":    result,
+        })
+
+
+# ── Steam ID resolution ────────────────────────────────────────────────────────
+
+def _resolve_steam_ids(esp, meeting_id, opponent_id, members):
+    names   = [m["inGameName"] for m in members if m.get("inGameName")]
+    missing = player_map.missing_players(names)
+
+    if not missing:
+        log.info(f"Steam IDs: all {len(names)} players already cached")
+        return
+
+    log.info(f"Steam IDs: resolving {len(missing)} new player(s)")
+
+    scraped = esp.scrape_player_ids_from_meeting(meeting_id)
+
+    for name in missing:
+        if name not in scraped:
+            continue
+        account_id = scraped[name]
+        if account_id is not None:
+            steam64 = str(steam.steam32_to_64(account_id))
+            player_map.upsert(name, account_id, steam64, confirmed=False, source="scraped")
+            _step("[green]✓[/]", f"[white]{name}[/] [dim]→ {account_id}[/]")
+        else:
+            _step("[yellow]⚠[/]", f"[white]{name}[/] [dim]has no numeric ID on E-Sparven[/]")
+
+    still_missing = player_map.missing_players(missing)
+    for name in still_missing:
+        results = _try_opendota_search(name)
+        if results:
+            best       = results[0]
+            account_id = best["account_id"]
+            steam64    = str(steam.steam32_to_64(account_id))
+            player_map.upsert(name, account_id, steam64, confirmed=False, source="search")
+            _step("[yellow]?[/]", f"[white]{name!r}[/] matched [dim]{best.get('personaname')!r}[/] ({account_id}) [yellow]UNCONFIRMED[/]")
+
+    summary = player_map.summary()
+    log.info(f"Player map: [dim]{summary}[/]")
+
+
+def _try_opendota_search(name: str) -> list:
+    try:
+        time.sleep(OPENDOTA_DELAY)
+        results = opendota.search_player(name)
+        return [r for r in results if r.get("similarity", 0) > 0.7]
+    except Exception as e:
+        log.warning(f"OpenDota search failed for {name!r}: {e}")
+        return []
+
+
+# ── Tournament match data parsing ─────────────────────────────────────────────
+
+def _parse_match_data(meeting: dict) -> list[dict]:
+    """
+    Parse all jsonMatchData entries from a meeting into structured dicts.
+    This replaces all OpenDota match fetching for tournament games.
+
+    Each returned dict contains:
+      matchId, duration, radiantWin, patch, players, picksBans
+    """
+    parsed = []
+    for match in meeting.get("matches", []):
+        raw = match.get("jsonMatchData")
+        if not raw:
+            continue
+        try:
+            data = json.loads(raw)
+        except json.JSONDecodeError:
+            log.warning(f"Failed to parse jsonMatchData for match {match.get('id')}")
+            continue
+
+        duration_secs = data.get("Duration", 0)
+        parsed.append({
+            "matchId":    data.get("MatchID"),
+            "duration":   f"{duration_secs // 60}:{duration_secs % 60:02d}",
+            "radiantWin": data.get("RadiantWin", False),
+            "patch":      data.get("Patch"),
+            "players":    data.get("Players", []),
+            "picksBans":  [
+                pb for pb in data.get("PicksBans", [])
+                if pb.get("HeroName")  # skip null/empty entries
+            ],
+        })
+    return parsed
+
+
+def _get_tournament_heroes_from_data(
+    account_id: int,
+    parsed_matches: list[dict],
+    hero_stats_named: list,
+) -> list[dict]:
+    """
+    Build tournament hero pool for one player from pre-parsed E-Sparven match data.
+    hero_stats_named is the OpenDota pub hero list enriched with heroName strings,
+    used only for pub WR delta comparison.
+    """
+    account_id_str = str(account_id)
+    hero_stats: dict[str, dict] = {}  # hero_name -> { games, wins, iconUrl }
+
+    for match in parsed_matches:
+        radiant_win = match["radiantWin"]
+        for p in match["players"]:
+            if p.get("AccountID") != account_id_str:
+                continue
+            hero_name = p.get("HeroName")
+            if not hero_name:
+                continue
+            is_radiant = p.get("IsRadiant", False)
+            won = (is_radiant and radiant_win) or (not is_radiant and not radiant_win)
+            if hero_name not in hero_stats:
+                hero_stats[hero_name] = {
+                    "games":   0,
+                    "wins":    0,
+                    "iconUrl": p.get("HeroIconUrl", ""),
+                }
+            hero_stats[hero_name]["games"] += 1
+            if won:
+                hero_stats[hero_name]["wins"] += 1
+            break  # found this player in the match, move on
+
+    result = []
+    for hero_name, stats in sorted(hero_stats.items(), key=lambda x: -x[1]["games"]):
+        tournament_wr = round(100 * stats["wins"] / stats["games"]) if stats["games"] else 0
+
+        pub_wr    = tournament_wr  # fallback if no pub data
+        pub_games = 0
+        for h in hero_stats_named:
+            if h.get("heroName") == hero_name and h.get("games", 0) > 0:
+                pub_wr    = round(100 * h["win"] / h["games"])
+                pub_games = h["games"]
+                break
+
+        result.append({
+            "name":            hero_name,
+            "iconUrl":         stats["iconUrl"],
+            "tournamentGames": stats["games"],
+            "tournamentWR":    tournament_wr,
+            "pubWR":           pub_wr,
+            "pubGames":        pub_games,
+        })
+
+    return result
+
+
+def _build_history_from_data(parsed_matches: list[dict]) -> list[dict]:
+    """
+    Build match history for the frontend from pre-parsed E-Sparven match data.
+    Includes full picks/bans with hero icon URLs — no OpenDota calls needed.
+    """
+    history = []
+    for match in parsed_matches:
+        picks = [
+            {
+                "heroName": pb["HeroName"],
+                "iconUrl":  pb.get("HeroIconUrl", ""),
+                "team":     pb["Team"],
+            }
+            for pb in match["picksBans"]
+            if pb.get("IsPick")
+        ]
+        bans = [
+            {
+                "heroName": pb["HeroName"],
+                "iconUrl":  pb.get("HeroIconUrl", ""),
+                "team":     pb["Team"],
+            }
+            for pb in match["picksBans"]
+            if not pb.get("IsPick")
+        ]
+        history.append({
+            "matchId":  match["matchId"],
+            "duration": match["duration"],
+            "patch":    match["patch"],
+            "picks":    picks,
+            "bans":     bans,
+        })
+    return history
+
+
+# ── Scout data builder ─────────────────────────────────────────────────────────
+
+def build_scout_data(
+    meeting: dict,
+    opponent: dict,
+    members: list,
+    heroes: dict[int, str],
+    status: str,
+    esp=None,
+) -> dict:
+    """
+    Build the full scouting JSON for one meeting.
+    Tournament data comes from E-Sparven jsonMatchData (no extra API calls).
+    For upcoming meetings the current meeting has no matches yet, so we also
+    fetch the opponent's past meetings to get their CM hero history.
+    Pub stats come from OpenDota.
+    """
+    date_str       = meeting.get("matches", [{}])[0].get("matchDate", "")
+    opponent_id    = opponent["id"]
+
+    # Parse match data from the current meeting (has games if already played)
+    parsed_matches = _parse_match_data(meeting)
+
+    # For upcoming matches (no games yet) also pull the opponent's past meetings
+    if not parsed_matches and esp is not None:
+        log.info(f"Upcoming match — fetching [yellow]{opponent['name']}[/] past meetings for CM history")
+        try:
+            opp_past = esp.get_team_past_meetings(opponent_id, COMPETITION)
+            opp_past = [m for m in opp_past if m.get("seasonID") == CURRENT_SEASON_ID]
+            for m in opp_past:
+                parsed_matches.extend(_parse_match_data(m))
+            log.info(f"Loaded [bold]{len(parsed_matches)}[/] game(s) from opponent's season history")
+        except Exception as e:
+            log.warning(f"Could not fetch opponent past meetings: {e}")
+
+    n_games = len(parsed_matches)
+    log.info(f"Parsed [bold]{n_games}[/] tournament game(s) total")
+
+    eligible = [m for m in members if m.get("inGameName")]
+    log.info(f"Fetching OpenDota stats for [bold]{len(eligible)}[/] player(s)...")
+
+    players = []
+    for i, member in enumerate(eligible, 1):
+        name       = member["inGameName"]
+        account_id = player_map.get_account_id(name)
+        confirmed  = player_map.load().get(name, {}).get("confirmed", False)
+
+        id_tag = f"[dim]{account_id}[/]" if account_id else "[dim red]no ID[/]"
+        _step(f"[dim]{i}/{len(eligible)}[/]", f"[white]{name}[/] {id_tag}")
+
+        player_data = {
+            "name":             name,
+            "accountId":        account_id,
+            "confirmed":        confirmed,
+            "lane":             None,
+            "rankTier":         None,
+            "rankLabel":        None,
+            "rankMedal":        None,
+            "rankStars":        None,
+            "winrate":          None,
+            "form":             [],
+            "tournamentHeroes": [],
+            "pubHeroes":        [],
+        }
+
+        if account_id:
+            try:
+                player_data = _fetch_player_data(
+                    name, account_id, confirmed, parsed_matches, heroes
+                )
+                rank  = player_data.get("rankLabel") or "?"
+                wr    = player_data.get("winrate")
+                wr_s  = f"{wr}%" if wr is not None else "?"
+                t_heroes = ", ".join(
+                    h["name"] for h in player_data.get("tournamentHeroes", [])[:3]
+                ) or "none"
+                _step(
+                    "   [green]✓[/]",
+                    f"[dim]{rank} | pub WR {wr_s} | CM: {t_heroes}[/]"
+                )
+            except Exception as e:
+                _step("   [red]✗[/]", f"[red]{e}[/]")
+                log.error(f"Failed to fetch data for {name!r} ({account_id}): {e}")
+
+        players.append(player_data)
+
+    history = _build_history_from_data(parsed_matches)
+
+    return {
+        "meetingId":  meeting["id"],
+        "opponent":   opponent["name"],
+        "date":       date_str,
+        "status":     status,
+        "snapshotAt": datetime.now(timezone.utc).isoformat(),
+        "players":    players,
+        "history":    history,
+    }
+
+
+def _fetch_player_data(
+    name: str,
+    account_id: int,
+    confirmed: bool,
+    parsed_matches: list[dict],
+    heroes: dict[int, str],
+) -> dict:
+    """
+    Fetch pub stats from OpenDota.
+    Tournament heroes are derived from pre-parsed E-Sparven match data.
+    """
+    time.sleep(OPENDOTA_DELAY)
+    profile   = opendota.get_player(account_id)
+    rank_tier = profile.get("rank_tier")
+    rank_name, rank_stars = opendota.rank_tier_to_label(rank_tier)
+    time.sleep(OPENDOTA_DELAY)
+    wl      = opendota.get_wl(account_id)
+    winrate = _calc_winrate(wl)
+
+    time.sleep(OPENDOTA_DELAY)
+    recent = opendota.get_recent_matches(account_id, limit=10)
+    form = [
+        "w" if (m.get("player_slot", 0) < 128 and m.get("radiant_win"))
+              or (m.get("player_slot", 0) >= 128 and not m.get("radiant_win"))
+        else "l"
+        for m in recent
+    ]
+
+    time.sleep(OPENDOTA_DELAY)
+    hero_stats = opendota.get_hero_stats(account_id)
+    hero_stats.sort(key=lambda h: h.get("games", 0), reverse=True)
+
+    pub_heroes = [
+        {
+            "name":  heroes.get(h["hero_id"], f"Hero {h['hero_id']}"),
+            "games": h["games"],
+            "wr":    round(100 * h["win"] / h["games"]) if h["games"] else 0,
+        }
+        for h in hero_stats[:5]
+    ]
+
+    hero_stats_named = [
+        {**h, "heroName": heroes.get(h["hero_id"], "")}
+        for h in hero_stats
+    ]
+
+    tournament_heroes = _get_tournament_heroes_from_data(
+        account_id, parsed_matches, hero_stats_named
+    )
+
+    rank_label = rank_name
+    if rank_stars and rank_name != "Immortal":
+        rank_label += f" {['I','II','III','IV','V'][rank_stars - 1]}"
+
+    return {
+        "name":             name,
+        "accountId":        account_id,
+        "confirmed":        confirmed,
+        "lane":             None,
+        "rankTier":         rank_tier,
+        "rankLabel":        rank_label,
+        "rankStars":        rank_stars,
+        "rankMedal":        rank_name,
+        "winrate":          winrate,
+        "form":             form,
+        "tournamentHeroes": tournament_heroes,
+        "pubHeroes":        pub_heroes,
+    }
+
+
+# ── Utilities ──────────────────────────────────────────────────────────────────
+
+def _find_opponent(meeting: dict, our_team_id: int) -> dict | None:
+    for contender in meeting.get("meetingContenders", []):
+        if contender["id"] != our_team_id:
+            return contender
+    return None
+
+
+def _get_result(meeting: dict, our_team_id: int) -> str:
+    if not meeting.get("winnerConfirmed"):
+        return "upcoming"
+    if meeting.get("tieWinner"):
+        return "tie"
+    winner = meeting.get("winnerTeam")
+    if winner is None:
+        return "upcoming"
+    return "win" if winner.get("id") == our_team_id else "loss"
+
+
+def _calc_winrate(profile: dict) -> int | None:
+    wins   = profile.get("win")
+    losses = profile.get("lose")
+    if wins is None or losses is None:
+        return None
+    total = wins + losses
+    return round(100 * wins / total) if total else None
+
+
+# ── Entry point ────────────────────────────────────────────────────────────────
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--run-once", action="store_true",
+                        help="Run immediately and exit (no schedule)")
+    args = parser.parse_args()
+
+    if args.run_once:
+        run()
+    else:
+        console.print(f"[dim]Scheduling daily run at [bold]{RUN_AT}[/][/]")
+        schedule.every().day.at(RUN_AT).do(run)
+        run()
+        while True:
+            schedule.run_pending()
+            time.sleep(60)

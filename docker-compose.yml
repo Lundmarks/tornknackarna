@@ -1,0 +1,9 @@
+services:
+  bot:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      # Persist state and player map outside the container
+      - ./player_map.json:/app/player_map.json
+      - ./state.json:/app/state.json
