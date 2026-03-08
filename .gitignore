@@ -2,3 +2,4 @@
 .venv
 player_map.json
 state.json
+**.backup

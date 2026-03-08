@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -9,9 +9,9 @@
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  :root {
+  :root, [data-theme="light"] {
     --bg:          #fafafa;
-    --white:       #ffffff;
+    --surface:     #ffffff;
     --ink:         #0a0a0a;
     --ink-2:       #3a3a3a;
     --ink-3:       #777777;
@@ -27,35 +27,79 @@
     --upcoming-bg: #f2effe;
     --ban-high:    #9b1c1c;
     --ban-med:     #92400e;
-    --mono:        'DM Mono', monospace;
-    --sans:        'DM Sans', sans-serif;
-    --radius:      12px;
-    --radius-sm:   6px;
+    --section-bans-bg:    #fdf8f3;
+    --section-bans-bdr:   #f0e0cc;
+    --section-roster-bg:  #f5f8ff;
+    --section-roster-bdr: #dce6f8;
+    --section-hist-bg:    #f6faf7;
+    --section-hist-bdr:   #cce8d4;
+    --active-item-bg:     #edf2ff;
     --shadow-h:    0 2px 8px rgba(0,0,0,.08), 0 8px 32px rgba(0,0,0,.08);
-    --tr:          0.18s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  [data-theme="dark"] {
+    --bg:          #0f1117;
+    --surface:     #1a1d27;
+    --ink:         #e8eaf0;
+    --ink-2:       #c0c4d0;
+    --ink-3:       #7a7f94;
+    --ink-4:       #4a4f62;
+    --line:        #272b3a;
+    --line-2:      #1e2130;
+    --accent:      #4d9eff;
+    --win:         #34c47a;
+    --win-bg:      #0d2b1e;
+    --loss:        #f06050;
+    --loss-bg:     #2a1210;
+    --upcoming:    #a78bfa;
+    --upcoming-bg: #1e1740;
+    --ban-high:    #f87171;
+    --ban-med:     #fb923c;
+    --section-bans-bg:    #1c1914;
+    --section-bans-bdr:   #2e2516;
+    --section-roster-bg:  #141622;
+    --section-roster-bdr: #1e2540;
+    --section-hist-bg:    #131d18;
+    --section-hist-bdr:   #1a3023;
+    --active-item-bg:     #1a2040;
+    --shadow-h:    0 2px 8px rgba(0,0,0,.3), 0 8px 32px rgba(0,0,0,.4);
+  }
+
+  :root {
+    --mono:      'DM Mono', monospace;
+    --sans:      'DM Sans', sans-serif;
+    --radius:    12px;
+    --radius-sm: 6px;
+    --tr:        0.18s cubic-bezier(0.4,0,0.2,1);
   }
 
   html { scroll-behavior: smooth; }
-  body { font-family: var(--sans); background: var(--bg); color: var(--ink); font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  body { font-family: var(--sans); background: var(--bg); color: var(--ink); font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased; transition: background var(--tr), color var(--tr); }
 
   .shell { display: grid; grid-template-columns: 272px 1fr; min-height: 100vh; }
 
-  /* ── Sidebar ──────────────────────────────────────────── */
-  aside { background: var(--white); border-right: 1px solid var(--line); display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
-  .sidebar-top { padding: 28px 22px 20px; border-bottom: 1px solid var(--line-2); }
+  aside { background: var(--surface); border-right: 1px solid var(--line); display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+  .sidebar-top { padding: 28px 22px 20px; border-bottom: 1px solid var(--line); display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
   .team-name { font-size: 13px; font-weight: 600; letter-spacing: .04em; color: var(--ink); display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
   .team-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
   .team-sub { font-size: 11.5px; color: var(--ink-4); padding-left: 16px; }
+
+  .theme-toggle-wrap { display: flex; flex-direction: column; align-items: center; gap: 3px; flex-shrink: 0; }
+  .theme-toggle { background: var(--line-2); border: 1px solid var(--line); border-radius: 20px; cursor: pointer; width: 32px; height: 18px; position: relative; padding: 0; transition: background var(--tr); }
+  .theme-toggle::after { content: ''; position: absolute; width: 12px; height: 12px; border-radius: 50%; background: var(--ink-3); top: 2px; left: 2px; transition: transform var(--tr), background var(--tr); }
+  [data-theme="light"] .theme-toggle::after { transform: translateX(14px); background: var(--accent); }
+  .theme-toggle-label { font-size: 9px; color: var(--ink-4); letter-spacing: .04em; text-transform: uppercase; font-weight: 600; }
+
   .sidebar-section { padding: 18px 22px 8px; }
   .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-4); margin-bottom: 6px; }
-  .match-item { display: block; padding: 10px 12px 10px 14px; border-radius: var(--radius-sm); cursor: pointer; transition: background var(--tr), border-color var(--tr); border: none; border-left: 3px solid transparent; background: none; width: 100%; text-align: left; margin-bottom: 2px; }
+  .match-item { display: block; padding: 10px 12px 10px 14px; border-radius: var(--radius-sm); cursor: pointer; transition: background var(--tr); border: none; border-left: 3px solid transparent; background: none; width: 100%; text-align: left; margin-bottom: 2px; color: var(--ink); }
   .match-item:hover { background: var(--line-2); }
-  .match-item.active { background: #edf2ff; border-left-color: var(--accent); }
+  .match-item.active { background: var(--active-item-bg); border-left-color: var(--accent); }
   .match-item.active .mi-opponent { color: var(--accent); }
-  .match-item.status-upcoming { border-left-color: #c4b5fd; }
-  .match-item.status-win  { border-left-color: #6ee7b7; }
-  .match-item.status-loss { border-left-color: #fca5a5; }
-  .match-item.status-tie  { border-left-color: #fcd34d; }
+  .match-item.status-upcoming { border-left-color: var(--upcoming); }
+  .match-item.status-win  { border-left-color: var(--win); }
+  .match-item.status-loss { border-left-color: var(--loss); }
+  .match-item.status-tie  { border-left-color: #f59e0b; }
   .mi-date { font-size: 10.5px; color: var(--ink-4); font-family: var(--mono); margin-bottom: 2px; }
   .mi-opponent { font-size: 13px; font-weight: 500; color: var(--ink); transition: color var(--tr); }
   .mi-badge { display: inline-block; font-size: 9.5px; font-weight: 600; letter-spacing: .04em; padding: 2px 7px; border-radius: 20px; margin-top: 4px; }
@@ -63,7 +107,6 @@
   .badge-win      { background: var(--win-bg);      color: var(--win); }
   .badge-loss     { background: var(--loss-bg);      color: var(--loss); }
 
-  /* ── Main ─────────────────────────────────────────────── */
   main { padding: 44px 52px 80px; max-width: 1120px; }
   .match-header { margin-bottom: 40px; opacity: 0; transform: translateY(12px); animation: fadeUp .38s cubic-bezier(0.4,0,0.2,1) .04s forwards; }
   @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
@@ -75,14 +118,14 @@
   .notice-snapshot { background: var(--line-2);      color: var(--ink-4); }
   .section-title { font-size: 10.5px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-4); margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
   .page-section { padding: 28px 32px; border-radius: 14px; margin-bottom: 28px; }
-  .page-section-bans    { background: #fdf8f3; border: 1px solid #f0e0cc; }
-  .page-section-roster  { background: #f5f8ff; border: 1px solid #dce6f8; }
-  .page-section-history { background: #f6faf7; border: 1px solid #cce8d4; }
+  .page-section-bans    { background: var(--section-bans-bg);   border: 1px solid var(--section-bans-bdr); }
+  .page-section-roster  { background: var(--section-roster-bg); border: 1px solid var(--section-roster-bdr); }
+  .page-section-history { background: var(--section-hist-bg);   border: 1px solid var(--section-hist-bdr); }
 
-  /* ── Ban cards ────────────────────────────────────────── */
   .ban-section { margin-bottom: 44px; }
-  .ban-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-  .ban-card { background: var(--white); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; display: flex; align-items: flex-start; gap: 10px; transition: box-shadow var(--tr), transform var(--tr); opacity: 0; animation: fadeUp .35s cubic-bezier(0.4,0,0.2,1) forwards; }
+  /* Responsive ban grid: fills available columns, min 200px per card */
+  .ban-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+  .ban-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; display: flex; align-items: flex-start; gap: 10px; transition: box-shadow var(--tr), transform var(--tr); opacity: 0; animation: fadeUp .35s cubic-bezier(0.4,0,0.2,1) forwards; }
   .ban-card:nth-child(1){animation-delay:.06s}.ban-card:nth-child(2){animation-delay:.10s}.ban-card:nth-child(3){animation-delay:.14s}
   .ban-card:nth-child(4){animation-delay:.18s}.ban-card:nth-child(5){animation-delay:.22s}.ban-card:nth-child(6){animation-delay:.26s}
   .ban-card:hover { box-shadow: var(--shadow-h); transform: translateY(-2px); }
@@ -90,21 +133,8 @@
   .priority-high .ban-priority-dot { background: var(--ban-high); }
   .priority-med  .ban-priority-dot { background: var(--ban-med); }
   .priority-low  .ban-priority-dot { background: #9ca3af; }
-
-  /* Hero icon in ban card — small square, no crop */
-  .ban-hero-icon {
-    width: 32px; height: 32px;
-    border-radius: 5px;
-    flex-shrink: 0;
-    background: var(--line-2);
-    overflow: hidden;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .ban-hero-icon img {
-    width: 100%; height: 100%;
-    object-fit: contain;
-  }
-
+  .ban-hero-icon { width: 32px; height: 32px; border-radius: 5px; flex-shrink: 0; background: var(--line-2); overflow: hidden; display: flex; align-items: center; justify-content: center; }
+  .ban-hero-icon img { width: 100%; height: 100%; object-fit: contain; }
   .ban-body { flex: 1; min-width: 0; }
   .ban-hero-name { font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .ban-owner { font-size: 10.5px; color: var(--ink-3); margin-bottom: 6px; }
@@ -117,66 +147,30 @@
   .priority-med  .ban-score-fill { background: var(--ban-med); }
   .priority-low  .ban-score-fill { background: #9ca3af; }
 
-  /* ── Player grid ──────────────────────────────────────── */
-  .player-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 16px; margin-bottom: 48px; }
-  .player-card { background: var(--white); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; transition: box-shadow var(--tr), transform var(--tr), border-color var(--tr); opacity: 0; animation: fadeUp .35s cubic-bezier(0.4,0,0.2,1) forwards; }
+  /* Responsive player grid: shrinks card min from 310 → 240 so more fit side by side */
+  .player-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; margin-bottom: 48px; }
+  .player-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; transition: box-shadow var(--tr), transform var(--tr), border-color var(--tr); opacity: 0; animation: fadeUp .35s cubic-bezier(0.4,0,0.2,1) forwards; }
   .player-card:nth-child(1){animation-delay:.10s}.player-card:nth-child(2){animation-delay:.15s}.player-card:nth-child(3){animation-delay:.20s}
   .player-card:nth-child(4){animation-delay:.25s}.player-card:nth-child(5){animation-delay:.30s}
-  .player-card:hover { box-shadow: var(--shadow-h); transform: translateY(-2px); border-color: #d4d4d4; }
-
+  .player-card:hover { box-shadow: var(--shadow-h); transform: translateY(-2px); border-color: var(--ink-4); }
   .player-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
   .player-name { font-size: 15px; font-weight: 600; color: var(--ink); margin-bottom: 5px; }
   .player-meta { display: flex; flex-direction: column; gap: 5px; }
 
-  /* CSS-drawn rank badge */
-  .rank-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 11px;
-    font-weight: 500;
-    padding: 3px 8px 3px 3px;
-    border-radius: 5px;
-    width: fit-content;
-  }
+  .rank-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 500; padding: 3px 8px 3px 3px; border-radius: 5px; width: fit-content; }
+  .rank-medal-img { width: 22px; height: 22px; flex-shrink: 0; object-fit: contain; }
+  .rank-medal-svg { width: 22px; height: 22px; flex-shrink: 0; }
 
-  /* Medal drawn entirely in SVG inline — no external fetch */
-  .rank-medal {
-    width: 22px;
-    height: 22px;
-    flex-shrink: 0;
-  }
-
-  .lane-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10.5px; font-weight: 500; color: var(--ink-3); background: var(--line-2); padding: 2px 8px; border-radius: 4px; width: fit-content; }
   .player-wr { text-align: right; flex-shrink: 0; }
   .wr-number { font-size: 22px; font-weight: 300; color: var(--ink); letter-spacing: -.02em; line-height: 1; }
   .wr-label  { font-size: 10px; color: var(--ink-4); margin-top: 1px; }
 
-  /* Hero rows */
   .hero-section { margin-bottom: 12px; }
   .hero-section-label { font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-4); margin-bottom: 7px; }
   .hero-row { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid var(--line-2); }
   .hero-row:last-child { border-bottom: none; }
-
-  /* Hero minimap icon — contain, never cropped */
-  .hero-icon-wrap {
-    width: 24px;
-    height: 24px;
-    flex-shrink: 0;
-    border-radius: 4px;
-    background: var(--line-2);
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .hero-icon-wrap img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    display: block;
-  }
-
+  .hero-icon-wrap { width: 24px; height: 24px; flex-shrink: 0; border-radius: 4px; background: var(--line-2); overflow: hidden; display: flex; align-items: center; justify-content: center; }
+  .hero-icon-wrap img { width: 100%; height: 100%; object-fit: contain; display: block; }
   .hero-name { font-size: 12px; font-weight: 500; color: var(--ink); flex: 1; }
   .hero-games { font-size: 10.5px; color: var(--ink-4); font-family: var(--mono); white-space: nowrap; }
   .hero-wr-bar { width: 40px; height: 3px; background: var(--line); border-radius: 2px; overflow: hidden; flex-shrink: 0; }
@@ -186,18 +180,15 @@
   .hero-wr-pct { font-size: 10px; font-family: var(--mono); color: var(--ink-3); width: 28px; text-align: right; }
   .key-pick-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ban-high); flex-shrink: 0; }
 
-  /* Form */
   .form-row { display: flex; align-items: center; gap: 3px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line-2); }
   .form-label { font-size: 10px; color: var(--ink-4); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; margin-right: 4px; white-space: nowrap; }
   .form-pip { width: 15px; height: 15px; border-radius: 3px; font-size: 8px; font-weight: 700; display: flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0; }
   .form-pip.w { background: var(--win); }
   .form-pip.l { background: var(--loss); }
-
   .player-links { display: flex; gap: 8px; margin-top: 10px; }
-  .player-link { font-size: 11px; font-weight: 500; color: var(--accent); text-decoration: none; padding: 3px 10px; border: 1px solid #cce0ff; border-radius: 20px; transition: background var(--tr), border-color var(--tr); }
-  .player-link:hover { background: #edf2ff; border-color: var(--accent); }
+  .player-link { font-size: 11px; font-weight: 500; color: var(--accent); text-decoration: none; padding: 3px 10px; border: 1px solid var(--line); border-radius: 20px; transition: background var(--tr), border-color var(--tr); }
+  .player-link:hover { background: var(--line-2); border-color: var(--accent); }
 
-  /* ── History ──────────────────────────────────────────── */
   .history-section { margin-bottom: 48px; }
   .history-table { width: 100%; border-collapse: collapse; font-size: 13px; }
   .history-table th { text-align: left; font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-4); padding: 0 12px 10px; border-bottom: 1px solid var(--line); }
@@ -216,11 +207,11 @@
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
 
+  /* Responsive breakpoint — auto-fill grids handle column count naturally above this */
   @media (max-width: 860px) {
     .shell { grid-template-columns: 1fr; }
     aside { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--line); }
     main { padding: 28px 20px 60px; }
-    .player-grid, .ban-grid { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -228,8 +219,14 @@
 <div class="shell">
   <aside>
     <div class="sidebar-top">
-      <div class="team-name"><span class="team-dot"></span>Tornknäckarna</div>
-      <div class="team-sub">Dota 2 · Captain's Mode · E-Sparven</div>
+      <div>
+        <div class="team-name"><span class="team-dot"></span>Tornknäckarna</div>
+        <div class="team-sub">Dota 2 · Captain's Mode · E-Sparven</div>
+      </div>
+      <div class="theme-toggle-wrap">
+        <button class="theme-toggle" id="theme-toggle" title="Toggle light/dark" onclick="toggleTheme()"></button>
+        <div class="theme-toggle-label" id="theme-label">Light</div>
+      </div>
     </div>
     <div id="sidebar-content">
       <div style="padding:28px 22px;color:var(--ink-4);font-size:13px">Loading matches…</div>
@@ -238,134 +235,147 @@
 
   <main id="main-panel">
     <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:70vh;color:var(--ink-4);gap:10px">
-      <div style="font-size:36px;opacity:.3">⚔️</div>
+      <div style="font-size:36px;opacity:.3">&#9876;</div>
       <div style="font-size:14px">Select a match to load the scouting report</div>
     </div>
   </main>
 </div>
 
 <script>
-// ─────────────────────────────────────────────────────────────────────────────
-// CONFIG — update INDEX_BIN_ID whenever the bot creates a new index bin
-// ─────────────────────────────────────────────────────────────────────────────
-const INDEX_BIN_ID = '69ac477043b1c97be9bdefcc';
-const JSONBIN_BASE = 'https://api.jsonbin.io/v3/b';
+const INDEX_BIN_ID    = '69ac477043b1c97be9bdefcc';
+const JSONBIN_BASE    = 'https://api.jsonbin.io/v3/b';
+const OUR_TEAM_BIN_ID = '69adfcf3ae596e708f6e2b4b';
+const MEDALS_BASE     = 'medals/';
 
+// ── Theme ─────────────────────────────────────────────────────────────────────
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  const lbl = document.getElementById('theme-label');
+  if (lbl) lbl.textContent = theme === 'dark' ? 'Light' : 'Dark';
+}
+function toggleTheme() {
+  const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('theme', next);
+  applyTheme(next);
+}
+applyTheme(localStorage.getItem('theme') || 'dark');
+
+// ── JSONbin ───────────────────────────────────────────────────────────────────
 async function fetchBin(binId) {
   const r = await fetch(`${JSONBIN_BASE}/${binId}/latest`);
   if (!r.ok) throw new Error(`JSONbin ${r.status} for ${binId}`);
-  const j = await r.json();
-  return j.record;
+  return (await r.json()).record;
 }
 
-// ── Steam ID helpers ──────────────────────────────────────────────────────────
-// Bot stores Steam32 (accountId). Dotabuff/OpenDota links need Steam32 directly.
-// Steam64 = Steam32 + 76561197960265728 — only needed for display if wanted.
+// ── Profile links ─────────────────────────────────────────────────────────────
 function profileLinks(accountId) {
   if (!accountId) return '';
-  return `
-    <div class="player-links">
-      <a class="player-link" href="https://www.dotabuff.com/players/${accountId}" target="_blank">Dotabuff</a>
-      <a class="player-link" href="https://www.opendota.com/players/${accountId}" target="_blank">OpenDota</a>
-    </div>`;
+  return `<div class="player-links">
+    <a class="player-link" href="https://www.dotabuff.com/players/${accountId}" target="_blank">Dotabuff</a>
+    <a class="player-link" href="https://www.opendota.com/players/${accountId}" target="_blank">OpenDota</a>
+  </div>`;
 }
 
-// ── Rank rendering ────────────────────────────────────────────────────────────
-// Bot provides rankMedal (string) and rankStars (int 0-5) directly.
-const RANK_CONFIG = {
-  'Herald':   { body:'#6e7f8a', shine:'#a0b0bb', star:'#c8d8e0', bg:'#f3f4f6', color:'#374151' },
-  'Guardian': { body:'#3d7a4e', shine:'#5aaa6e', star:'#90d4a0', bg:'#f0fdf4', color:'#166534' },
-  'Crusader': { body:'#7a5a20', shine:'#b08030', star:'#e0b060', bg:'#fffbeb', color:'#92400e' },
-  'Archon':   { body:'#8a3a18', shine:'#c05828', star:'#f0a060', bg:'#fff7ed', color:'#9a3412' },
-  'Legend':   { body:'#6a1a2a', shine:'#a02040', star:'#e06080', bg:'#fff1f2', color:'#9f1239' },
-  'Ancient':  { body:'#3a1a70', shine:'#6030b0', star:'#a870f0', bg:'#f5f3ff', color:'#6d28d9' },
-  'Divine':   { body:'#7a5a00', shine:'#c09010', star:'#f0d040', bg:'#fefce8', color:'#854d0e' },
-  'Immortal': { body:'#0a5a6a', shine:'#10a0b8', star:'#40d8f0', bg:'#ecfeff', color:'#0e7490' },
-  'Unknown':  { body:'#888',    shine:'#aaa',    star:'#ccc',    bg:'#f3f4f6', color:'#6b7280' },
+// ── Rank badge ─────────────────────────────────────────────────────────────────
+const RANK_THEME = {
+  Herald:   { lbg:'#f3f4f6', lc:'#374151', dbg:'#1c1f27', dc:'#9ca3af' },
+  Guardian: { lbg:'#f0fdf4', lc:'#166534', dbg:'#0d2b1a', dc:'#4ade80' },
+  Crusader: { lbg:'#fffbeb', lc:'#92400e', dbg:'#271a05', dc:'#fbbf24' },
+  Archon:   { lbg:'#fff7ed', lc:'#9a3412', dbg:'#2a1208', dc:'#fb923c' },
+  Legend:   { lbg:'#fff1f2', lc:'#9f1239', dbg:'#2a0a10', dc:'#fb7185' },
+  Ancient:  { lbg:'#f5f3ff', lc:'#6d28d9', dbg:'#1a1040', dc:'#a78bfa' },
+  Divine:   { lbg:'#fefce8', lc:'#854d0e', dbg:'#201a04', dc:'#fde047' },
+  Immortal: { lbg:'#ecfeff', lc:'#0e7490', dbg:'#042028', dc:'#22d3ee' },
+  Unknown:  { lbg:'#f3f4f6', lc:'#6b7280', dbg:'#1c1f27', dc:'#6b7280' },
+};
+const RANK_SVG = {
+  Herald:   { body:'#6e7f8a', shine:'#a0b0bb', star:'#c8d8e0' },
+  Guardian: { body:'#3d7a4e', shine:'#5aaa6e', star:'#90d4a0' },
+  Crusader: { body:'#7a5a20', shine:'#b08030', star:'#e0b060' },
+  Archon:   { body:'#8a3a18', shine:'#c05828', star:'#f0a060' },
+  Legend:   { body:'#6a1a2a', shine:'#a02040', star:'#e06080' },
+  Ancient:  { body:'#3a1a70', shine:'#6030b0', star:'#a870f0' },
+  Divine:   { body:'#7a5a00', shine:'#c09010', star:'#f0d040' },
+  Immortal: { body:'#0a5a6a', shine:'#10a0b8', star:'#40d8f0' },
+  Unknown:  { body:'#888',    shine:'#aaa',    star:'#ccc' },
 };
 
-function medalSVG(medalName, stars) {
-  const r = RANK_CONFIG[medalName] || RANK_CONFIG['Unknown'];
-  const { body, shine, star } = r;
-  const totalPips = medalName === 'Immortal' ? 0 : 5;
+function medalSVGFallback(medal, stars) {
+  const c = RANK_SVG[medal] || RANK_SVG.Unknown;
+  const totalPips = medal === 'Immortal' ? 0 : 5;
   const spacing = 4.5;
   const startX = 11 - ((totalPips - 1) * spacing) / 2;
   let pips = '';
   for (let i = 0; i < totalPips; i++) {
-    const cx = startX + i * spacing;
-    pips += `<circle cx="${cx}" cy="19.5" r="1.8" fill="${i < stars ? star : 'rgba(255,255,255,0.18)'}"/>`;
+    pips += `<circle cx="${startX + i * spacing}" cy="19.5" r="1.8" fill="${i < stars ? c.star : 'rgba(255,255,255,0.18)'}"/>`;
   }
-  const gem = medalName === 'Immortal'
-    ? `<polygon points="11,14 13.5,11 11,8 8.5,11" fill="${star}" opacity="0.9"/>`
+  const gem = medal === 'Immortal'
+    ? `<polygon points="11,14 13.5,11 11,8 8.5,11" fill="${c.star}" opacity="0.9"/>`
     : '';
-  return `<svg class="rank-medal" viewBox="0 0 22 24" fill="none">
-    <path d="M11 1L2 4.5V13C2 17.5 6 21.5 11 23C16 21.5 20 17.5 20 13V4.5L11 1Z" fill="${body}" stroke="${shine}" stroke-width="0.8"/>
-    <path d="M11 2.5L3.5 5.5V13C3.5 13 4 14 5 15" stroke="${shine}" stroke-width="0.6" stroke-linecap="round" opacity="0.5"/>
-    ${gem}${pips}
-  </svg>`;
+  return `<svg class='rank-medal-svg' viewBox='0 0 22 24' fill='none'><path d='M11 1L2 4.5V13C2 17.5 6 21.5 11 23C16 21.5 20 17.5 20 13V4.5L11 1Z' fill='${c.body}' stroke='${c.shine}' stroke-width='0.8'/><path d='M11 2.5L3.5 5.5V13C3.5 13 4 14 5 15' stroke='${c.shine}' stroke-width='0.6' stroke-linecap='round' opacity='0.5'/>${gem}${pips}</svg>`;
 }
 
 function rankBadgeHTML(rankMedal, rankLabel) {
-  const r = RANK_CONFIG[rankMedal] || RANK_CONFIG['Unknown'];
-  const stars = rankLabel ? (rankLabel.match(/[IVX]+$/) || [''])[0] : '';
-  const starCount = { 'I':1,'II':2,'III':3,'IV':4,'V':5 }[stars] || 0;
-  return `<div class="rank-badge" style="background:${r.bg};color:${r.color}">
-    ${medalSVG(rankMedal, starCount)}
+  const medal  = rankMedal || 'Unknown';
+  const cfg    = RANK_THEME[medal] || RANK_THEME.Unknown;
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const bg     = isDark ? cfg.dbg : cfg.lbg;
+  const color  = isDark ? cfg.dc  : cfg.lc;
+  const starsStr = rankLabel ? (rankLabel.match(/[IVX]+$/) || [''])[0] : '';
+  const stars    = { I:1, II:2, III:3, IV:4, V:5 }[starsStr] || 0;
+  const slug    = medal.toLowerCase().replace(/\s+/g, '_');
+  const imgUrl  = `${MEDALS_BASE}${slug}.png`;
+  const fallback = medalSVGFallback(medal, stars).replace(/"/g, '&quot;');
+  return `<div class="rank-badge" style="background:${bg};color:${color}">
+    <img class="rank-medal-img" src="${imgUrl}" alt="${medal}" onerror="this.outerHTML='${fallback}'">
     ${rankLabel || 'Unknown'}
   </div>`;
 }
 
-// ── Hero icon ─────────────────────────────────────────────────────────────────
-// Bot provides iconUrl directly on tournamentHeroes — use it.
-// For pubHeroes (no iconUrl from bot), fall back to CDN slug lookup.
+// ── Hero icons ────────────────────────────────────────────────────────────────
 const HERO_SLUG = {
   'Anti-Mage':'antimage','Axe':'axe','Beastmaster':'beastmaster','Bristleback':'bristleback',
-  'Centaur':'centaur','Chen':'chen','Clockwerk':'rattletrap','Crystal Maiden':'crystal_maiden',
-  'Dark Willow':'dark_willow','Death Prophet':'death_prophet','Dragon Knight':'dragon_knight',
-  'Drow Ranger':'drow_ranger','Earth Spirit':'earth_spirit','Earthshaker':'earthshaker',
-  'Ember Spirit':'ember_spirit','Enigma':'enigma','Huskar':'huskar','Invoker':'invoker',
-  'Jakiro':'jakiro','Juggernaut':'juggernaut','Leshrac':'leshrac','Lina':'lina','Lion':'lion',
-  'Lycan':'lycan','Magnus':'magnataur','Mars':'mars','Medusa':'medusa','Muerta':'muerta',
-  'Naga Siren':'naga_siren',"Nature's Prophet":'furion','Omniknight':'omniknight',
-  'Phantom Assassin':'phantom_assassin','Phantom Lancer':'phantom_lancer','Phoenix':'phoenix',
-  'Pudge':'pudge','Puck':'puck','Queen of Pain':'queenofpain','Razor':'razor','Rubick':'rubick',
-  'Shadow Demon':'shadow_demon','Shadow Fiend':'nevermore','Shadow Shaman':'shadow_shaman',
-  'Slardar':'slardar','Snapfire':'snapfire','Spectre':'spectre','Spirit Breaker':'spirit_breaker',
-  'Storm Spirit':'storm_spirit','Techies':'techies','Templar Assassin':'templar_assassin',
-  'Timbersaw':'shredder','Tinker':'tinker','Tidehunter':'tidehunter','Troll Warlord':'troll_warlord',
-  'Ursa':'ursa','Vengeful Spirit':'vengefulspirit','Viper':'viper','Void Spirit':'void_spirit',
-  'Warlock':'warlock','Weaver':'weaver','Winter Wyvern':'winter_wyvern','Witch Doctor':'witch_doctor',
-  'Wraith King':'skeleton_king','Clinkz':'clinkz','Disruptor':'disruptor','Gyrocopter':'gyrocopter',
-  'Clockwerk':'rattletrap','Skywrath Mage':'skywrath_mage','Tiny':'tiny','Pugna':'pugna',
-  'Lich':'lich','Windranger':'windrunner','Sven':'sven',
-  'Bounty Hunter':'bounty_hunter','Legion Commander':'legion_commander',
-  'Centaur Warrunner':'centaur','Mirana':'mirana','Hoodwink':'hoodwink',
-  'Bane':'bane','Dazzle':'dazzle','Abaddon':'abaddon','Alchemist':'alchemist',
-  'Ancient Apparition':'ancient_apparition','Arc Warden':'arc_warden',
+  'Centaur':'centaur','Centaur Warrunner':'centaur','Chen':'chen','Clockwerk':'rattletrap',
+  'Crystal Maiden':'crystal_maiden','Dark Willow':'dark_willow','Death Prophet':'death_prophet',
+  'Dragon Knight':'dragon_knight','Drow Ranger':'drow_ranger','Earth Spirit':'earth_spirit',
+  'Earthshaker':'earthshaker','Ember Spirit':'ember_spirit','Enigma':'enigma','Huskar':'huskar',
+  'Invoker':'invoker','Jakiro':'jakiro','Juggernaut':'juggernaut','Leshrac':'leshrac',
+  'Lina':'lina','Lion':'lion','Lycan':'lycan','Magnus':'magnataur','Mars':'mars',
+  'Medusa':'medusa','Muerta':'muerta','Naga Siren':'naga_siren',"Nature's Prophet":'furion',
+  'Omniknight':'omniknight','Phantom Assassin':'phantom_assassin','Phantom Lancer':'phantom_lancer',
+  'Phoenix':'phoenix','Pudge':'pudge','Puck':'puck','Queen of Pain':'queenofpain','Razor':'razor',
+  'Rubick':'rubick','Shadow Demon':'shadow_demon','Shadow Fiend':'nevermore',
+  'Shadow Shaman':'shadow_shaman','Slardar':'slardar','Snapfire':'snapfire','Spectre':'spectre',
+  'Spirit Breaker':'spirit_breaker','Storm Spirit':'storm_spirit','Techies':'techies',
+  'Templar Assassin':'templar_assassin','Timbersaw':'shredder','Tinker':'tinker',
+  'Tidehunter':'tidehunter','Troll Warlord':'troll_warlord','Ursa':'ursa',
+  'Vengeful Spirit':'vengefulspirit','Viper':'viper','Void Spirit':'void_spirit',
+  'Warlock':'warlock','Weaver':'weaver','Winter Wyvern':'winter_wyvern',
+  'Witch Doctor':'witch_doctor','Wraith King':'skeleton_king','Clinkz':'clinkz',
+  'Disruptor':'disruptor','Gyrocopter':'gyrocopter','Skywrath Mage':'skywrath_mage',
+  'Tiny':'tiny','Pugna':'pugna','Lich':'lich','Windranger':'windrunner','Sven':'sven',
+  'Bounty Hunter':'bounty_hunter','Legion Commander':'legion_commander','Mirana':'mirana',
+  'Hoodwink':'hoodwink','Bane':'bane','Dazzle':'dazzle','Abaddon':'abaddon',
+  'Alchemist':'alchemist','Ancient Apparition':'ancient_apparition','Arc Warden':'arc_warden',
   'Batrider':'batrider','Bloodseeker':'bloodseeker','Brewmaster':'brewmaster',
   'Broodmother':'broodmother','Chaos Knight':'chaos_knight','Doom':'doom',
   'Elder Titan':'elder_titan','Faceless Void':'faceless_void','Grimstroke':'grimstroke',
   'Io':'wisp','Keeper of the Light':'keeper_of_the_light','Kunkka':'kunkka',
-  'Leshrac':'leshrac','Lifestealer':'life_stealer','Lone Druid':'lone_druid',
-  'Marci':'marci','Medusa':'medusa','Meepo':'meepo','Monkey King':'monkey_king',
-  'Morphling':'morphling','Night Stalker':'night_stalker','Nyx Assassin':'nyx_assassin',
-  'Ogre Magi':'ogre_magi','Oracle':'oracle','Outworld Destroyer':'obsidian_destroyer',
-  'Pangolier':'pangolier','Primal Beast':'primal_beast','Riki':'riki',
-  'Sand King':'sand_king','Silencer':'silencer','Slark':'slark',
+  'Lifestealer':'life_stealer','Lone Druid':'lone_druid','Marci':'marci','Meepo':'meepo',
+  'Monkey King':'monkey_king','Morphling':'morphling','Night Stalker':'night_stalker',
+  'Nyx Assassin':'nyx_assassin','Ogre Magi':'ogre_magi','Oracle':'oracle',
+  'Outworld Destroyer':'obsidian_destroyer','Pangolier':'pangolier','Primal Beast':'primal_beast',
+  'Riki':'riki','Sand King':'sand_king','Silencer':'silencer','Slark':'slark',
   'Terrorblade':'terrorblade','Treant Protector':'treant','Tusk':'tusk',
-  'Underlord':'underlord','Undying':'undying','Vengeful Spirit':'vengefulspirit',
-  'Venomancer':'venomancer','Visage':'visage','Zeus':'zuus',
+  'Underlord':'underlord','Undying':'undying','Venomancer':'venomancer','Visage':'visage',
+  'Zeus':'zuus',
 };
 
 function heroIconUrl(name, directUrl) {
-  if (directUrl) {
-    // Bot provides relative URLs like /apps/dota2/images/... — make absolute
-    return directUrl.startsWith('http') ? directUrl : `https://steamcdn-a.akamaihd.net${directUrl}`;
-  }
+  if (directUrl) return directUrl.startsWith('http') ? directUrl : `https://steamcdn-a.akamaihd.net${directUrl}`;
   const slug = HERO_SLUG[name];
-  return slug ? `https://cdn.dota2.com/apps/dota2/images/dota_react/heroes/icons/${slug}.png` : null;
+  return slug ? `https://steamcdn-a.akamaihd.net/apps/dota2/images/dota_react/heroes/icons/${slug}.png` : null;
 }
-
 function heroIconTag(name, wrapClass, directUrl) {
   const url = heroIconUrl(name, directUrl);
   return `<div class="${wrapClass}">${url ? `<img src="${url}" alt="${name}" loading="lazy" onerror="this.parentElement.style.opacity='0.3'">` : ''}</div>`;
@@ -379,11 +389,7 @@ function keyPickScore(h) {
   const recency   = h.recentSeason ? 1.2 : 1.0;
   return (h.tournamentWR / 100) * Math.log(h.tournamentGames + 1) * deltaMult * recency;
 }
-
-// Thresholds calibrated: Invoker 8g/75%/+20pp ~2.8 = high, Pudge 11g/64%/+9pp ~2.0 = med,
-// Lina 5g/60%/+9pp ~1.3 = low, Magnus 4g/50%/0pp ~0.8 = no dot
-function priorityLabel(score) { return score >= 2.4 ? 'high' : score >= 1.6 ? 'med' : 'low'; }
-
+function priorityLabel(s) { return s >= 2.4 ? 'high' : s >= 1.6 ? 'med' : 'low'; }
 function banReason(h) {
   const delta = Math.max(0, h.tournamentWR - (h.pubWR || h.tournamentWR));
   const parts = [];
@@ -392,23 +398,16 @@ function banReason(h) {
   if (delta >= 15)             parts.push(`+${delta}pp vs pub`);
   return parts.join(' · ') || 'Moderate threat';
 }
-
 function computeBans(players) {
-  const candidates = [];
-  for (const p of players) {
+  const cands = [];
+  for (const p of players)
     for (const h of (p.tournamentHeroes || [])) {
       const score = keyPickScore(h);
-      if (!score) continue;
-      candidates.push({ hero: h, player: p.name, score, priority: priorityLabel(score) });
+      if (score) cands.push({ hero:h, player:p.name, score, priority:priorityLabel(score) });
     }
-  }
-  candidates.sort((a, b) => b.score - a.score);
+  cands.sort((a,b) => b.score - a.score);
   const seen = new Set();
-  return candidates.filter(c => {
-    if (seen.has(c.hero.name)) return false;
-    seen.add(c.hero.name);
-    return true;
-  }).slice(0, 6);
+  return cands.filter(c => { if (seen.has(c.hero.name)) return false; seen.add(c.hero.name); return true; }).slice(0,6);
 }
 
 // ── Render helpers ────────────────────────────────────────────────────────────
@@ -416,238 +415,218 @@ function wrClass(wr) { return wr >= 60 ? 'high' : wr < 45 ? 'low' : ''; }
 
 function renderBanSection(players) {
   const bans = computeBans(players);
-  if (!bans.length) return '<div style="color:var(--ink-4);font-size:13px;margin-bottom:32px">No CM data yet - ban suggestions will appear after the opponent plays their first match.</div>';
-
-  const maxScore = bans[0]?.score || 1;
-
-  function banCard(b) {
+  if (!bans.length) return '<div style="color:var(--ink-4);font-size:13px;margin-bottom:32px">No CM data yet — ban suggestions will appear after the opponent plays their first match.</div>';
+  const maxScore = bans[0].score || 1;
+  const banCard = b => {
     const norm = Math.min(100, (b.score / maxScore) * 100).toFixed(0);
-    return `
-      <div class="ban-card priority-${b.priority}">
-        <div class="ban-priority-dot"></div>
-        ${heroIconTag(b.hero.name, 'ban-hero-icon', b.hero.iconUrl)}
-        <div class="ban-body">
-          <div class="ban-hero-name">${b.hero.name}</div>
-          <div class="ban-owner">${b.player}</div>
-          <div class="ban-stats">
-            <span class="ban-stat">${b.hero.tournamentGames} CM games</span>
-            <span class="ban-stat">${b.hero.tournamentWR}% CM wr</span>
-            ${b.hero.pubWR ? `<span class="ban-stat">${b.hero.pubWR}% pub wr</span>` : ''}
-          </div>
-          <div class="ban-reason">${banReason(b.hero)}</div>
-          <div class="ban-score-bar"><div class="ban-score-fill" style="width:${norm}%"></div></div>
+    return `<div class="ban-card priority-${b.priority}">
+      <div class="ban-priority-dot"></div>
+      ${heroIconTag(b.hero.name, 'ban-hero-icon', b.hero.iconUrl)}
+      <div class="ban-body">
+        <div class="ban-hero-name">${b.hero.name}</div>
+        <div class="ban-owner">${b.player}</div>
+        <div class="ban-stats">
+          <span class="ban-stat">${b.hero.tournamentGames} CM games</span>
+          <span class="ban-stat">${b.hero.tournamentWR}% CM wr</span>
+          ${b.hero.pubWR ? `<span class="ban-stat">${b.hero.pubWR}% pub wr</span>` : ''}
         </div>
-      </div>`;
-  }
-
-  const high = bans.filter(b => b.priority === 'high');
-  const med  = bans.filter(b => b.priority === 'med');
-  const low  = bans.filter(b => b.priority === 'low');
-
-  function tierBlock(label, color, items) {
-    if (!items.length) return '';
-    return `
-      <div style="margin-bottom:20px">
-        <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
-                    color:${color};margin-bottom:8px;display:flex;align-items:center;gap:6px">
-          <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${color}"></span>
-          ${label}
-        </div>
-        <div class="ban-grid">${items.map(banCard).join('')}</div>
-      </div>`;
-  }
-
-  return `
-    <div class="ban-section">
-      <div class="section-title">Suggested bans</div>
-      ${tierBlock('Priority bans', 'var(--ban-high)', high)}
-      ${tierBlock('Moderate threats', 'var(--ban-med)', med)}
-      ${tierBlock('Situational', '#9ca3af', low)}
-      <div style="font-size:11px;color:var(--ink-4);margin-top:4px;line-height:1.5">
-        Scored by CM winrate, games played, delta vs pub winrate, and recency.
+        <div class="ban-reason">${banReason(b.hero)}</div>
+        <div class="ban-score-bar"><div class="ban-score-fill" style="width:${norm}%"></div></div>
       </div>
     </div>`;
+  };
+  const tier = (label, color, items) => !items.length ? '' : `
+    <div style="margin-bottom:20px">
+      <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:${color};margin-bottom:8px;display:flex;align-items:center;gap:6px">
+        <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${color}"></span>${label}
+      </div>
+      <div class="ban-grid">${items.map(banCard).join('')}</div>
+    </div>`;
+  const high = bans.filter(b => b.priority==='high');
+  const med  = bans.filter(b => b.priority==='med');
+  const low  = bans.filter(b => b.priority==='low');
+  return `<div class="ban-section">
+    <div class="section-title">Suggested bans</div>
+    ${tier('Priority bans','var(--ban-high)',high)}
+    ${tier('Moderate threats','var(--ban-med)',med)}
+    ${tier('Situational','#9ca3af',low)}
+    <div style="font-size:11px;color:var(--ink-4);margin-top:4px;line-height:1.5">Scored by CM winrate, games played, delta vs pub winrate, and recency.</div>
+  </div>`;
 }
 
-function renderHeroRows(heroes, isTournament) {
+function renderHeroRows(heroes, isTournament, isSelf) {
   if (!heroes || !heroes.length) return '<div style="font-size:12px;color:var(--ink-4);padding:4px 0">No data</div>';
   return heroes.map(h => {
     const wr    = isTournament ? h.tournamentWR : h.wr;
     const games = isTournament ? h.tournamentGames : h.games;
-    const isKey = isTournament && keyPickScore(h) >= 2.4 && h.tournamentGames >= 3;
-    return `
-      <div class="hero-row">
-        ${heroIconTag(h.name, 'hero-icon-wrap', h.iconUrl)}
-        <div class="hero-name">${h.name}</div>
-        <div class="hero-games">${games}g</div>
-        <div class="hero-wr-bar"><div class="hero-wr-fill ${wrClass(wr)}" style="width:${wr}%"></div></div>
-        <div class="hero-wr-pct">${wr}%</div>
-        ${isKey ? '<div class="key-pick-dot" title="Ban candidate"></div>' : '<div style="width:6px"></div>'}
-      </div>`;
+    const isKey = !isSelf && isTournament && keyPickScore(h) >= 2.4 && h.tournamentGames >= 3;
+    return `<div class="hero-row">
+      ${heroIconTag(h.name, 'hero-icon-wrap', h.iconUrl)}
+      <div class="hero-name">${h.name}</div>
+      <div class="hero-games">${games}g</div>
+      <div class="hero-wr-bar"><div class="hero-wr-fill ${wrClass(wr)}" style="width:${wr}%"></div></div>
+      <div class="hero-wr-pct">${wr}%</div>
+      ${isKey ? '<div class="key-pick-dot" title="Ban candidate"></div>' : '<div style="width:6px"></div>'}
+    </div>`;
   }).join('');
 }
 
-function renderPlayerCard(p) {
+function renderPlayerCard(p, isSelf) {
   const form = (p.form || []).map(r => `<div class="form-pip ${r}">${r.toUpperCase()}</div>`).join('');
-  const unconfirmedTag = !p.accountId
-    ? `<span style="font-size:9px;color:var(--ink-4);margin-left:6px;font-weight:600">no ID</span>`
-    : '';
-
-  return `
-    <div class="player-card">
-      <div class="player-card-top">
-        <div class="player-meta">
-          <div class="player-name">${p.name}${unconfirmedTag}</div>
-          ${rankBadgeHTML(p.rankMedal || 'Unknown', p.rankLabel)}
-        </div>
-        <div class="player-wr">
-          ${p.winrate != null ? `<div class="wr-number">${p.winrate}%</div><div class="wr-label">pub wr</div>` : '<div class="wr-number" style="font-size:14px;color:var(--ink-4)">—</div>'}
-        </div>
+  const noId = !p.accountId ? `<span style="font-size:9px;color:var(--ink-4);margin-left:6px;font-weight:600">no ID</span>` : '';
+  const hasBanCandidate = !isSelf && (p.tournamentHeroes || []).some(h => keyPickScore(h) >= 2.4 && h.tournamentGames >= 3);
+  return `<div class="player-card">
+    <div class="player-card-top">
+      <div class="player-meta">
+        <div class="player-name">${p.name}${noId}</div>
+        ${rankBadgeHTML(p.rankMedal || 'Unknown', p.rankLabel)}
       </div>
-
-      <div class="hero-section">
-        <div class="hero-section-label">CM picks (E-Sparven)
-          <span style="font-size:9px;color:var(--ban-high);margin-left:4px">● ban candidate</span>
-        </div>
-        ${renderHeroRows(p.tournamentHeroes, true)}
+      <div class="player-wr">
+        ${p.winrate != null ? `<div class="wr-number">${p.winrate}%</div><div class="wr-label">pub wr</div>` : '<div class="wr-number" style="font-size:14px;color:var(--ink-4)">—</div>'}
       </div>
-
-      <div class="hero-section">
-        <div class="hero-section-label">Pub pool</div>
-        ${renderHeroRows(p.pubHeroes, false)}
+    </div>
+    <div class="hero-section">
+      <div class="hero-section-label">CM picks (E-Sparven)
+        ${hasBanCandidate ? `<span style="font-size:9px;color:var(--ban-high);margin-left:4px">● ban candidate</span>` : ''}
       </div>
-
-      ${form ? `<div class="form-row"><div class="form-label">Form</div>${form}</div>` : ''}
-      ${profileLinks(p.accountId)}
-    </div>`;
+      ${renderHeroRows(p.tournamentHeroes, true, isSelf)}
+    </div>
+    <div class="hero-section">
+      <div class="hero-section-label">Pub pool</div>
+      ${renderHeroRows(p.pubHeroes, false, isSelf)}
+    </div>
+    ${form ? `<div class="form-row"><div class="form-label">Form</div>${form}</div>` : ''}
+    ${profileLinks(p.accountId)}
+  </div>`;
 }
 
 function renderHistory(history) {
   if (!history || !history.length) return '';
-  function chipGroup(picks, team) {
-    return (picks || []).filter(pk => pk.team === team).map(pk => {
+
+  const chipGroup = (picks, team) => {
+    const chips = (picks || []).filter(pk => pk.team === team).map(pk => {
       const url = heroIconUrl(pk.heroName, pk.iconUrl);
-      return `<span class="hero-chip">
-        <div class="hero-chip-icon">${url ? `<img src="${url}" alt="${pk.heroName}" loading="lazy">` : ''}</div>
-        ${pk.heroName}
-      </span>`;
-    }).join('') || '<span style="font-size:11px;color:var(--ink-4)">—</span>';
-  }
+      return `<span class="hero-chip"><div class="hero-chip-icon">${url ? `<img src="${url}" alt="${pk.heroName}" loading="lazy">` : ''}</div>${pk.heroName}</span>`;
+    }).join('');
+    return chips || '<span style="font-size:11px;color:var(--ink-4)">—</span>';
+  };
+
   const rows = history.map(m => {
-    const matchUrl = `https://www.opendota.com/matches/${m.matchId}`;
-    // opponentTeam: 0 = opponent was Radiant, 1 = opponent was Dire
-    // If not set, fall back to showing both columns unlabelled
-    const oppTeam  = m.opponentTeam;  // 0, 1, or undefined
-    const oppWon   = m.opponentWon;   // true/false or undefined
+    // Use ?? so that JSON null and JS undefined are both treated as "no data"
+    const oppTeam = m.opponentTeam ?? null;
+    const oppWon  = m.opponentWon  ?? null;
+
+    // W/L badge: shown when oppWon is a real boolean
     const resultBadge = oppWon === true
       ? `<span class="result-badge win">W</span>`
       : oppWon === false
         ? `<span class="result-badge loss">L</span>`
         : '';
-    // Side label pill
-    function sideLabel(team) {
-      if (oppTeam === undefined) return '';
-      const isOpp = (team === oppTeam);
-      return isOpp
-        ? `<span style="font-size:9px;font-weight:700;letter-spacing:.05em;color:var(--upcoming);background:var(--upcoming-bg);padding:1px 5px;border-radius:3px;margin-right:4px">OPP</span>`
-        : `<span style="font-size:9px;color:var(--ink-4);background:var(--line-2);padding:1px 5px;border-radius:3px;margin-right:4px">vs</span>`;
-    }
+
+    // OPP / vs labels: only shown when we know which side the opponent was on
+    const sideLabel = t => oppTeam === null ? '' : t === oppTeam
+      ? `<span style="font-size:9px;font-weight:700;letter-spacing:.05em;color:var(--upcoming);background:var(--upcoming-bg);padding:1px 5px;border-radius:3px;margin-right:4px">OPP</span>`
+      : `<span style="font-size:9px;color:var(--ink-4);background:var(--line-2);padding:1px 5px;border-radius:3px;margin-right:4px">vs</span>`;
+
     return `<tr>
       <td class="mono">${m.duration || '—'}</td>
       <td>${resultBadge ? `<span style="margin-right:6px">${resultBadge}</span>` : ''}${sideLabel(0)}${chipGroup(m.picks, 0)}</td>
       <td>${sideLabel(1)}${chipGroup(m.picks, 1)}</td>
       <td class="mono" style="color:var(--ink-4)">${m.patch ? `patch ${m.patch}` : ''}</td>
-      <td style="white-space:nowrap"><a class="player-link" href="${matchUrl}" target="_blank" style="font-size:10.5px;padding:2px 8px">Match</a></td>
+      <td style="white-space:nowrap"><a class="player-link" href="https://www.opendota.com/matches/${m.matchId}" target="_blank" style="font-size:10.5px;padding:2px 8px">Match</a></td>
     </tr>`;
   }).join('');
 
-  return `
-    <div class="page-section page-section-history history-section">
-      <div class="section-title">Opponent's E-Sparven match history this season</div>
-      <table class="history-table">
-        <thead><tr><th>Duration</th><th>Radiant</th><th>Dire</th><th>Patch</th><th></th></tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
-    </div>`;
+  return `<div class="page-section page-section-history history-section">
+    <div class="section-title">Opponent's E-Sparven match history this season</div>
+    <table class="history-table">
+      <thead><tr><th>Duration</th><th>Radiant</th><th>Dire</th><th>Patch</th><th></th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>`;
 }
 
-// ── Date formatting ───────────────────────────────────────────────────────────
 function fmtDate(iso) {
   if (!iso) return '—';
-  const d = new Date(iso);
-  return d.toLocaleDateString('sv-SE', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
+  return new Date(iso).toLocaleDateString('sv-SE', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
 }
 
 // ── Sidebar ───────────────────────────────────────────────────────────────────
 function buildSidebar(matches) {
   const upcoming = matches.filter(m => m.status === 'upcoming');
   const past     = matches.filter(m => m.status !== 'upcoming').reverse();
-
-  function matchItem(m) {
-    const badgeClass = { upcoming:'badge-upcoming', win:'badge-win', loss:'badge-loss', tie:'badge-loss' }[m.status] || 'badge-upcoming';
-    const badgeText  = { upcoming:'Upcoming', win:'Win', loss:'Loss', tie:'Tie' }[m.status] || m.status;
+  const item = m => {
+    const bc = { upcoming:'badge-upcoming', win:'badge-win', loss:'badge-loss', tie:'badge-loss' }[m.status] || 'badge-upcoming';
+    const bt = { upcoming:'Upcoming', win:'Win', loss:'Loss', tie:'Tie' }[m.status] || m.status;
     return `<button class="match-item status-${m.status}" data-bin="${m.binId}" onclick="loadMatch('${m.binId}','${m.meetingId||''}',this)">
       <div class="mi-date">${fmtDate(m.date)}</div>
       <div class="mi-opponent">${m.opponent}</div>
-      <span class="mi-badge ${badgeClass}">${badgeText}</span>
+      <span class="mi-badge ${bc}">${bt}</span>
     </button>`;
-  }
-
+  };
   let html = '';
-  if (upcoming.length) {
-    html += `<div class="sidebar-section">
-      <div class="sidebar-label">Upcoming</div>
-      ${upcoming.map(matchItem).join('')}
-    </div>`;
-  }
-  if (past.length) {
-    html += `<div class="sidebar-section">
-      <div class="sidebar-label">Past matches</div>
-      ${past.map(matchItem).join('')}
-    </div>`;
-  }
-  if (!html) {
-    html = '<div style="padding:20px 22px;font-size:13px;color:var(--ink-4)">No matches found.</div>';
-  }
-
+  html += `<div class="sidebar-section">
+    <div class="sidebar-label">Our team</div>
+    <button class="match-item" id="our-team-btn" onclick="loadOurTeam(this)">
+      <div class="mi-opponent">Tornknäckarna</div>
+      <span class="mi-badge badge-upcoming" style="background:var(--line-2);color:var(--ink-3)">Roster</span>
+    </button>
+  </div>`;
+  if (upcoming.length) html += `<div class="sidebar-section"><div class="sidebar-label">Upcoming</div>${upcoming.map(item).join('')}</div>`;
+  if (past.length)     html += `<div class="sidebar-section"><div class="sidebar-label">Past matches</div>${past.map(item).join('')}</div>`;
+  if (!upcoming.length && !past.length) html += '<div style="padding:0 22px 20px;font-size:13px;color:var(--ink-4)">No matches found.</div>';
   document.getElementById('sidebar-content').innerHTML = html;
 }
 
-// ── Show match ────────────────────────────────────────────────────────────────
-function setMainLoading(opponent) {
+async function loadOurTeam(btn) {
+  document.querySelectorAll('.match-item').forEach(el => el.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  if (!OUR_TEAM_BIN_ID) {
+    document.getElementById('main-panel').innerHTML = `
+      <div style="padding:44px 52px;max-width:600px">
+        <div class="match-title" style="margin-bottom:16px">Tornknäckarna</div>
+        <div style="color:var(--ink-3);font-size:14px;line-height:1.7">
+          No team bin configured yet.<br>
+          Set <code style="background:var(--line-2);padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:13px">OUR_TEAM_BIN_ID</code> in <code style="background:var(--line-2);padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:13px">index.html</code> to a JSONbin containing your own roster data in the same format as opponent bins.
+        </div>
+      </div>`;
+    return;
+  }
+  document.getElementById('main-panel').innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:70vh;color:var(--ink-4);gap:10px"><div style="font-size:14px">Loading Tornknäckarna roster…</div></div>`;
+  let data;
+  try { data = await fetchBin(OUR_TEAM_BIN_ID); }
+  catch(e) {
+    document.getElementById('main-panel').innerHTML = `<div style="padding:44px 52px;color:var(--loss)"><strong>Error:</strong> ${e.message}</div>`;
+    return;
+  }
   document.getElementById('main-panel').innerHTML = `
-    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:70vh;color:var(--ink-4);gap:10px">
-      <div style="font-size:14px">Loading scouting report for <strong>${opponent}</strong>…</div>
-    </div>`;
+    <div class="match-header">
+      <div class="match-title"><strong>Tornknäckarna</strong></div>
+      <div class="match-meta"><span>Dota 2 · Captain's Mode · E-Sparven</span></div>
+      <div class="notice notice-snapshot" style="margin-top:8px">Refreshed daily by the bot</div>
+    </div>
+    <div class="page-section page-section-roster">
+      <div class="section-title" style="margin-bottom:16px">Our roster</div>
+      <div class="player-grid">${(data.players || []).map(p => renderPlayerCard(p, true)).join('')}</div>
+    </div>
+    ${renderHistory(data.history)}`;
 }
 
-function setMainError(msg) {
-  document.getElementById('main-panel').innerHTML = `
-    <div style="padding:44px 52px;color:var(--loss)">
-      <strong>Error:</strong> ${msg}
-    </div>`;
-}
-
+// ── Load match ────────────────────────────────────────────────────────────────
 async function loadMatch(binId, meetingId, btn) {
   document.querySelectorAll('.match-item').forEach(el => el.classList.remove('active'));
   if (btn) btn.classList.add('active');
-
   const opponent = btn ? btn.querySelector('.mi-opponent').textContent : '…';
-  setMainLoading(opponent);
+  document.getElementById('main-panel').innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:70vh;color:var(--ink-4);gap:10px"><div style="font-size:14px">Loading scouting report for <strong>${opponent}</strong>…</div></div>`;
   const esparvenUrl = meetingId ? `https://esparven.se/none/Meeting/Details/${meetingId}` : null;
-
   let data;
-  try {
-    data = await fetchBin(binId);
-  } catch(e) {
-    setMainError(`Could not load bin ${binId}: ${e.message}`);
-    return;
-  }
+  try { data = await fetchBin(binId); }
+  catch(e) { document.getElementById('main-panel').innerHTML = `<div style="padding:44px 52px;color:var(--loss)"><strong>Error:</strong> Could not load bin ${binId}: ${e.message}</div>`; return; }
 
-  const status      = data.status || 'upcoming';
-  const badgeClass  = { upcoming:'badge-upcoming', win:'badge-win', loss:'badge-loss', tie:'badge-loss' }[status] || 'badge-upcoming';
-  const badgeText   = { upcoming:'Upcoming', win:'Win', loss:'Loss', tie:'Tie' }[status] || status;
-  const notice      = status === 'upcoming'
+  const status     = data.status || 'upcoming';
+  const badgeClass = { upcoming:'badge-upcoming', win:'badge-win', loss:'badge-loss', tie:'badge-loss' }[status] || 'badge-upcoming';
+  const badgeText  = { upcoming:'Upcoming', win:'Win', loss:'Loss', tie:'Tie' }[status] || status;
+  const notice     = status === 'upcoming'
     ? `<div class="notice notice-live">Live data · refreshed daily until match day</div>`
     : `<div class="notice notice-snapshot">Snapshot · ${fmtDate(data.snapshotAt)}</div>`;
 
@@ -655,13 +634,17 @@ async function loadMatch(binId, meetingId, btn) {
     <div class="match-header">
       <div style="margin-bottom:10px"><span class="mi-badge ${badgeClass}" style="font-size:11px">${badgeText}</span></div>
       <div class="match-title">vs <strong>${data.opponent}</strong></div>
-      <div class="match-meta"><span>${fmtDate(data.date)}</span><span>Dota 2 · Captain's Mode</span>${esparvenUrl ? `<a href="${esparvenUrl}" target="_blank" style="color:var(--accent);text-decoration:none;font-size:13px">E-Sparven</a>` : ''}</div>
+      <div class="match-meta">
+        <span>${fmtDate(data.date)}</span>
+        <span>Dota 2 · Captain's Mode</span>
+        ${esparvenUrl ? `<a href="${esparvenUrl}" target="_blank" style="color:var(--accent);text-decoration:none;font-size:13px">E-Sparven</a>` : ''}
+      </div>
       ${notice}
     </div>
     ${status === 'upcoming' ? `<div class="page-section page-section-bans">${renderBanSection(data.players || [])}</div>` : ''}
     <div class="page-section page-section-roster">
       <div class="section-title" style="margin-bottom:16px">Opponent roster</div>
-      <div class="player-grid">${(data.players || []).map(renderPlayerCard).join('')}</div>
+      <div class="player-grid">${(data.players || []).map(p => renderPlayerCard(p, false)).join('')}</div>
     </div>
     ${renderHistory(data.history)}`;
 }
@@ -669,23 +652,15 @@ async function loadMatch(binId, meetingId, btn) {
 // ── Boot ──────────────────────────────────────────────────────────────────────
 (async () => {
   let index;
-  try {
-    index = await fetchBin(INDEX_BIN_ID);
-  } catch(e) {
-    document.getElementById('sidebar-content').innerHTML =
-      `<div style="padding:20px 22px;color:var(--loss);font-size:13px">Failed to load index: ${e.message}</div>`;
+  try { index = await fetchBin(INDEX_BIN_ID); }
+  catch(e) {
+    document.getElementById('sidebar-content').innerHTML = `<div style="padding:20px 22px;color:var(--loss);font-size:13px">Failed to load index: ${e.message}</div>`;
     return;
   }
-
   const matches = index.matches || [];
   buildSidebar(matches);
-
-  // Auto-open first upcoming match, or first match if none upcoming
   const first = matches.find(m => m.status === 'upcoming') || matches[0];
-  if (first) {
-    const btn = document.querySelector(`[data-bin="${first.binId}"]`);
-    loadMatch(first.binId, first.meetingId || '', btn);
-  }
+  if (first) loadMatch(first.binId, first.meetingId || '', document.querySelector(`[data-bin="${first.binId}"]`));
 })();
 </script>
 </body>
