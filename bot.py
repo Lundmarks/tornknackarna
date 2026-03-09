@@ -1,19 +1,6 @@
 """
-bot.py
-------
-Main orchestration loop for the Tornknäckarna scouting bot.
-
-Run once manually to test:   python bot.py --run-once
-Run on a schedule (Docker):  python bot.py
-
-Flow per cycle:
-  1. Fetch upcoming meetings from E-Sparven
-  2. For each meeting, identify the opponent team
-  3. Scrape or look up Steam IDs for opponent members
-  4. Fetch player pub stats from OpenDota
-  5. Parse tournament match data directly from E-Sparven jsonMatchData
-  6. Write scouting JSON to JSONbin
-  7. Update the index bin (list of all meetings + their bin IDs)
+bot.py - Tornknäckarna scouting bot (all-seasons update)
+See inline comments for what changed vs previous version.
 """
 
 import argparse
@@ -38,7 +25,6 @@ from jsonbin import JSONBinClient
 
 load_dotenv()
 
-# Console logging colours and themes
 console = Console(theme=Theme({
     "logging.level.info":    "cyan",
     "logging.level.warning": "yellow bold",
@@ -58,14 +44,10 @@ logging.basicConfig(
     )]
 )
 log = logging.getLogger("bot")
-
-# Suppress httpx request noise
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
-# ── Config ─────────────────────────────────────────────────────────────────────
-
 ESPARVEN_KEY      = os.environ["ESPARVEN_KEY"]
-ESPARVEN_TEAM_ID  = int(os.environ["ESPARVEN_TEAM_ID"])   # 67 = Tornknäckarna
+ESPARVEN_TEAM_ID  = int(os.environ["ESPARVEN_TEAM_ID"])
 JSONBIN_KEY       = os.environ["JSONBIN_KEY"]
 INDEX_BIN_ID      = os.environ.get("JSONBIN_INDEX_BIN_ID") or None
 CURRENT_SEASON_ID = 67  # update each season
@@ -73,11 +55,9 @@ CURRENT_SEASON_ID = 67  # update each season
 STATE_PATH     = Path(__file__).parent / "state.json"
 OUR_TEAM_ID    = ESPARVEN_TEAM_ID
 COMPETITION    = "dota2cm"
-RUN_AT         = "06:00"   # daily schedule time (server local time)
-OPENDOTA_DELAY = 2.5       # seconds between OpenDota requests
+RUN_AT         = "06:00"
+OPENDOTA_DELAY = 2.5
 
-
-# ── State ──────────────────────────────────────────────────────────────────────
 
 def load_state() -> dict:
     if STATE_PATH.exists():
@@ -91,32 +71,25 @@ def save_state(state: dict) -> None:
         json.dump(state, f, indent=2)
 
 
-# ── Display helpers ────────────────────────────────────────────────────────────
-
 def _print_banner():
     console.print("\n[bold cyan]╔══════════════════════════════════════╗[/]")
     console.print("[bold cyan]║[/]  [bold white]Tornknackarna Scouting Bot[/]          [bold cyan]║[/]")
     console.print("[bold cyan]╚══════════════════════════════════════╝[/]\n")
 
 def _section(label: str) -> None:
-    """Print a visual section divider."""
     pad = max(0, 38 - len(label))
     console.print(f"\n[bold white]── {label} [/][dim]{'─' * pad}[/]")
 
-
 def _step(icon: str, msg: str) -> None:
-    """Print a single indented step line — used inside player/meeting loops."""
     console.print(f"   {icon} {msg}")
 
-
-# ── Main run ───────────────────────────────────────────────────────────────────
 
 def run():
     _print_banner()
     log.info("[bold]Starting bot cycle[/]")
-    state  = load_state()
-    esp    = EsparvenClient(ESPARVEN_KEY)
-    jb     = JSONBinClient(JSONBIN_KEY)
+    state = load_state()
+    esp   = EsparvenClient(ESPARVEN_KEY)
+    jb    = JSONBinClient(JSONBIN_KEY)
 
     _section("OpenDota: hero list")
     heroes = opendota.get_heroes()
@@ -174,7 +147,6 @@ def run():
 
     _process_past_meetings(esp, jb, state, heroes, index_entries)
 
-    # ── Our team self-scouting bin ──────────────────────────────────────────
     _section("Our team: self-scouting bin")
     try:
         _update_our_team_bin(esp, jb, state, heroes)
@@ -192,26 +164,20 @@ def run():
     console.print(f"\n[bold green]✓ Cycle complete.[/] Index bin: [cyan]{idx_bin}[/]\n")
     if not INDEX_BIN_ID:
         console.print(f"[yellow]Add to .env:[/] [bold]JSONBIN_INDEX_BIN_ID={idx_bin}[/]\n")
-
     our_bin = state.get("our_team_bin_id")
     if our_bin:
         console.print(f"[yellow]Set in index.html:[/] [bold]OUR_TEAM_BIN_ID = '{our_bin}'[/]\n")
 
 
 def _update_our_team_bin(esp, jb, state, heroes):
-    """
-    Build and write a self-scouting bin for Tornknäckarna in the same format
-    as opponent bins, so the frontend 'Our team' page can load it.
-    """
-    # Fetch our own team contender object from E-Sparven
+    """Build and write self-scouting bin for Tornknäckarna."""
     try:
-        our_past = esp.get_team_past_meetings(OUR_TEAM_ID, COMPETITION)
-        our_past = [m for m in our_past if m.get("seasonID") == CURRENT_SEASON_ID]
+        our_past = esp.get_team_past_meetings(OUR_TEAM_ID, COMPETITION) or []
+        log.info(f"Fetched [bold]{len(our_past)}[/] of our own past meeting(s) across all seasons")
     except Exception as e:
         log.warning(f"Could not fetch our past meetings: {e}")
         our_past = []
 
-    # Get our roster from any meeting we appear in
     our_contender = None
     for meeting in our_past:
         for c in meeting.get("meetingContenders", []):
@@ -221,7 +187,6 @@ def _update_our_team_bin(esp, jb, state, heroes):
         if our_contender:
             break
 
-    # Also check upcoming meetings
     if not our_contender:
         try:
             upcoming = esp.get_upcoming_meetings(COMPETITION)
@@ -242,70 +207,55 @@ def _update_our_team_bin(esp, jb, state, heroes):
     members = our_contender.get("members", [])
     log.info(f"Self-scouting [bold]{len(members)}[/] player(s) on Tornknäckarna")
 
-    # Resolve our own Steam IDs the same way as opponents
-    for meeting in our_past[:1]:  # use first past meeting for scraping
+    for meeting in our_past[:1]:
         _resolve_steam_ids(esp, meeting["id"], OUR_TEAM_ID, members)
 
-    # Collect all our own parsed match data across the season
     all_parsed = []
     for meeting in our_past:
         all_parsed.extend(_parse_match_data(meeting))
     log.info(f"Parsed [bold]{len(all_parsed)}[/] of our own tournament game(s)")
 
-    # Build player data — same as opponents but isSelf context (no opponent_account_ids needed)
     eligible = [m for m in members if m.get("inGameName")]
     players = []
     for i, member in enumerate(eligible, 1):
         name       = member["inGameName"]
         account_id = player_map.get_account_id(name)
         confirmed  = player_map.load().get(name, {}).get("confirmed", False)
-
         id_tag = f"[dim]{account_id}[/]" if account_id else "[dim red]no ID[/]"
         _step(f"[dim]{i}/{len(eligible)}[/]", f"[white]{name}[/] {id_tag}")
-
         player_data = {
-            "name":             name,
-            "accountId":        account_id,
-            "confirmed":        confirmed,
-            "lane":             None,
-            "rankTier":         None,
-            "rankLabel":        None,
-            "rankMedal":        None,
-            "rankStars":        None,
-            "winrate":          None,
-            "form":             [],
-            "tournamentHeroes": [],
-            "pubHeroes":        [],
+            "name": name, "accountId": account_id, "confirmed": confirmed,
+            "lane": None, "rankTier": None, "rankLabel": None,
+            "rankMedal": None, "rankStars": None, "winrate": None,
+            "form": [], "tournamentHeroes": [], "pubHeroes": [],
         }
-
         if account_id:
             try:
-                player_data = _fetch_player_data(
-                    name, account_id, confirmed, all_parsed, heroes
-                )
-                rank     = player_data.get("rankLabel") or "?"
-                wr       = player_data.get("winrate")
-                wr_s     = f"{wr}%" if wr is not None else "?"
-                t_heroes = ", ".join(
-                    h["name"] for h in player_data.get("tournamentHeroes", [])[:3]
-                ) or "none"
+                player_data = _fetch_player_data(name, account_id, confirmed, all_parsed, heroes)
+                rank = player_data.get("rankLabel") or "?"
+                wr   = player_data.get("winrate")
+                wr_s = f"{wr}%" if wr is not None else "?"
+                t_heroes = ", ".join(h["name"] for h in player_data.get("tournamentHeroes", [])[:3]) or "none"
                 _step("   [green]✓[/]", f"[dim]{rank} | pub WR {wr_s} | CM: {t_heroes}[/]")
             except Exception as e:
                 _step("   [red]✗[/]", f"[red]{e}[/]")
-
         players.append(player_data)
 
-    # Build our own match history — no opponent_account_ids needed here since
-    # the history table on the self-scout page shows our picks, not an opponent's
     history = _build_history_from_data(all_parsed, opponent_account_ids=set())
 
+    for entry in history:
+        if entry.get("seasonId") != CURRENT_SEASON_ID:
+            entry["picks"] = []
+            entry["bans"]  = []
+
     our_bin_data = {
-        "opponent":   "Tornknäckarna",
-        "date":       datetime.now(timezone.utc).isoformat(),
-        "status":     "self",
-        "snapshotAt": datetime.now(timezone.utc).isoformat(),
-        "players":    players,
-        "history":    history,
+        "opponent":        "Tornknäckarna",
+        "date":            datetime.now(timezone.utc).isoformat(),
+        "status":          "self",
+        "snapshotAt":      datetime.now(timezone.utc).isoformat(),
+        "currentSeasonId": CURRENT_SEASON_ID,
+        "players":         players,
+        "history":         history,
     }
 
     our_bin_id = state.get("our_team_bin_id")
@@ -354,7 +304,6 @@ def _process_past_meetings(esp, jb, state, heroes, index_entries):
 
         _section(f"Past: vs {opponent_name} ({result})")
         _resolve_steam_ids(esp, meeting_id, opponent_id, members)
-
         scout = build_scout_data(meeting, opponent, members, heroes, status=result, esp=esp)
 
         _step("↑", f"Writing bin for [yellow]{opponent_name}[/] ({result})...")
@@ -377,20 +326,14 @@ def _process_past_meetings(esp, jb, state, heroes, index_entries):
         })
 
 
-# ── Steam ID resolution ────────────────────────────────────────────────────────
-
 def _resolve_steam_ids(esp, meeting_id, opponent_id, members):
     names   = [m["inGameName"] for m in members if m.get("inGameName")]
     missing = player_map.missing_players(names)
-
     if not missing:
         log.info(f"Steam IDs: all {len(names)} players already cached")
         return
-
     log.info(f"Steam IDs: resolving {len(missing)} new player(s)")
-
     scraped = esp.scrape_player_ids_from_meeting(meeting_id)
-
     for name in missing:
         if name not in scraped:
             continue
@@ -401,7 +344,6 @@ def _resolve_steam_ids(esp, meeting_id, opponent_id, members):
             _step("[green]✓[/]", f"[white]{name}[/] [dim]→ {account_id}[/]")
         else:
             _step("[yellow]⚠[/]", f"[white]{name}[/] [dim]has no numeric ID on E-Sparven[/]")
-
     still_missing = player_map.missing_players(missing)
     for name in still_missing:
         results = _try_opendota_search(name)
@@ -411,9 +353,7 @@ def _resolve_steam_ids(esp, meeting_id, opponent_id, members):
             steam64    = str(steam.steam32_to_64(account_id))
             player_map.upsert(name, account_id, steam64, confirmed=False, source="search")
             _step("[yellow]?[/]", f"[white]{name!r}[/] matched [dim]{best.get('personaname')!r}[/] ({account_id}) [yellow]UNCONFIRMED[/]")
-
-    summary = player_map.summary()
-    log.info(f"Player map: [dim]{summary}[/]")
+    log.info(f"Player map: [dim]{player_map.summary()}[/]")
 
 
 def _try_opendota_search(name: str) -> list:
@@ -426,16 +366,13 @@ def _try_opendota_search(name: str) -> list:
         return []
 
 
-# ── Tournament match data parsing ─────────────────────────────────────────────
-
+# ── CHANGED: _parse_match_data now tags every match with seasonId ─────────────
 def _parse_match_data(meeting: dict) -> list[dict]:
     """
     Parse all jsonMatchData entries from a meeting into structured dicts.
-    This replaces all OpenDota match fetching for tournament games.
-
-    Each returned dict contains:
-      matchId, duration, radiantWin, patch, players, picksBans
+    Each returned dict now includes seasonId from the meeting.
     """
+    season_id = meeting.get("seasonID")  # CHANGED: capture season
     parsed = []
     for match in meeting.get("matches", []):
         raw = match.get("jsonMatchData")
@@ -446,7 +383,6 @@ def _parse_match_data(meeting: dict) -> list[dict]:
         except json.JSONDecodeError:
             log.warning(f"Failed to parse jsonMatchData for match {match.get('id')}")
             continue
-
         duration_secs = data.get("Duration", 0)
         parsed.append({
             "matchId":    data.get("MatchID"),
@@ -454,29 +390,34 @@ def _parse_match_data(meeting: dict) -> list[dict]:
             "radiantWin": data.get("RadiantWin", False),
             "patch":      data.get("Patch"),
             "players":    data.get("Players", []),
-            "picksBans":  [
-                pb for pb in data.get("PicksBans", [])
-                if pb.get("HeroName")  # skip null/empty entries
-            ],
+            "picksBans":  [pb for pb in (data.get("PicksBans") or []) if pb.get("HeroName")],
+            "seasonId":   season_id,  # CHANGED: tag with season
         })
     return parsed
 
 
+# ── CHANGED: tracks current-season stats separately per hero ─────────────────
 def _get_tournament_heroes_from_data(
     account_id: int,
     parsed_matches: list[dict],
     hero_stats_named: list,
+    current_season_id: int = CURRENT_SEASON_ID,
 ) -> list[dict]:
     """
-    Build tournament hero pool for one player from pre-parsed E-Sparven match data.
-    hero_stats_named is the OpenDota pub hero list enriched with heroName strings,
-    used only for pub WR delta comparison.
+    Build tournament hero pool. Now tracks all-time AND current-season stats
+    per hero so the frontend toggle can switch between views.
+
+    New fields added to each hero entry:
+      currentSeasonGames  — games played in current season
+      currentSeasonWR     — winrate in current season
+      recentSeason        — True if any current-season game exists
     """
     account_id_str = str(account_id)
-    hero_stats: dict[str, dict] = {}  # hero_name -> { games, wins, iconUrl }
+    hero_stats: dict[str, dict] = {}
 
     for match in parsed_matches:
         radiant_win = match["radiantWin"]
+        is_current  = match.get("seasonId") == current_season_id  # CHANGED
         for p in match["players"]:
             if p.get("AccountID") != account_id_str:
                 continue
@@ -487,20 +428,25 @@ def _get_tournament_heroes_from_data(
             won = (is_radiant and radiant_win) or (not is_radiant and not radiant_win)
             if hero_name not in hero_stats:
                 hero_stats[hero_name] = {
-                    "games":   0,
-                    "wins":    0,
+                    "games": 0, "wins": 0,
+                    "csGames": 0, "csWins": 0,  # CHANGED: current-season counters
                     "iconUrl": p.get("HeroIconUrl", ""),
                 }
             hero_stats[hero_name]["games"] += 1
             if won:
                 hero_stats[hero_name]["wins"] += 1
-            break  # found this player in the match, move on
+            if is_current:  # CHANGED: track current-season separately
+                hero_stats[hero_name]["csGames"] += 1
+                if won:
+                    hero_stats[hero_name]["csWins"] += 1
+            break
 
     result = []
     for hero_name, stats in sorted(hero_stats.items(), key=lambda x: -x[1]["games"]):
         tournament_wr = round(100 * stats["wins"] / stats["games"]) if stats["games"] else 0
+        cs_wr = round(100 * stats["csWins"] / stats["csGames"]) if stats["csGames"] else 0
 
-        pub_wr    = tournament_wr  # fallback if no pub data
+        pub_wr = tournament_wr
         pub_games = 0
         for h in hero_stats_named:
             if h.get("heroName") == hero_name and h.get("games", 0) > 0:
@@ -509,29 +455,31 @@ def _get_tournament_heroes_from_data(
                 break
 
         result.append({
-            "name":            hero_name,
-            "iconUrl":         stats["iconUrl"],
-            "tournamentGames": stats["games"],
-            "tournamentWR":    tournament_wr,
-            "pubWR":           pub_wr,
-            "pubGames":        pub_games,
+            "name":               hero_name,
+            "iconUrl":            stats["iconUrl"],
+            "tournamentGames":    stats["games"],       # all seasons
+            "tournamentWR":       tournament_wr,        # all seasons
+            "currentSeasonGames": stats["csGames"],     # CHANGED: current season
+            "currentSeasonWR":    cs_wr,                # CHANGED: current season
+            "recentSeason":       stats["csGames"] > 0, # CHANGED: played this season?
+            "pubWR":              pub_wr,
+            "pubGames":           pub_games,
         })
 
     return result
 
 
+# ── CHANGED: history entries now include seasonId ────────────────────────────
 def _build_history_from_data(
     parsed_matches: list[dict],
     opponent_account_ids: set,
 ) -> list[dict]:
     """
-    Build match history for the frontend from pre-parsed E-Sparven match data.
-    opponent_account_ids: set of string Steam32 IDs belonging to the opponent,
-    used to label which team side is OPP vs us. Pass an empty set for self-scout.
+    Build match history for the frontend.
+    Each entry now includes seasonId for frontend season filtering.
     """
     history = []
     for match in parsed_matches:
-        # Determine which team (0=Radiant, 1=Dire) the opponent was on
         opponent_team = None
         opponent_won  = None
         if opponent_account_ids:
@@ -543,27 +491,18 @@ def _build_history_from_data(
                     break
 
         picks = [
-            {
-                "heroName": pb["HeroName"],
-                "iconUrl":  pb.get("HeroIconUrl", ""),
-                "team":     pb["Team"],
-            }
-            for pb in match["picksBans"]
-            if pb.get("IsPick")
+            {"heroName": pb["HeroName"], "iconUrl": pb.get("HeroIconUrl", ""), "team": pb["Team"]}
+            for pb in match["picksBans"] if pb.get("IsPick")
         ]
         bans = [
-            {
-                "heroName": pb["HeroName"],
-                "iconUrl":  pb.get("HeroIconUrl", ""),
-                "team":     pb["Team"],
-            }
-            for pb in match["picksBans"]
-            if not pb.get("IsPick")
+            {"heroName": pb["HeroName"], "iconUrl": pb.get("HeroIconUrl", ""), "team": pb["Team"]}
+            for pb in match["picksBans"] if not pb.get("IsPick")
         ]
         history.append({
             "matchId":      str(match["matchId"]),
             "duration":     match["duration"],
             "patch":        match["patch"],
+            "seasonId":     match.get("seasonId"),  # CHANGED: include for frontend filtering
             "opponentTeam": opponent_team,
             "opponentWon":  opponent_won,
             "picks":        picks,
@@ -572,8 +511,7 @@ def _build_history_from_data(
     return history
 
 
-# ── Scout data builder ─────────────────────────────────────────────────────────
-
+# ── CHANGED: build_scout_data fetches all seasons for opponent history ────────
 def build_scout_data(
     meeting: dict,
     opponent: dict,
@@ -584,33 +522,43 @@ def build_scout_data(
 ) -> dict:
     """
     Build the full scouting JSON for one meeting.
-    Tournament data comes from E-Sparven jsonMatchData (no extra API calls).
-    For upcoming meetings the current meeting has no matches yet, so we also
-    fetch the opponent's past meetings to get their CM hero history.
-    Pub stats come from OpenDota.
+    For upcoming matches, now fetches ALL opponent past meetings (no season
+    filter) so the frontend all-seasons toggle has data to display.
+    The bin stores currentSeasonId so the frontend knows which is "current".
     """
-    date_str       = meeting.get("matches", [{}])[0].get("matchDate", "")
-    opponent_id    = opponent["id"]
+    date_str    = meeting.get("matches", [{}])[0].get("matchDate", "")
+    opponent_id = opponent["id"]
 
-    # Parse match data from the current meeting (has games if already played)
     parsed_matches = _parse_match_data(meeting)
 
-    # For upcoming matches (no games yet) also pull the opponent's past meetings
-    if not parsed_matches and esp is not None:
-        log.info(f"Upcoming match — fetching [yellow]{opponent['name']}[/] past meetings for CM history")
+    # Always fetch the opponent's full history across all seasons so the
+    # all-seasons toggle has data. For past meetings the current meeting's
+    # games are already in parsed_matches; we extend with the rest.
+    if esp is not None:
+        log.info(f"Fetching [yellow]{opponent['name']}[/] full CM history (all seasons)")
         try:
             opp_past = esp.get_team_past_meetings(opponent_id, COMPETITION)
-            opp_past = [m for m in opp_past if m.get("seasonID") == CURRENT_SEASON_ID]
+            if not isinstance(opp_past, list):
+                log.warning(f"Unexpected response type for opponent past meetings: {type(opp_past)} — {opp_past}")
+                opp_past = []
+            seen_match_ids = {m["matchId"] for m in parsed_matches}
             for m in opp_past:
-                parsed_matches.extend(_parse_match_data(m))
-            log.info(f"Loaded [bold]{len(parsed_matches)}[/] game(s) from opponent's season history")
+                for pm in _parse_match_data(m):
+                    if pm["matchId"] not in seen_match_ids:
+                        parsed_matches.append(pm)
+                        seen_match_ids.add(pm["matchId"])
+            current = sum(1 for m in parsed_matches if m.get("seasonId") == CURRENT_SEASON_ID)
+            log.info(
+                f"Loaded [bold]{len(parsed_matches)}[/] game(s) total "
+                f"([bold]{current}[/] from current season)"
+            )
         except Exception as e:
+            import traceback; traceback.print_exc()
             log.warning(f"Could not fetch opponent past meetings: {e}")
 
     n_games = len(parsed_matches)
     log.info(f"Parsed [bold]{n_games}[/] tournament game(s) total")
 
-    # Build set of opponent account IDs for history labelling (OPP/vs columns)
     opponent_account_ids = {
         str(player_map.get_account_id(m["inGameName"]))
         for m in members
@@ -625,56 +573,45 @@ def build_scout_data(
         name       = member["inGameName"]
         account_id = player_map.get_account_id(name)
         confirmed  = player_map.load().get(name, {}).get("confirmed", False)
-
         id_tag = f"[dim]{account_id}[/]" if account_id else "[dim red]no ID[/]"
         _step(f"[dim]{i}/{len(eligible)}[/]", f"[white]{name}[/] {id_tag}")
-
         player_data = {
-            "name":             name,
-            "accountId":        account_id,
-            "confirmed":        confirmed,
-            "lane":             None,
-            "rankTier":         None,
-            "rankLabel":        None,
-            "rankMedal":        None,
-            "rankStars":        None,
-            "winrate":          None,
-            "form":             [],
-            "tournamentHeroes": [],
-            "pubHeroes":        [],
+            "name": name, "accountId": account_id, "confirmed": confirmed,
+            "lane": None, "rankTier": None, "rankLabel": None,
+            "rankMedal": None, "rankStars": None, "winrate": None,
+            "form": [], "tournamentHeroes": [], "pubHeroes": [],
         }
-
         if account_id:
             try:
-                player_data = _fetch_player_data(
-                    name, account_id, confirmed, parsed_matches, heroes
-                )
-                rank  = player_data.get("rankLabel") or "?"
-                wr    = player_data.get("winrate")
-                wr_s  = f"{wr}%" if wr is not None else "?"
-                t_heroes = ", ".join(
-                    h["name"] for h in player_data.get("tournamentHeroes", [])[:3]
-                ) or "none"
-                _step(
-                    "   [green]✓[/]",
-                    f"[dim]{rank} | pub WR {wr_s} | CM: {t_heroes}[/]"
-                )
+                player_data = _fetch_player_data(name, account_id, confirmed, parsed_matches, heroes)
+                rank = player_data.get("rankLabel") or "?"
+                wr   = player_data.get("winrate")
+                wr_s = f"{wr}%" if wr is not None else "?"
+                t_heroes = ", ".join(h["name"] for h in player_data.get("tournamentHeroes", [])[:3]) or "none"
+                _step("   [green]✓[/]", f"[dim]{rank} | pub WR {wr_s} | CM: {t_heroes}[/]")
             except Exception as e:
                 _step("   [red]✗[/]", f"[red]{e}[/]")
                 log.error(f"Failed to fetch data for {name!r} ({account_id}): {e}")
-
         players.append(player_data)
 
     history = _build_history_from_data(parsed_matches, opponent_account_ids)
 
+    # Strip picks/bans from older-season entries to keep bin size within JSONbin limits.
+    # Hero pool stats (the main value) are derived from players[], not picks/bans.
+    for entry in history:
+        if entry.get("seasonId") != CURRENT_SEASON_ID:
+            entry["picks"] = []
+            entry["bans"]  = []
+
     return {
-        "meetingId":  meeting["id"],
-        "opponent":   opponent["name"],
-        "date":       date_str,
-        "status":     status,
-        "snapshotAt": datetime.now(timezone.utc).isoformat(),
-        "players":    players,
-        "history":    history,
+        "meetingId":       meeting["id"],
+        "opponent":        opponent["name"],
+        "date":            date_str,
+        "status":          status,
+        "snapshotAt":      datetime.now(timezone.utc).isoformat(),
+        "currentSeasonId": CURRENT_SEASON_ID,  # CHANGED: stored for frontend
+        "players":         players,
+        "history":         history,
     }
 
 
@@ -685,10 +622,6 @@ def _fetch_player_data(
     parsed_matches: list[dict],
     heroes: dict[int, str],
 ) -> dict:
-    """
-    Fetch pub stats from OpenDota.
-    Tournament heroes are derived from pre-parsed E-Sparven match data.
-    """
     time.sleep(OPENDOTA_DELAY)
     profile   = opendota.get_player(account_id)
     rank_tier = profile.get("rank_tier")
@@ -696,7 +629,6 @@ def _fetch_player_data(
     time.sleep(OPENDOTA_DELAY)
     wl      = opendota.get_wl(account_id)
     winrate = _calc_winrate(wl)
-
     time.sleep(OPENDOTA_DELAY)
     recent = opendota.get_recent_matches(account_id, limit=10)
     form = [
@@ -705,11 +637,9 @@ def _fetch_player_data(
         else "l"
         for m in recent
     ]
-
     time.sleep(OPENDOTA_DELAY)
     hero_stats = opendota.get_hero_stats(account_id)
     hero_stats.sort(key=lambda h: h.get("games", 0), reverse=True)
-
     pub_heroes = [
         {
             "name":  heroes.get(h["hero_id"], f"Hero {h['hero_id']}"),
@@ -718,37 +648,21 @@ def _fetch_player_data(
         }
         for h in hero_stats[:5]
     ]
-
-    hero_stats_named = [
-        {**h, "heroName": heroes.get(h["hero_id"], "")}
-        for h in hero_stats
-    ]
-
+    hero_stats_named = [{**h, "heroName": heroes.get(h["hero_id"], "")} for h in hero_stats]
     tournament_heroes = _get_tournament_heroes_from_data(
-        account_id, parsed_matches, hero_stats_named
+        account_id, parsed_matches, hero_stats_named, CURRENT_SEASON_ID
     )
-
     rank_label = rank_name
     if rank_stars and rank_name != "Immortal":
         rank_label += f" {['I','II','III','IV','V'][rank_stars - 1]}"
-
     return {
-        "name":             name,
-        "accountId":        account_id,
-        "confirmed":        confirmed,
-        "lane":             None,
-        "rankTier":         rank_tier,
-        "rankLabel":        rank_label,
-        "rankStars":        rank_stars,
-        "rankMedal":        rank_name,
-        "winrate":          winrate,
-        "form":             form,
-        "tournamentHeroes": tournament_heroes,
-        "pubHeroes":        pub_heroes,
+        "name": name, "accountId": account_id, "confirmed": confirmed,
+        "lane": None, "rankTier": rank_tier, "rankLabel": rank_label,
+        "rankStars": rank_stars, "rankMedal": rank_name,
+        "winrate": winrate, "form": form,
+        "tournamentHeroes": tournament_heroes, "pubHeroes": pub_heroes,
     }
 
-
-# ── Utilities ──────────────────────────────────────────────────────────────────
 
 def _find_opponent(meeting: dict, our_team_id: int) -> dict | None:
     for contender in meeting.get("meetingContenders", []):
@@ -777,14 +691,10 @@ def _calc_winrate(profile: dict) -> int | None:
     return round(100 * wins / total) if total else None
 
 
-# ── Entry point ────────────────────────────────────────────────────────────────
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--run-once", action="store_true",
-                        help="Run immediately and exit (no schedule)")
+    parser.add_argument("--run-once", action="store_true")
     args = parser.parse_args()
-
     if args.run_once:
         run()
     else:
