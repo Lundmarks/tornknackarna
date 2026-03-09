@@ -433,6 +433,161 @@
   ::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
   [data-theme="console"] ::-webkit-scrollbar-thumb { border-radius: 0; }
 
+  /* ── Ticker strip (all themes) ──────────────────────────────────────────── */
+  .sidebar-ticker-wrap {
+    border-top: 1px solid var(--line);
+    background: var(--line-2);
+    height: 26px;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .sidebar-ticker-label {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--bg);
+    background: var(--accent);
+    padding: 0 7px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    white-space: nowrap;
+    position: relative;
+    z-index: 1;
+  }
+  .sidebar-ticker-scroll {
+    flex: 1;
+    overflow: hidden;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    min-width: 0;
+  }
+  .sidebar-ticker-text {
+    white-space: nowrap;
+    font-size: 10.5px;
+    color: var(--ink-3);
+    animation: sidebar-ticker 60s linear infinite;
+    padding-left: 16px;
+    font-family: var(--mono);
+  }
+  @keyframes sidebar-ticker {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  [data-theme="console"] .sidebar-ticker-wrap {
+    border-color: var(--line);
+    background: rgba(0,10,0,0.8);
+    height: 22px;
+  }
+  [data-theme="console"] .sidebar-ticker-label {
+    font-family: 'Orbitron', monospace;
+    font-size: 8px;
+    letter-spacing: 2px;
+    background: var(--loss);
+    color: #000;
+  }
+  [data-theme="console"] .sidebar-ticker-text {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-3);
+    letter-spacing: .5px;
+  }
+
+  /* ── Console sidebar footer ─────────────────────────────────────────────── */
+  .console-sidebar-footer {
+    display: none;
+    flex-direction: column;
+    border-top: 1px solid var(--line);
+    flex-shrink: 0;
+  }
+  [data-theme="console"] .console-sidebar-footer { display: flex; }
+
+  /* minimap / logo */
+  .console-minimap-wrap {
+    padding: 8px 0 0;
+    border-bottom: 1px solid var(--line);
+  }
+  #console-minimap {
+    display: block;
+    width: 100%;
+    image-rendering: pixelated;
+  }
+
+  /* terminal log */
+  .console-termlog-wrap {
+    padding: 8px 12px 10px;
+  }
+  .console-termlog-label {
+    font-family: 'Orbitron', monospace;
+    font-size: 8px;
+    letter-spacing: 2px;
+    color: var(--ink-4);
+    margin-bottom: 5px;
+  }
+  .console-termlog {
+    height: 90px;
+    overflow: hidden;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9.5px;
+    line-height: 1.55;
+  }
+  .tl-line { color: var(--ink-3); }
+  .tl-line.ok  { color: var(--win); }
+  .tl-line.warn { color: var(--upcoming); }
+  .tl-line.err { color: var(--loss); }
+
+  /* ── Boot sequence overlay (console only) ───────────────────────────────── */
+  #boot-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: #020a02;
+    z-index: 99999;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    color: #00ff41;
+    gap: 0;
+  }
+  #boot-overlay.active { display: flex; }
+  .boot-line {
+    opacity: 0;
+    width: 420px;
+    max-width: 90vw;
+    line-height: 1.7;
+  }
+  .boot-line.visible { opacity: 1; }
+  .boot-cursor { display: inline-block; animation: blink-cur 0.7s step-end infinite; }
+  @keyframes blink-cur { 50% { opacity: 0; } }
+
+  /* ── Match title cursor + glitch ────────────────────────────────────────── */
+  [data-theme="console"] .match-title-cursor {
+    display: inline-block;
+    animation: blink-cur 0.8s step-end infinite;
+    color: var(--accent);
+    font-weight: 400;
+    margin-left: 2px;
+  }
+  [data-theme="console"] .match-title {
+    animation: title-glitch 8s ease-in-out infinite;
+  }
+  @keyframes title-glitch {
+    0%,89%,100% { opacity:1; text-shadow: 0 0 15px rgba(0,255,65,0.4); transform: none; }
+    90%  { opacity:0.85; text-shadow: 2px 0 8px rgba(0,255,65,0.6), -2px 0 4px rgba(255,32,32,0.4); transform: skewX(-1deg); }
+    91%  { opacity:1;    text-shadow: 0 0 15px rgba(0,255,65,0.4); transform: none; }
+    92%  { opacity:0.7;  text-shadow: -3px 0 6px rgba(0,255,65,0.5),  3px 0 4px rgba(255,32,32,0.3); transform: skewX(1.5deg) translateX(2px); }
+    93%  { opacity:1;    text-shadow: 0 0 15px rgba(0,255,65,0.4); transform: none; }
+    95%  { opacity:0.9;  text-shadow: 1px 0 10px rgba(0,255,65,0.7); transform: skewX(-0.5deg); }
+    96%  { opacity:1;    text-shadow: 0 0 15px rgba(0,255,65,0.4); transform: none; }
+  }
+
   /* ── Responsive ─────────────────────────────────────────────────────────── */
   @media (max-width: 860px) {
     .shell { grid-template-columns: 1fr; }
@@ -442,6 +597,12 @@
 </style>
 </head>
 <body>
+<!-- Boot sequence overlay (console mode only) -->
+<div id="boot-overlay">
+  <div style="font-family:'Orbitron',monospace;font-size:10px;letter-spacing:4px;color:#00aa2a;margin-bottom:20px;">TORNKNÄCKARNA // SCOUTING WORKSTATION</div>
+  <div id="boot-lines"></div>
+</div>
+
 <div class="shell">
   <aside>
     <div class="sidebar-top">
@@ -453,8 +614,23 @@
         <button class="theme-toggle" id="theme-toggle" onclick="cycleTheme()">DARK</button>
       </div>
     </div>
+    <div id="sidebar-ticker" class="sidebar-ticker-wrap">
+      <div class="sidebar-ticker-label">FEED</div>
+      <div class="sidebar-ticker-scroll">
+        <div class="sidebar-ticker-text" id="sidebar-ticker-text">Loading…</div>
+      </div>
+    </div>
     <div id="sidebar-content">
       <div style="padding:28px 22px;color:var(--ink-4);font-size:13px">Loading matches…</div>
+    </div>
+    <div class="console-sidebar-footer">
+      <div class="console-minimap-wrap">
+        <canvas id="console-minimap"></canvas>
+      </div>
+      <div class="console-termlog-wrap">
+        <div class="console-termlog-label">// INTEL FEED</div>
+        <div class="console-termlog" id="console-termlog"></div>
+      </div>
     </div>
   </aside>
 
@@ -480,6 +656,7 @@ function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
   const btn = document.getElementById('theme-toggle');
   if (btn) btn.textContent = THEME_LABELS[theme] || theme;
+  if (theme === 'console') setTimeout(() => startMinimap(), 0);
 }
 function cycleTheme() {
   const cur  = document.documentElement.getAttribute('data-theme') || 'dark';
@@ -778,8 +955,384 @@ function fmtDate(iso) {
   return new Date(iso).toLocaleDateString('sv-SE', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
 }
 
-// ── Sidebar ───────────────────────────────────────────────────────────────────
+// ── Ticker strip (all themes) ─────────────────────────────────────────────────
+const TICKER_ITEMS = [
+  'PATCH 7.37 // DARK WILLOW REWORKED',
+  'TORNKNÄCKARNA // CAPTAIN\'S MODE',
+  'E-SPARVEN DIVISION // CURRENT SEASON',
+  'ENIGMA BLACK HOLE // HIGH BAN PRIORITY',
+  'INVOKER // WINRATE ELEVATED IN CM',
+  'REMEMBER: DRAFT TEMPO WINS GAMES',
+  'ROSHAN SPAWNS AT 00:00 // TRACK IT',
+  'OBSERVER WARDS // PLACE EARLY',
+  'SMOKE ROTATIONS // SECURE OBJECTIVES',
+  'NET WORTH DELTA // KEY METRIC',
+  'SMOKE OF DECEIT // HIGH IMP. ITEM',
+  'CM DRAFT PHASE // 5 BANS EACH SIDE',
+  'ANALYSIS: PUSH LINEUPS STRONG PATCH',
+  'SENTINEL // DIRE // 5V5 // GO',
+];
+
+function buildTicker(matches) {
+  const parts = [...TICKER_ITEMS];
+  const upcoming = matches.filter(m => m.status === 'upcoming');
+  const past     = matches.filter(m => m.status !== 'upcoming');
+  if (upcoming.length) parts.unshift(`NEXT MATCH // ${upcoming[0].opponent.toUpperCase()} // ${fmtDate(upcoming[0].date).toUpperCase()}`);
+  const lastWin  = past.find(m => m.status === 'win');
+  const lastLoss = past.find(m => m.status === 'loss');
+  if (lastWin)  parts.unshift(`LAST WIN // ${lastWin.opponent.toUpperCase()}`);
+  if (lastLoss) parts.unshift(`LAST LOSS // ${lastLoss.opponent.toUpperCase()}`);
+  const full = [...parts, ...parts].join('   ///   ');
+  const el = document.getElementById('sidebar-ticker-text');
+  if (el) el.textContent = full;
+}
+
+// ── Boot sequence ─────────────────────────────────────────────────────────────
+const BOOT_LINES = [
+  { text: '> INITIALIZING SCOUTING WORKSTATION...', cls: '', delay: 0 },
+  { text: '> AUTHENTICATING SESSION... OK', cls: 'ok', delay: 280 },
+  { text: '> FETCHING OPPONENT INTELLIGENCE...', cls: '', delay: 520 },
+  { text: '> DECRYPTING HERO POOL DATA...', cls: '', delay: 760 },
+  { text: '> CROSS-REFERENCING CM WINRATES...', cls: '', delay: 980 },
+  { text: '> GENERATING BAN RECOMMENDATIONS...', cls: 'warn', delay: 1200 },
+  { text: '> ALL SYSTEMS NOMINAL. STAND BY.', cls: 'ok', delay: 1440 },
+];
+
+function runBootSequence(cb) {
+  if (document.documentElement.getAttribute('data-theme') !== 'console') { cb(); return; }
+  const overlay = document.getElementById('boot-overlay');
+  const linesEl = document.getElementById('boot-lines');
+  linesEl.innerHTML = '';
+  overlay.classList.add('active');
+  BOOT_LINES.forEach((l, i) => {
+    const div = document.createElement('div');
+    div.className = 'boot-line';
+    div.style.color = l.cls === 'ok' ? '#00ff41' : l.cls === 'warn' ? '#ffb000' : '#00aa2a';
+    div.style.width = '420px';
+    div.style.maxWidth = '90vw';
+    div.style.lineHeight = '1.7';
+    div.style.fontFamily = "'Share Tech Mono', monospace";
+    div.style.fontSize = '12px';
+    linesEl.appendChild(div);
+    setTimeout(() => {
+      div.classList.add('visible');
+      div.textContent = l.text;
+    }, l.delay);
+  });
+  const total = BOOT_LINES[BOOT_LINES.length - 1].delay + 600;
+  setTimeout(() => {
+    overlay.classList.remove('active');
+    cb();
+  }, total);
+}
+
+// ── Console terminal log ──────────────────────────────────────────────────────
+const TERM_LINES = [
+  { cls:'ok',   text:'HERO POOL ANALYSIS COMPLETE' },
+  { cls:'',     text:'LOADING OPPONENT PROFILE...' },
+  { cls:'warn', text:'INVOKER FLAGGED // HIGH CM WR' },
+  { cls:'',     text:'CROSS-REF PATCH 7.37 DATA...' },
+  { cls:'ok',   text:'BAN TIER COMPUTED // 6 HEROES' },
+  { cls:'warn', text:'ENIGMA TRACKED // 4 CM GAMES' },
+  { cls:'',     text:'SYNCING DOTABUFF RECORDS...' },
+  { cls:'ok',   text:'PLAYER 1 PROFILE LOADED' },
+  { cls:'',     text:'CALCULATING DRAFT PATTERNS...' },
+  { cls:'warn', text:'SHADOW FIEND // SITUATIONAL BAN' },
+  { cls:'ok',   text:'WINRATE DELTA POSITIVE' },
+  { cls:'err',  text:'WARNING: SMALL SAMPLE SIZE' },
+  { cls:'',     text:'OPENDOTA SYNC... OK' },
+  { cls:'ok',   text:'INTELLIGENCE PACKAGE READY' },
+  { cls:'',     text:'STANDBY FOR DRAFT PHASE' },
+  { cls:'warn', text:'PUCK MONITORED // PUB POOL' },
+  { cls:'ok',   text:'SESSION SECURE // UPLINK GREEN' },
+];
+let termIdx = 0;
+let termInterval = null;
+
+function startTermLog() {
+  const el = document.getElementById('console-termlog');
+  if (!el) return;
+  if (termInterval) clearInterval(termInterval);
+  termInterval = setInterval(() => {
+    if (document.documentElement.getAttribute('data-theme') !== 'console') return;
+    const item = TERM_LINES[termIdx % TERM_LINES.length];
+    termIdx++;
+    const now = new Date();
+    const ts = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0') + ':' + String(now.getSeconds()).padStart(2,'0');
+    const line = document.createElement('div');
+    line.className = 'tl-line ' + item.cls;
+    line.textContent = '[' + ts + '] ' + item.text;
+    el.appendChild(line);
+    // keep last ~8 lines visible
+    while (el.children.length > 8) el.removeChild(el.firstChild);
+  }, 2800);
+}
+startTermLog();
+
+// ── 3D rotating Dota 2 logo (ASCII art → canvas 3D projection) ───────────────
+let minimapRunning = false;
+
+function startMinimap() {
+  if (minimapRunning) return;
+  const canvas = document.getElementById('console-minimap');
+  if (!canvas) return;
+  minimapRunning = true;
+
+  // ── ASCII art source (the logo mask, 100×55) ──────────────────────────────
+  const ART = `                                                                                                    
+                                                                                                    
+                                                                                                    
+            ##                          ##*************#*      #*#****#**#####  ## #                
+     ##**********************##########*******************#    #**********************#*****#       
+     ##*****************************************************#*********************************      
+     ###**************************************************************************************#     
+      ########################################################################################      
+      ########################################################################################      
+      ########################################################################################      
+      #########################################################################################     
+      ##############*+*########################################################################     
+      #########*=..     .:*######################################*+-... ..+####################     
+      ##########*:         .=#############################*+-:..           .:*#################     
+      ############+.         .:*###########################+:.             .-+#################     
+      ##############=.         .==###########################*-.            .*#################     
+      ###############*:          ..:*###########################=.          .##################     
+      #################*.             .+##########################*:        =##################     
+      ###################+.             .:*##########################-.    .*##################     
+      #####################-.              .=*#########################+=- .*##################     
+       #####################*:                .+##########################+-################        
+       #######################+.                .:*##########################################       
+       #########################-                 ..-######################################         
+       ##########################*:                  ..=####################################        
+       ############################*.                   .:*##################################       
+       ##############################+=.                   .-################################       
+        ###############################+.                     .=##############################      
+       ##################################-.                     .:+##########################       
+      ####################################*..                      .-*########################      
+      ######################################+.                        .+#####################       
+      ########################################-:                        .-###################       
+      ##########################################:..                     ....-*#################     
+      ###########################################+::                          .=###############     
+      ###############*..=###########################-                           ..+############     
+       #############*.   .+##########################*.                            .###########     
+        ############:.     .+##########################+.                          -###########     
+        ###########-        .:*#########################+.                        .*###########     
+        ##########+.          .:*#########################=.                      :############     
+        #########*.             .:*#########################:.                    +############     
+        #########:                 -#########################*.                  :#############     
+      ###########.                   -#########################=.               .##############     
+      ############+.                  .=#########################:.           ..*##############     
+      ###############:.          ...-*#############################-..        .*###############     
+      #################+.:.  .:+########################################*+===+#################     
+      #########################################################################################     
+      #########################################################################################     
+      #########################################################################################     
+      #########################################################################################     
+      #########################################################################################     
+      #########################################################################################     
+        ####### ## ##%##   ####### #####################################################    ###     
+                                          ##############     #####                                  
+                                                                                                    
+                                                                                                    
+                                                                                                    `;
+
+  // Parse into binary bitmap
+  const artLines = ART.split('\n');
+  const ART_H = artLines.length;
+  const ART_W = Math.max(...artLines.map(l => l.length));
+  // 1 = filled, 0 = empty
+  const mask = new Uint8Array(ART_W * ART_H);
+  for (let row = 0; row < ART_H; row++) {
+    const line = artLines[row] || '';
+    for (let col = 0; col < ART_W; col++) {
+      const ch = line[col] || ' ';
+      mask[row * ART_W + col] = ch !== ' ' ? 1 : 0;
+    }
+  }
+
+  function sampleMask(u, v) {
+    // u,v in [0,1]
+    const col = Math.floor(u * ART_W);
+    const row = Math.floor(v * ART_H);
+    if (col < 0 || col >= ART_W || row < 0 || row >= ART_H) return 0;
+    return mask[row * ART_W + col];
+  }
+
+  // Canvas setup: display size matches sidebar width, aspect from art
+  const DISP_W = 248;
+  const ASPECT = ART_H / ART_W * 1.85; // chars are taller than wide
+  const DISP_H = Math.round(DISP_W * ASPECT);
+  canvas.width  = DISP_W;
+  canvas.height = DISP_H;
+
+  const ctx = canvas.getContext('2d');
+
+  // Pixel buffer
+  const imgData = ctx.createImageData(DISP_W, DISP_H);
+  const buf = imgData.data;
+
+  // Depth extrusion: the logo has a Z depth of DEPTH units
+  // Front face at z=+DEPTH/2, back at z=-DEPTH/2
+  const DEPTH = 0.22; // as fraction of logo width
+
+  // Light direction (normalised)
+  const LD = (() => {
+    const v = [0.6, -0.5, 0.6];
+    const l = Math.sqrt(v[0]**2+v[1]**2+v[2]**2);
+    return v.map(x=>x/l);
+  })();
+
+  // Green phosphor colour stops: dim → bright
+  // We'll interpolate in RGB based on brightness [0,1]
+  function greenRGB(b) {
+    // 0 = black, 0.3 = dark green, 0.7 = mid green, 1.0 = bright green/white
+    const r = Math.floor(Math.max(0, (b - 0.6) * 2.5) * 180);
+    const g = Math.floor(b * 255);
+    const bl = Math.floor(Math.max(0, (b - 0.7) * 3.3) * 120);
+    return [r, g, bl];
+  }
+
+  function render(t) {
+    // Rotation: slow Y spin, gentle X bob
+    const ay = t * 0.50;
+    const ax = Math.sin(t * 0.31) * 0.18;
+    const Cy = Math.cos(ay), Sy = Math.sin(ay);
+    const Cx = Math.cos(ax), Sx = Math.sin(ax);
+
+    // World-to-model: inverse of (Ry then Rx) = R(-ax) then R(-ay)
+    // i.e. transpose of the combined rotation matrix
+    // Combined fwd: p_world = Ry(ay) * Rx(ax) * p_model
+    // Inverse:      p_model = Rx(-ax) * Ry(-ay) * p_world
+    function w2m(wx, wy, wz) {
+      // Step 1: Ry(-ay)
+      const rx1 =  wx*Cy - wz*Sy;
+      const ry1 =  wy;
+      const rz1 =  wx*Sy + wz*Cy;
+      // Step 2: Rx(-ax)
+      const rx2 =  rx1;
+      const ry2 =  ry1*Cx + rz1*Sx;
+      const rz2 = -ry1*Sx + rz1*Cx;
+      return [rx2, ry2, rz2];
+    }
+
+    // For our orthographic ray (ox, oy, -3) + t*(0,0,1):
+    // model point = w2m(ox, oy, -3+t)
+    // Since w2m is linear: mp = w2m(ox,oy,-3) + t * w2m(0,0,1)
+    // Precompute ray direction in model space once per row won't help much since ox varies
+    // But the direction component is constant per frame:
+    const [ddx, ddy, ddz] = w2m(0, 0, 1);  // model-space ray direction
+
+    // Model space bounds: logo occupies x∈[-1,1], y∈[-ASPECT,ASPECT], z∈[-DEPTH/2,DEPTH/2]
+    const HZ = DEPTH * 0.5;
+
+    // Clear buffer
+    buf.fill(0);
+
+    for (let py = 0; py < DISP_H; py++) {
+      const sy_ndc = -((py / (DISP_H - 1)) * 2 - 1); // Y up
+
+      for (let px2 = 0; px2 < DISP_W; px2++) {
+        const sx = (px2 / (DISP_W - 1)) * 2 - 1;
+
+        // Ray origin in world space (orthographic)
+        const [ox, oy, oz] = w2m(sx, sy_ndc, -3.0);
+
+        // Ray marches along (ddx, ddy, ddz) in model space
+        // Intersect z = +HZ and z = -HZ planes
+        if (Math.abs(ddz) < 1e-7) continue;
+        const t_front = ( HZ - oz) / ddz;
+        const t_back  = (-HZ - oz) / ddz;
+        const t_near  = Math.min(t_front, t_back);
+        const t_far   = Math.max(t_front, t_back);
+
+        let hitColor = null;
+
+        // ── Front / back face ────────────────────────────────────────────
+        for (const tf of [t_near, t_far]) {
+          if (hitColor) break;
+          const mx = ox + tf * ddx;
+          const my = oy + tf * ddy;
+          // Map to UV: x∈[-1,1]→[0,1], y∈[-ASPECT,ASPECT]→[0,1]
+          const u = (mx + 1) * 0.5;
+          const v = 1 - (my / ASPECT + 1) * 0.5;
+          if (u < 0 || u >= 1 || v < 0 || v >= 1) continue;
+          if (!sampleMask(u, v)) continue;
+
+          // Face normal in model space: (0,0,±1)
+          const nz_m = (tf === t_near) ? Math.sign(ddz) : -Math.sign(ddz);
+          // Rotate normal to world: apply fwd rotation Ry then Rx
+          // Normal is (0,0,nz_m) in model space
+          // After Rx(ax): (0, -nz_m*Sx, nz_m*Cx)
+          // After Ry(ay): (nz_m*Cx*Sy, -nz_m*Sx, nz_m*Cx*Cy)  — wait, simpler:
+          // n_world = Ry(ay)*Rx(ax)*[0,0,nz_m]
+          // Rx: [0, -nz_m*Sx, nz_m*Cx]
+          // Ry: x'= 0*Cy + nz_m*Cx*Sy, y'= -nz_m*Sx, z'= -0*Sy + nz_m*Cx*Cy
+          const nwx = nz_m * Cx * Sy;
+          const nwy = -nz_m * Sx;
+          const nwz = nz_m * Cx * Cy;
+
+          const diff = Math.max(0, nwx*LD[0] + nwy*LD[1] + nwz*LD[2]);
+          const isFront = tf === t_near;
+          const b = Math.min(1, 0.18 + diff * 0.82) * (isFront ? 1.0 : 0.45);
+          hitColor = greenRGB(b);
+        }
+
+        // ── Side walls ───────────────────────────────────────────────────
+        if (!hitColor) {
+          // Sample along the depth slab, look for filled pixels at the boundary
+          const WSTEPS = 8;
+          for (let s = 0; s <= WSTEPS && !hitColor; s++) {
+            const tf = t_near + (t_far - t_near) * (s / WSTEPS);
+            const mx = ox + tf * ddx;
+            const my = oy + tf * ddy;
+            const u = (mx + 1) * 0.5;
+            const v = 1 - (my / ASPECT + 1) * 0.5;
+            if (u < 0 || u >= 1 || v < 0 || v >= 1) continue;
+            if (!sampleMask(u, v)) continue;
+
+            // Normal: outward XY gradient of mask in model space, then rotate
+            const eps2 = 1.5 / ART_W;
+            const gx = sampleMask(u - eps2, v) - sampleMask(u + eps2, v);
+            const gy = sampleMask(u, v - eps2*(ART_W/ART_H)*1.85) - sampleMask(u, v + eps2*(ART_W/ART_H)*1.85);
+            const gl = Math.sqrt(gx*gx+gy*gy) || 1;
+            const nm_x = gx/gl, nm_y = gy/gl, nm_z = 0;
+            // Rotate to world (Ry then Rx)
+            const nwx = nm_x*Cy + nm_z*Sy;
+            const nwz = -nm_x*Sy + nm_z*Cy;
+            const nwy = nm_y*Cx - nwz*Sx;
+            const nwz2 = nm_y*Sx + nwz*Cx;
+
+            const diff = Math.max(0, nwx*LD[0] + nwy*LD[1] + nwz2*LD[2]);
+            const depth_f = s / WSTEPS;
+            const b = Math.min(1, 0.12 + diff * 0.60) * (1 - depth_f * 0.35);
+            hitColor = greenRGB(b * 0.80);
+          }
+        }
+
+        if (hitColor) {
+          const i = (py * DISP_W + px2) * 4;
+          buf[i]   = hitColor[0];
+          buf[i+1] = hitColor[1];
+          buf[i+2] = hitColor[2];
+          buf[i+3] = 255;
+        }
+      }
+    }
+
+    ctx.putImageData(imgData, 0, 0);
+  }
+
+  let startTs = null;
+  function tick(ts) {
+    if (!startTs) startTs = ts;
+    render((ts - startTs) / 1000);
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+
 function buildSidebar(matches) {
+  buildTicker(matches);
   const upcoming = matches.filter(m => m.status === 'upcoming');
   const past     = matches.filter(m => m.status !== 'upcoming').reverse();
   const item = m => {
@@ -805,13 +1358,19 @@ function buildSidebar(matches) {
   document.getElementById('sidebar-content').innerHTML = html;
 }
 
+// ── Cursor helper ─────────────────────────────────────────────────────────────
+function consoleCursor() {
+  return document.documentElement.getAttribute('data-theme') === 'console'
+    ? '<span class="match-title-cursor">█</span>' : '';
+}
+
 async function loadOurTeam(btn) {
   document.querySelectorAll('.match-item').forEach(el => el.classList.remove('active'));
   if (btn) btn.classList.add('active');
   if (!OUR_TEAM_BIN_ID) {
     document.getElementById('main-panel').innerHTML = `
       <div style="padding:44px 52px;max-width:600px">
-        <div class="match-title" style="margin-bottom:16px">Tornknäckarna</div>
+        <div class="match-title" style="margin-bottom:16px">Tornknäckarna${consoleCursor()}</div>
         <div style="color:var(--ink-3);font-size:14px;line-height:1.7">
           No team bin configured yet.<br>
           Set <code style="background:var(--line-2);padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:13px">OUR_TEAM_BIN_ID</code> in <code style="background:var(--line-2);padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:13px">index.html</code> to a JSONbin containing your own roster data in the same format as opponent bins.
@@ -827,9 +1386,9 @@ async function loadOurTeam(btn) {
     return;
   }
   const isConsole = document.documentElement.getAttribute('data-theme') === 'console';
-  document.getElementById('main-panel').innerHTML = `
+  const html = `
     <div class="match-header">
-      <div class="match-title"><strong>Tornknäckarna</strong></div>
+      <div class="match-title"><strong>Tornknäckarna</strong>${consoleCursor()}</div>
       <div class="match-meta"><span>Dota 2 · Captain's Mode · E-Sparven</span></div>
       <div class="notice notice-snapshot" style="margin-top:8px">Refreshed daily by the bot</div>
     </div>
@@ -838,6 +1397,7 @@ async function loadOurTeam(btn) {
       <div class="player-grid">${(data.players || []).map(p => renderPlayerCard(p, true)).join('')}</div>
     </div>
     ${renderHistory(data.history)}`;
+  runBootSequence(() => { document.getElementById('main-panel').innerHTML = html; });
 }
 
 // ── Load match ────────────────────────────────────────────────────────────────
@@ -859,10 +1419,10 @@ async function loadMatch(binId, meetingId, btn) {
     : `<div class="notice notice-snapshot">Snapshot · ${fmtDate(data.snapshotAt)}</div>`;
 
   const isConsole = document.documentElement.getAttribute('data-theme') === 'console';
-  document.getElementById('main-panel').innerHTML = `
+  const html = `
     <div class="match-header">
       <div style="margin-bottom:10px"><span class="mi-badge ${badgeClass}" style="font-size:11px">${badgeText}</span></div>
-      <div class="match-title">vs <strong>${data.opponent}</strong></div>
+      <div class="match-title">vs <strong>${data.opponent}</strong>${consoleCursor()}</div>
       <div class="match-meta">
         <span>${fmtDate(data.date)}</span>
         <span>Dota 2 · Captain's Mode</span>
@@ -876,6 +1436,7 @@ async function loadMatch(binId, meetingId, btn) {
       <div class="player-grid">${(data.players || []).map(p => renderPlayerCard(p, false)).join('')}</div>
     </div>
     ${renderHistory(data.history)}`;
+  runBootSequence(() => { document.getElementById('main-panel').innerHTML = html; });
 }
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
