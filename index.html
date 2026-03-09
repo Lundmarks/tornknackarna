@@ -9,37 +9,35 @@
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  /* ── Light ─────────────────────────────────────────────────────────────── */
-  [data-theme="light"] {
-    --bg:          #fafafa;
-    --surface:     #ffffff;
-    --ink:         #0a0a0a;
-    --ink-2:       #3a3a3a;
-    --ink-3:       #777777;
-    --ink-4:       #aaaaaa;
-    --line:        #e8e8e8;
-    --line-2:      #f0f0f0;
-    --accent:      #0066cc;
-    --win:         #1a7a4a;
-    --win-bg:      #edf7f2;
-    --loss:        #b33a2a;
-    --loss-bg:     #fdf0ee;
-    --upcoming:    #5a3fa0;
-    --upcoming-bg: #f2effe;
-    --ban-high:    #9b1c1c;
-    --ban-med:     #92400e;
-    --section-bans-bg:    #fdf8f3;
-    --section-bans-bdr:   #f0e0cc;
-    --section-roster-bg:  #f5f8ff;
-    --section-roster-bdr: #dce6f8;
-    --section-hist-bg:    #f6faf7;
-    --section-hist-bdr:   #cce8d4;
-    --active-item-bg:     #edf2ff;
-    --shadow-h:    0 2px 8px rgba(0,0,0,.08), 0 8px 32px rgba(0,0,0,.08);
+  /* ── Dark (default via :root fallback) ─────────────────────────────────── */
+  :root {
+    --bg:          #0f1117;
+    --surface:     #1a1d27;
+    --ink:         #e8eaf0;
+    --ink-2:       #c0c4d0;
+    --ink-3:       #7a7f94;
+    --ink-4:       #4a4f62;
+    --line:        #272b3a;
+    --line-2:      #1e2130;
+    --accent:      #4d9eff;
+    --win:         #34c47a;
+    --win-bg:      #0d2b1e;
+    --loss:        #f06050;
+    --loss-bg:     #2a1210;
+    --upcoming:    #a78bfa;
+    --upcoming-bg: #1e1740;
+    --ban-high:    #f87171;
+    --ban-med:     #fb923c;
+    --section-bans-bg:    #1c1914;
+    --section-bans-bdr:   #2e2516;
+    --section-roster-bg:  #141622;
+    --section-roster-bdr: #1e2540;
+    --section-hist-bg:    #131d18;
+    --section-hist-bdr:   #1a3023;
+    --active-item-bg:     #1a2040;
+    --shadow-h:    0 2px 8px rgba(0,0,0,.3), 0 8px 32px rgba(0,0,0,.4);
   }
-
-  /* ── Dark (default) ────────────────────────────────────────────────────── */
-  :root, [data-theme="dark"] {
+  [data-theme="dark"] {
     --bg:          #0f1117;
     --surface:     #1a1d27;
     --ink:         #e8eaf0;
@@ -94,6 +92,35 @@
     --section-hist-bdr:   #004a10;
     --active-item-bg:     #001a00;
     --shadow-h:    0 0 15px rgba(0,255,65,0.15), 0 0 40px rgba(0,255,65,0.05);
+  }
+
+  /* ── Light ──────────────────────────────────────────────────────────────── */
+  [data-theme="light"] {
+    --bg:          #fafafa;
+    --surface:     #ffffff;
+    --ink:         #0a0a0a;
+    --ink-2:       #3a3a3a;
+    --ink-3:       #777777;
+    --ink-4:       #aaaaaa;
+    --line:        #e8e8e8;
+    --line-2:      #f0f0f0;
+    --accent:      #0066cc;
+    --win:         #1a7a4a;
+    --win-bg:      #edf7f2;
+    --loss:        #b33a2a;
+    --loss-bg:     #fdf0ee;
+    --upcoming:    #5a3fa0;
+    --upcoming-bg: #f2effe;
+    --ban-high:    #9b1c1c;
+    --ban-med:     #92400e;
+    --section-bans-bg:    #fdf8f3;
+    --section-bans-bdr:   #f0e0cc;
+    --section-roster-bg:  #f5f8ff;
+    --section-roster-bdr: #dce6f8;
+    --section-hist-bg:    #f6faf7;
+    --section-hist-bdr:   #cce8d4;
+    --active-item-bg:     #edf2ff;
+    --shadow-h:    0 2px 8px rgba(0,0,0,.08), 0 8px 32px rgba(0,0,0,.08);
   }
 
   :root {
@@ -447,12 +474,12 @@ const MEDALS_BASE     = 'medals/';
 
 // ── Theme cycle ────────────────────────────────────────────────────────────────
 const THEMES = ['dark', 'light', 'console'];
-const THEME_LABELS = { dark: 'DARK', light: 'LIGHT', console: 'CONSOLE' };
+const THEME_LABELS = { dark: 'Dark', light: 'Light', console: 'Console' };
 
 function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
   const btn = document.getElementById('theme-toggle');
-  if (btn) btn.textContent = THEME_LABELS[theme] || theme.toUpperCase();
+  if (btn) btn.textContent = THEME_LABELS[theme] || theme;
 }
 function cycleTheme() {
   const cur  = document.documentElement.getAttribute('data-theme') || 'dark';
@@ -520,17 +547,16 @@ function medalSVGFallback(medal, stars) {
 function rankBadgeHTML(rankMedal, rankLabel) {
   const medal  = rankMedal || 'Unknown';
   const cfg    = RANK_THEME[medal] || RANK_THEME.Unknown;
-  const theme  = document.documentElement.getAttribute('data-theme');
-  const isDark = theme === 'dark' || theme === 'console';
-  const bg     = isDark ? cfg.dbg : cfg.lbg;
-  const color  = isDark ? cfg.dc  : cfg.lc;
+  const theme  = document.documentElement.getAttribute('data-theme') || 'dark';
+  const isLight = theme === 'light';
+  const bg     = isLight ? cfg.lbg : cfg.dbg;
+  const color  = isLight ? cfg.lc  : cfg.dc;
   const starsStr = rankLabel ? (rankLabel.match(/[IVX]+$/) || [''])[0] : '';
   const stars    = { I:1, II:2, III:3, IV:4, V:5 }[starsStr] || 0;
   const slug    = medal.toLowerCase().replace(/\s+/g, '_');
   const imgUrl  = `${MEDALS_BASE}${slug}.png`;
-  const fallback = medalSVGFallback(medal, stars).replace(/"/g, '&quot;');
   return `<div class="rank-badge" style="background:${bg};color:${color}">
-    <img class="rank-medal-img" src="${imgUrl}" alt="${medal}" onerror="this.outerHTML='${fallback}'">
+    <img class="rank-medal-img" src="${imgUrl}" alt="${medal}" onerror="this.style.display='none'">
     ${rankLabel || 'Unknown'}
   </div>`;
 }
