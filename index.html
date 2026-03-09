@@ -5,11 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Tornknäckarna · Scouting</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@400;500&family=Share+Tech+Mono&family=VT323&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  :root, [data-theme="light"] {
+  /* ── Light ─────────────────────────────────────────────────────────────── */
+  [data-theme="light"] {
     --bg:          #fafafa;
     --surface:     #ffffff;
     --ink:         #0a0a0a;
@@ -37,7 +38,8 @@
     --shadow-h:    0 2px 8px rgba(0,0,0,.08), 0 8px 32px rgba(0,0,0,.08);
   }
 
-  [data-theme="dark"] {
+  /* ── Dark (default) ────────────────────────────────────────────────────── */
+  :root, [data-theme="dark"] {
     --bg:          #0f1117;
     --surface:     #1a1d27;
     --ink:         #e8eaf0;
@@ -65,6 +67,35 @@
     --shadow-h:    0 2px 8px rgba(0,0,0,.3), 0 8px 32px rgba(0,0,0,.4);
   }
 
+  /* ── Console ───────────────────────────────────────────────────────────── */
+  [data-theme="console"] {
+    --bg:          #020a02;
+    --surface:     rgba(0,20,0,0.85);
+    --ink:         #00ff41;
+    --ink-2:       #00dd38;
+    --ink-3:       #00aa2a;
+    --ink-4:       #006614;
+    --line:        #004a10;
+    --line-2:      #003308;
+    --accent:      #00ff41;
+    --win:         #00ff41;
+    --win-bg:      #003308;
+    --loss:        #ff2020;
+    --loss-bg:     #1e0000;
+    --upcoming:    #ffb000;
+    --upcoming-bg: #1a0f00;
+    --ban-high:    #ff2020;
+    --ban-med:     #ffb000;
+    --section-bans-bg:    #040f04;
+    --section-bans-bdr:   #004a10;
+    --section-roster-bg:  #020d02;
+    --section-roster-bdr: #004a10;
+    --section-hist-bg:    #020a02;
+    --section-hist-bdr:   #004a10;
+    --active-item-bg:     #001a00;
+    --shadow-h:    0 0 15px rgba(0,255,65,0.15), 0 0 40px rgba(0,255,65,0.05);
+  }
+
   :root {
     --mono:      'DM Mono', monospace;
     --sans:      'DM Sans', sans-serif;
@@ -76,20 +107,90 @@
   html { scroll-behavior: smooth; }
   body { font-family: var(--sans); background: var(--bg); color: var(--ink); font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased; transition: background var(--tr), color var(--tr); }
 
-  .shell { display: grid; grid-template-columns: 272px 1fr; min-height: 100vh; }
+  /* ── Console body overrides ─────────────────────────────────────────────── */
+  [data-theme="console"] body {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    cursor: crosshair;
+  }
+  /* CRT scanline overlay */
+  [data-theme="console"] body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent, transparent 2px,
+      rgba(0,0,0,0.18) 2px, rgba(0,0,0,0.18) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+  /* Grid overlay */
+  [data-theme="console"] body::after {
+    content: '';
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background-image:
+      linear-gradient(rgba(0,255,65,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,65,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
 
-  aside { background: var(--surface); border-right: 1px solid var(--line); display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+  /* ── Shell ──────────────────────────────────────────────────────────────── */
+  .shell { display: grid; grid-template-columns: 272px 1fr; min-height: 100vh; position: relative; z-index: 1; }
+
+  /* ── Sidebar ────────────────────────────────────────────────────────────── */
+  aside { background: var(--surface); border-right: 1px solid var(--line); display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow-y: auto; transition: background var(--tr), border-color var(--tr); }
   .sidebar-top { padding: 28px 22px 20px; border-bottom: 1px solid var(--line); display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
   .team-name { font-size: 13px; font-weight: 600; letter-spacing: .04em; color: var(--ink); display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
   .team-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
   .team-sub { font-size: 11.5px; color: var(--ink-4); padding-left: 16px; }
 
+  /* Console sidebar overrides */
+  [data-theme="console"] .team-name { font-family: 'Orbitron', monospace; font-size: 11px; letter-spacing: 3px; }
+  [data-theme="console"] .team-sub { font-family: 'Orbitron', monospace; font-size: 9px; letter-spacing: 2px; color: var(--ink-4); }
+  [data-theme="console"] .team-dot { animation: console-pulse 2s ease-in-out infinite; }
+  @keyframes console-pulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(0,255,65,0.4); }
+    50%      { box-shadow: 0 0 0 5px rgba(0,255,65,0); }
+  }
+
+  /* ── Theme cycle button ─────────────────────────────────────────────────── */
   .theme-toggle-wrap { display: flex; flex-direction: column; align-items: center; gap: 3px; flex-shrink: 0; }
-  .theme-toggle { background: var(--line-2); border: 1px solid var(--line); border-radius: 20px; cursor: pointer; width: 32px; height: 18px; position: relative; padding: 0; transition: background var(--tr); }
-  .theme-toggle::after { content: ''; position: absolute; width: 12px; height: 12px; border-radius: 50%; background: var(--ink-3); top: 2px; left: 2px; transition: transform var(--tr), background var(--tr); }
-  [data-theme="light"] .theme-toggle::after { transform: translateX(14px); background: var(--accent); }
+  .theme-toggle {
+    background: var(--line-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    padding: 4px 8px;
+    color: var(--ink-3);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    transition: background var(--tr), color var(--tr), border-color var(--tr);
+    white-space: nowrap;
+    font-family: inherit;
+    min-width: 54px;
+    text-align: center;
+  }
+  .theme-toggle:hover { background: var(--line); color: var(--ink); }
+  [data-theme="console"] .theme-toggle {
+    font-family: 'Orbitron', monospace;
+    border-color: var(--ink-4);
+    color: var(--ink-3);
+    background: rgba(0,20,0,0.8);
+    letter-spacing: 2px;
+  }
+  [data-theme="console"] .theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
   .theme-toggle-label { font-size: 9px; color: var(--ink-4); letter-spacing: .04em; text-transform: uppercase; font-weight: 600; }
 
+  /* ── Sidebar nav items ──────────────────────────────────────────────────── */
   .sidebar-section { padding: 18px 22px 8px; }
   .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-4); margin-bottom: 6px; }
   .match-item { display: block; padding: 10px 12px 10px 14px; border-radius: var(--radius-sm); cursor: pointer; transition: background var(--tr); border: none; border-left: 3px solid transparent; background: none; width: 100%; text-align: left; margin-bottom: 2px; color: var(--ink); }
@@ -107,7 +208,40 @@
   .badge-win      { background: var(--win-bg);      color: var(--win); }
   .badge-loss     { background: var(--loss-bg);      color: var(--loss); }
 
-  main { padding: 44px 52px 80px; max-width: 1120px; }
+  [data-theme="console"] .match-item { font-family: 'Share Tech Mono', monospace; border-radius: 0; }
+  [data-theme="console"] .match-item:hover { background: rgba(0,255,65,0.05); }
+  [data-theme="console"] .match-item.active { background: rgba(0,255,65,0.08); border-left-color: var(--accent); box-shadow: inset 0 0 10px rgba(0,255,65,0.05); }
+  [data-theme="console"] .mi-date { font-family: 'Share Tech Mono', monospace; font-size: 10px; }
+  [data-theme="console"] .mi-opponent { font-size: 12px; letter-spacing: 1px; }
+  [data-theme="console"] .mi-badge { border-radius: 0; font-family: 'Orbitron', monospace; font-size: 8px; letter-spacing: 2px; }
+  [data-theme="console"] .sidebar-label { font-family: 'Orbitron', monospace; font-size: 9px; letter-spacing: 3px; }
+  [data-theme="console"] .badge-upcoming { border: 1px solid var(--upcoming); background: transparent; }
+  [data-theme="console"] .badge-win      { border: 1px solid var(--win); background: transparent; }
+  [data-theme="console"] .badge-loss     { border: 1px solid var(--loss); background: transparent; }
+
+  /* ── Main panel ─────────────────────────────────────────────────────────── */
+  main { padding: 44px 52px 80px; max-width: 1120px; position: relative; z-index: 1; }
+
+  [data-theme="console"] main { padding: 28px 32px 80px; max-width: none; }
+
+  /* Console flash banner */
+  [data-theme="console"] main::before {
+    content: '◆ TORNKNÄCKARNA // SCOUTING WORKSTATION // CAPTAIN\'S MODE INTELLIGENCE // ESPARVEN DIVISION ◆';
+    display: block;
+    background: var(--loss);
+    color: #000;
+    text-align: center;
+    font-family: 'Orbitron', monospace;
+    font-weight: 900;
+    font-size: 9px;
+    letter-spacing: 4px;
+    padding: 5px;
+    margin-bottom: 12px;
+    animation: banner-pulse 3s ease-in-out infinite;
+  }
+  @keyframes banner-pulse { 0%,100%{opacity:1} 50%{opacity:0.75} }
+
+  /* ── Match header ───────────────────────────────────────────────────────── */
   .match-header { margin-bottom: 40px; opacity: 0; transform: translateY(12px); animation: fadeUp .38s cubic-bezier(0.4,0,0.2,1) .04s forwards; }
   @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
   .match-title { font-size: 30px; font-weight: 300; letter-spacing: -.02em; color: var(--ink); line-height: 1.2; margin-bottom: 8px; }
@@ -116,14 +250,34 @@
   .notice { font-size: 11px; padding: 7px 12px; border-radius: 6px; display: inline-block; margin-top: 4px; }
   .notice-live     { background: var(--upcoming-bg); color: var(--upcoming); }
   .notice-snapshot { background: var(--line-2);      color: var(--ink-4); }
+
+  [data-theme="console"] .match-title { font-family: 'VT323', monospace; font-size: 42px; font-weight: 400; letter-spacing: 2px; color: var(--accent); text-shadow: 0 0 15px rgba(0,255,65,0.4); }
+  [data-theme="console"] .match-title strong { font-weight: 400; }
+  [data-theme="console"] .match-meta { font-family: 'Share Tech Mono', monospace; font-size: 11px; letter-spacing: 1px; color: var(--ink-3); }
+  [data-theme="console"] .notice { border-radius: 0; font-family: 'Orbitron', monospace; font-size: 9px; letter-spacing: 2px; border: 1px solid; }
+  [data-theme="console"] .notice-live     { border-color: var(--upcoming); background: transparent; }
+  [data-theme="console"] .notice-snapshot { border-color: var(--ink-4); background: transparent; }
+
+  /* ── Sections ───────────────────────────────────────────────────────────── */
   .section-title { font-size: 10.5px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-4); margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
   .page-section { padding: 28px 32px; border-radius: 14px; margin-bottom: 28px; }
   .page-section-bans    { background: var(--section-bans-bg);   border: 1px solid var(--section-bans-bdr); }
   .page-section-roster  { background: var(--section-roster-bg); border: 1px solid var(--section-roster-bdr); }
   .page-section-history { background: var(--section-hist-bg);   border: 1px solid var(--section-hist-bdr); }
 
+  [data-theme="console"] .page-section { border-radius: 0; position: relative; }
+  [data-theme="console"] .page-section::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  }
+  [data-theme="console"] .section-title { font-family: 'Orbitron', monospace; font-size: 9px; letter-spacing: 3px; color: var(--ink-3); }
+  [data-theme="console"] .page-section:hover { box-shadow: 0 0 20px rgba(0,255,65,0.08); }
+
+  /* ── Ban cards ──────────────────────────────────────────────────────────── */
   .ban-section { margin-bottom: 44px; }
-  /* Responsive ban grid: fills available columns, min 200px per card */
   .ban-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
   .ban-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; display: flex; align-items: flex-start; gap: 10px; transition: box-shadow var(--tr), transform var(--tr); opacity: 0; animation: fadeUp .35s cubic-bezier(0.4,0,0.2,1) forwards; }
   .ban-card:nth-child(1){animation-delay:.06s}.ban-card:nth-child(2){animation-delay:.10s}.ban-card:nth-child(3){animation-delay:.14s}
@@ -147,7 +301,19 @@
   .priority-med  .ban-score-fill { background: var(--ban-med); }
   .priority-low  .ban-score-fill { background: #9ca3af; }
 
-  /* Responsive player grid: shrinks card min from 310 → 240 so more fit side by side */
+  [data-theme="console"] .ban-card { border-radius: 0; font-family: 'Share Tech Mono', monospace; }
+  [data-theme="console"] .ban-card:hover { transform: none; box-shadow: 0 0 10px rgba(0,255,65,0.15); }
+  [data-theme="console"] .ban-hero-name { font-family: 'Share Tech Mono', monospace; font-size: 12px; font-weight: 400; letter-spacing: 1px; }
+  [data-theme="console"] .ban-owner { font-family: 'Orbitron', monospace; font-size: 8px; letter-spacing: 1px; }
+  [data-theme="console"] .ban-stat { border-radius: 0; font-family: 'Share Tech Mono', monospace; border: 1px solid var(--line); background: transparent; }
+  [data-theme="console"] .ban-score-bar { border-radius: 0; }
+  [data-theme="console"] .ban-score-fill { border-radius: 0; }
+  [data-theme="console"] .priority-high .ban-priority-dot { animation: pulse-red 0.5s ease-in-out infinite; }
+  [data-theme="console"] .priority-med  .ban-priority-dot { animation: pulse-amber 1s ease-in-out infinite; }
+  @keyframes pulse-red   { 0%,100%{box-shadow:0 0 0 0 rgba(255,32,32,0.6)}   50%{box-shadow:0 0 0 4px rgba(255,32,32,0)} }
+  @keyframes pulse-amber { 0%,100%{box-shadow:0 0 0 0 rgba(255,176,0,0.4)}   50%{box-shadow:0 0 0 4px rgba(255,176,0,0)} }
+
+  /* ── Player cards ───────────────────────────────────────────────────────── */
   .player-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; margin-bottom: 48px; }
   .player-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; transition: box-shadow var(--tr), transform var(--tr), border-color var(--tr); opacity: 0; animation: fadeUp .35s cubic-bezier(0.4,0,0.2,1) forwards; }
   .player-card:nth-child(1){animation-delay:.10s}.player-card:nth-child(2){animation-delay:.15s}.player-card:nth-child(3){animation-delay:.20s}
@@ -156,15 +322,21 @@
   .player-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
   .player-name { font-size: 15px; font-weight: 600; color: var(--ink); margin-bottom: 5px; }
   .player-meta { display: flex; flex-direction: column; gap: 5px; }
-
   .rank-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 500; padding: 3px 8px 3px 3px; border-radius: 5px; width: fit-content; }
   .rank-medal-img { width: 22px; height: 22px; flex-shrink: 0; object-fit: contain; }
   .rank-medal-svg { width: 22px; height: 22px; flex-shrink: 0; }
-
   .player-wr { text-align: right; flex-shrink: 0; }
   .wr-number { font-size: 22px; font-weight: 300; color: var(--ink); letter-spacing: -.02em; line-height: 1; }
   .wr-label  { font-size: 10px; color: var(--ink-4); margin-top: 1px; }
 
+  [data-theme="console"] .player-card { border-radius: 0; font-family: 'Share Tech Mono', monospace; }
+  [data-theme="console"] .player-card:hover { transform: none; box-shadow: 0 0 15px rgba(0,255,65,0.12); border-color: var(--accent); }
+  [data-theme="console"] .player-name { font-family: 'Orbitron', monospace; font-size: 11px; letter-spacing: 2px; font-weight: 700; }
+  [data-theme="console"] .rank-badge { border-radius: 0; font-family: 'Share Tech Mono', monospace; font-size: 10px; }
+  [data-theme="console"] .wr-number { font-family: 'VT323', monospace; font-size: 32px; font-weight: 400; letter-spacing: 0; }
+  [data-theme="console"] .wr-label { font-family: 'Orbitron', monospace; font-size: 8px; letter-spacing: 2px; }
+
+  /* ── Hero rows ──────────────────────────────────────────────────────────── */
   .hero-section { margin-bottom: 12px; }
   .hero-section-label { font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-4); margin-bottom: 7px; }
   .hero-row { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid var(--line-2); }
@@ -180,6 +352,15 @@
   .hero-wr-pct { font-size: 10px; font-family: var(--mono); color: var(--ink-3); width: 28px; text-align: right; }
   .key-pick-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ban-high); flex-shrink: 0; }
 
+  [data-theme="console"] .hero-section-label { font-family: 'Orbitron', monospace; font-size: 8px; letter-spacing: 2px; }
+  [data-theme="console"] .hero-name { font-family: 'Share Tech Mono', monospace; font-size: 11px; font-weight: 400; }
+  [data-theme="console"] .hero-games { font-family: 'Share Tech Mono', monospace; }
+  [data-theme="console"] .hero-wr-pct { font-family: 'Share Tech Mono', monospace; }
+  [data-theme="console"] .hero-icon-wrap { border-radius: 0; }
+  [data-theme="console"] .hero-wr-bar { border-radius: 0; }
+  [data-theme="console"] .hero-wr-fill { border-radius: 0; }
+
+  /* ── Form row ───────────────────────────────────────────────────────────── */
   .form-row { display: flex; align-items: center; gap: 3px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line-2); }
   .form-label { font-size: 10px; color: var(--ink-4); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; margin-right: 4px; white-space: nowrap; }
   .form-pip { width: 15px; height: 15px; border-radius: 3px; font-size: 8px; font-weight: 700; display: flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0; }
@@ -189,6 +370,12 @@
   .player-link { font-size: 11px; font-weight: 500; color: var(--accent); text-decoration: none; padding: 3px 10px; border: 1px solid var(--line); border-radius: 20px; transition: background var(--tr), border-color var(--tr); }
   .player-link:hover { background: var(--line-2); border-color: var(--accent); }
 
+  [data-theme="console"] .form-pip { border-radius: 0; font-family: 'Share Tech Mono', monospace; }
+  [data-theme="console"] .form-label { font-family: 'Orbitron', monospace; font-size: 8px; letter-spacing: 2px; }
+  [data-theme="console"] .player-link { border-radius: 0; font-family: 'Share Tech Mono', monospace; font-size: 10px; letter-spacing: 1px; }
+  [data-theme="console"] .player-link:hover { box-shadow: 0 0 8px rgba(0,255,65,0.2); }
+
+  /* ── History table ──────────────────────────────────────────────────────── */
   .history-section { margin-bottom: 48px; }
   .history-table { width: 100%; border-collapse: collapse; font-size: 13px; }
   .history-table th { text-align: left; font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-4); padding: 0 12px 10px; border-bottom: 1px solid var(--line); }
@@ -203,11 +390,23 @@
   .hero-chip-icon img { width: 100%; height: 100%; object-fit: contain; }
   .mono { font-family: var(--mono); font-size: 11.5px; color: var(--ink-3); }
 
+  [data-theme="console"] .history-table { font-family: 'Share Tech Mono', monospace; font-size: 11px; }
+  [data-theme="console"] .history-table th { font-family: 'Orbitron', monospace; font-size: 8px; letter-spacing: 2px; }
+  [data-theme="console"] .history-table tr:hover td { background: rgba(0,255,65,0.04); }
+  [data-theme="console"] .result-badge { border-radius: 0; font-family: 'Orbitron', monospace; font-size: 8px; letter-spacing: 2px; background: transparent; border: 1px solid; }
+  [data-theme="console"] .result-badge.win  { border-color: var(--win); }
+  [data-theme="console"] .result-badge.loss { border-color: var(--loss); }
+  [data-theme="console"] .hero-chip { border-radius: 0; font-family: 'Share Tech Mono', monospace; border: 1px solid var(--line); background: transparent; }
+  [data-theme="console"] .hero-chip-icon { border-radius: 0; }
+  [data-theme="console"] .mono { font-family: 'Share Tech Mono', monospace; }
+
+  /* ── Scrollbar ──────────────────────────────────────────────────────────── */
   ::-webkit-scrollbar { width: 5px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
+  [data-theme="console"] ::-webkit-scrollbar-thumb { border-radius: 0; }
 
-  /* Responsive breakpoint — auto-fill grids handle column count naturally above this */
+  /* ── Responsive ─────────────────────────────────────────────────────────── */
   @media (max-width: 860px) {
     .shell { grid-template-columns: 1fr; }
     aside { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--line); }
@@ -224,8 +423,7 @@
         <div class="team-sub">Dota 2 · Captain's Mode · E-Sparven</div>
       </div>
       <div class="theme-toggle-wrap">
-        <button class="theme-toggle" id="theme-toggle" title="Toggle light/dark" onclick="toggleTheme()"></button>
-        <div class="theme-toggle-label" id="theme-label">Light</div>
+        <button class="theme-toggle" id="theme-toggle" onclick="cycleTheme()">DARK</button>
       </div>
     </div>
     <div id="sidebar-content">
@@ -235,7 +433,7 @@
 
   <main id="main-panel">
     <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:70vh;color:var(--ink-4);gap:10px">
-      <div style="font-size:36px;opacity:.3">&#9876;</div>
+      <div style="font-size:36px;opacity:.3">⚔</div>
       <div style="font-size:14px">Select a match to load the scouting report</div>
     </div>
   </main>
@@ -247,14 +445,18 @@ const JSONBIN_BASE    = 'https://api.jsonbin.io/v3/b';
 const OUR_TEAM_BIN_ID = '69adfcf3ae596e708f6e2b4b';
 const MEDALS_BASE     = 'medals/';
 
-// ── Theme ─────────────────────────────────────────────────────────────────────
+// ── Theme cycle ────────────────────────────────────────────────────────────────
+const THEMES = ['dark', 'light', 'console'];
+const THEME_LABELS = { dark: 'DARK', light: 'LIGHT', console: 'CONSOLE' };
+
 function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
-  const lbl = document.getElementById('theme-label');
-  if (lbl) lbl.textContent = theme === 'dark' ? 'Light' : 'Dark';
+  const btn = document.getElementById('theme-toggle');
+  if (btn) btn.textContent = THEME_LABELS[theme] || theme.toUpperCase();
 }
-function toggleTheme() {
-  const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+function cycleTheme() {
+  const cur  = document.documentElement.getAttribute('data-theme') || 'dark';
+  const next = THEMES[(THEMES.indexOf(cur) + 1) % THEMES.length];
   localStorage.setItem('theme', next);
   applyTheme(next);
 }
@@ -318,7 +520,8 @@ function medalSVGFallback(medal, stars) {
 function rankBadgeHTML(rankMedal, rankLabel) {
   const medal  = rankMedal || 'Unknown';
   const cfg    = RANK_THEME[medal] || RANK_THEME.Unknown;
-  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const theme  = document.documentElement.getAttribute('data-theme');
+  const isDark = theme === 'dark' || theme === 'console';
   const bg     = isDark ? cfg.dbg : cfg.lbg;
   const color  = isDark ? cfg.dc  : cfg.lc;
   const starsStr = rankLabel ? (rankLabel.match(/[IVX]+$/) || [''])[0] : '';
@@ -415,6 +618,7 @@ function wrClass(wr) { return wr >= 60 ? 'high' : wr < 45 ? 'low' : ''; }
 
 function renderBanSection(players) {
   const bans = computeBans(players);
+  const isConsole = document.documentElement.getAttribute('data-theme') === 'console';
   if (!bans.length) return '<div style="color:var(--ink-4);font-size:13px;margin-bottom:32px">No CM data yet — ban suggestions will appear after the opponent plays their first match.</div>';
   const maxScore = bans[0].score || 1;
   const banCard = b => {
@@ -437,8 +641,8 @@ function renderBanSection(players) {
   };
   const tier = (label, color, items) => !items.length ? '' : `
     <div style="margin-bottom:20px">
-      <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:${color};margin-bottom:8px;display:flex;align-items:center;gap:6px">
-        <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${color}"></span>${label}
+      <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:${color};margin-bottom:8px;display:flex;align-items:center;gap:6px;${isConsole ? 'font-family:Orbitron,monospace;letter-spacing:3px;' : ''}">
+        <span style="display:inline-block;width:6px;height:6px;border-radius:${isConsole?'0':'50%'};background:${color}"></span>${label}
       </div>
       <div class="ban-grid">${items.map(banCard).join('')}</div>
     </div>`;
@@ -446,11 +650,11 @@ function renderBanSection(players) {
   const med  = bans.filter(b => b.priority==='med');
   const low  = bans.filter(b => b.priority==='low');
   return `<div class="ban-section">
-    <div class="section-title">Suggested bans</div>
+    <div class="section-title">${isConsole ? '// ' : ''}Suggested bans</div>
     ${tier('Priority bans','var(--ban-high)',high)}
     ${tier('Moderate threats','var(--ban-med)',med)}
     ${tier('Situational','#9ca3af',low)}
-    <div style="font-size:11px;color:var(--ink-4);margin-top:4px;line-height:1.5">Scored by CM winrate, games played, delta vs pub winrate, and recency.</div>
+    <div style="font-size:11px;color:var(--ink-4);margin-top:4px;line-height:1.5${isConsole ? ';font-family:Share Tech Mono,monospace' : ''}">Scored by CM winrate, games played, delta vs pub winrate, and recency.</div>
   </div>`;
 }
 
@@ -475,6 +679,7 @@ function renderPlayerCard(p, isSelf) {
   const form = (p.form || []).map(r => `<div class="form-pip ${r}">${r.toUpperCase()}</div>`).join('');
   const noId = !p.accountId ? `<span style="font-size:9px;color:var(--ink-4);margin-left:6px;font-weight:600">no ID</span>` : '';
   const hasBanCandidate = !isSelf && (p.tournamentHeroes || []).some(h => keyPickScore(h) >= 2.4 && h.tournamentGames >= 3);
+  const isConsole = document.documentElement.getAttribute('data-theme') === 'console';
   return `<div class="player-card">
     <div class="player-card-top">
       <div class="player-meta">
@@ -482,17 +687,17 @@ function renderPlayerCard(p, isSelf) {
         ${rankBadgeHTML(p.rankMedal || 'Unknown', p.rankLabel)}
       </div>
       <div class="player-wr">
-        ${p.winrate != null ? `<div class="wr-number">${p.winrate}%</div><div class="wr-label">pub wr</div>` : '<div class="wr-number" style="font-size:14px;color:var(--ink-4)">—</div>'}
+        ${p.winrate != null ? `<div class="wr-number">${p.winrate}%</div><div class="wr-label">${isConsole ? 'PUB WR' : 'pub wr'}</div>` : '<div class="wr-number" style="font-size:14px;color:var(--ink-4)">—</div>'}
       </div>
     </div>
     <div class="hero-section">
-      <div class="hero-section-label">CM picks (E-Sparven)
+      <div class="hero-section-label">${isConsole ? '// ' : ''}CM picks (E-Sparven)
         ${hasBanCandidate ? `<span style="font-size:9px;color:var(--ban-high);margin-left:4px">● ban candidate</span>` : ''}
       </div>
       ${renderHeroRows(p.tournamentHeroes, true, isSelf)}
     </div>
     <div class="hero-section">
-      <div class="hero-section-label">Pub pool</div>
+      <div class="hero-section-label">${isConsole ? '// ' : ''}Pub pool</div>
       ${renderHeroRows(p.pubHeroes, false, isSelf)}
     </div>
     ${form ? `<div class="form-row"><div class="form-label">Form</div>${form}</div>` : ''}
@@ -502,6 +707,7 @@ function renderPlayerCard(p, isSelf) {
 
 function renderHistory(history) {
   if (!history || !history.length) return '';
+  const isConsole = document.documentElement.getAttribute('data-theme') === 'console';
 
   const chipGroup = (picks, team) => {
     const chips = (picks || []).filter(pk => pk.team === team).map(pk => {
@@ -512,21 +718,16 @@ function renderHistory(history) {
   };
 
   const rows = history.map(m => {
-    // Use ?? so that JSON null and JS undefined are both treated as "no data"
     const oppTeam = m.opponentTeam ?? null;
     const oppWon  = m.opponentWon  ?? null;
-
-    // W/L badge: shown when oppWon is a real boolean
     const resultBadge = oppWon === true
       ? `<span class="result-badge win">W</span>`
       : oppWon === false
         ? `<span class="result-badge loss">L</span>`
         : '';
-
-    // OPP / vs labels: only shown when we know which side the opponent was on
     const sideLabel = t => oppTeam === null ? '' : t === oppTeam
-      ? `<span style="font-size:9px;font-weight:700;letter-spacing:.05em;color:var(--upcoming);background:var(--upcoming-bg);padding:1px 5px;border-radius:3px;margin-right:4px">OPP</span>`
-      : `<span style="font-size:9px;color:var(--ink-4);background:var(--line-2);padding:1px 5px;border-radius:3px;margin-right:4px">vs</span>`;
+      ? `<span style="font-size:9px;font-weight:700;letter-spacing:.05em;color:var(--upcoming);background:var(--upcoming-bg);padding:1px 5px;border-radius:${isConsole?'0':'3px'};margin-right:4px${isConsole?';font-family:Orbitron,monospace;letter-spacing:2px':''}">OPP</span>`
+      : `<span style="font-size:9px;color:var(--ink-4);background:var(--line-2);padding:1px 5px;border-radius:${isConsole?'0':'3px'};margin-right:4px">vs</span>`;
 
     return `<tr>
       <td class="mono">${m.duration || '—'}</td>
@@ -538,7 +739,7 @@ function renderHistory(history) {
   }).join('');
 
   return `<div class="page-section page-section-history history-section">
-    <div class="section-title">Opponent's E-Sparven match history this season</div>
+    <div class="section-title">${isConsole ? '// ' : ''}Opponent's E-Sparven match history this season</div>
     <table class="history-table">
       <thead><tr><th>Duration</th><th>Radiant</th><th>Dire</th><th>Patch</th><th></th></tr></thead>
       <tbody>${rows}</tbody>
@@ -599,6 +800,7 @@ async function loadOurTeam(btn) {
     document.getElementById('main-panel').innerHTML = `<div style="padding:44px 52px;color:var(--loss)"><strong>Error:</strong> ${e.message}</div>`;
     return;
   }
+  const isConsole = document.documentElement.getAttribute('data-theme') === 'console';
   document.getElementById('main-panel').innerHTML = `
     <div class="match-header">
       <div class="match-title"><strong>Tornknäckarna</strong></div>
@@ -606,7 +808,7 @@ async function loadOurTeam(btn) {
       <div class="notice notice-snapshot" style="margin-top:8px">Refreshed daily by the bot</div>
     </div>
     <div class="page-section page-section-roster">
-      <div class="section-title" style="margin-bottom:16px">Our roster</div>
+      <div class="section-title" style="margin-bottom:16px">${isConsole ? '// ' : ''}Our roster</div>
       <div class="player-grid">${(data.players || []).map(p => renderPlayerCard(p, true)).join('')}</div>
     </div>
     ${renderHistory(data.history)}`;
@@ -630,6 +832,7 @@ async function loadMatch(binId, meetingId, btn) {
     ? `<div class="notice notice-live">Live data · refreshed daily until match day</div>`
     : `<div class="notice notice-snapshot">Snapshot · ${fmtDate(data.snapshotAt)}</div>`;
 
+  const isConsole = document.documentElement.getAttribute('data-theme') === 'console';
   document.getElementById('main-panel').innerHTML = `
     <div class="match-header">
       <div style="margin-bottom:10px"><span class="mi-badge ${badgeClass}" style="font-size:11px">${badgeText}</span></div>
@@ -643,7 +846,7 @@ async function loadMatch(binId, meetingId, btn) {
     </div>
     ${status === 'upcoming' ? `<div class="page-section page-section-bans">${renderBanSection(data.players || [])}</div>` : ''}
     <div class="page-section page-section-roster">
-      <div class="section-title" style="margin-bottom:16px">Opponent roster</div>
+      <div class="section-title" style="margin-bottom:16px">${isConsole ? '// ' : ''}Opponent roster</div>
       <div class="player-grid">${(data.players || []).map(p => renderPlayerCard(p, false)).join('')}</div>
     </div>
     ${renderHistory(data.history)}`;
