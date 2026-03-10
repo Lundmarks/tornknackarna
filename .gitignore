@@ -3,3 +3,4 @@
 player_map.json
 state.json
 **.backup
+__pycache__/

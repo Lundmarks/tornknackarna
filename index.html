@@ -337,10 +337,14 @@
 </div>
 
 <script>
-const INDEX_BIN_ID    = '69ac477043b1c97be9bdefcc';
-const JSONBIN_BASE    = 'https://api.jsonbin.io/v3/b';
-const OUR_TEAM_BIN_ID = '69adfcf3ae596e708f6e2b4b';
+const GIST_USER       = 'Lundmarks';
+const INDEX_GIST_ID   = 'bd51bdad423fb0050aef6f7adea11c4e';
+const OUR_TEAM_GIST_ID= '5ace550ee3310d0295fda5ed77727652';
 const MEDALS_BASE     = 'medals/';
+
+function gistUrl(gistId) {
+  return `https://gist.githubusercontent.com/${GIST_USER}/${gistId}/raw/data.json`;
+}
 
 // ── Season filter state ───────────────────────────────────────────────────────
 // true  = current season only (default)
@@ -368,11 +372,11 @@ function cycleTheme() {
 }
 applyTheme(localStorage.getItem('theme')||'dark');
 
-// ── JSONbin ───────────────────────────────────────────────────────────────────
-async function fetchBin(binId) {
-  const r=await fetch(`${JSONBIN_BASE}/${binId}/latest`);
-  if(!r.ok) throw new Error(`JSONbin ${r.status} for ${binId}`);
-  return (await r.json()).record;
+// ── Gist storage ─────────────────────────────────────────────────────────────
+async function fetchGist(gistId) {
+  const r = await fetch(gistUrl(gistId));
+  if(!r.ok) throw new Error(`Gist fetch ${r.status} for ${gistId}`);
+  return r.json();
 }
 
 // ── Profile links ─────────────────────────────────────────────────────────────
@@ -569,6 +573,12 @@ function wrClass(wr) { return wr>=60?'high':wr<45?'low':''; }
 
 function renderHeroRows(heroes, isTournament, isSelf) {
   if (!heroes||!heroes.length) return '<div style="font-size:12px;color:var(--ink-4);padding:4px 0">No data</div>';
+  if (isTournament) {
+    heroes = [...heroes].sort((a,b) => {
+      const sa = resolveHeroStats(a), sb = resolveHeroStats(b);
+      return sb.games - sa.games || sb.wr - sa.wr;
+    });
+  }
   let anyVisible = false;
   const rows = heroes.map(h => {
     let wr, games;
@@ -906,7 +916,7 @@ function buildSidebar(matches) {
   const item=m=>{
     const bc={upcoming:'badge-upcoming',win:'badge-win',loss:'badge-loss',tie:'badge-loss'}[m.status]||'badge-upcoming';
     const bt={upcoming:'Upcoming',win:'Win',loss:'Loss',tie:'Tie'}[m.status]||m.status;
-    return `<button class="match-item status-${m.status}" data-bin="${m.binId}" onclick="loadMatch('${m.binId}','${m.meetingId||''}',this)">
+    return `<button class="match-item status-${m.status}" data-bin="${m.gistId}" onclick="loadMatch('${m.gistId}','${m.meetingId||''}',this)">
       <div class="mi-date">${fmtDate(m.date)}</div>
       <div class="mi-opponent">${m.opponent}</div>
       <span class="mi-badge ${bc}">${bt}</span>
@@ -933,13 +943,13 @@ function consoleCursor() {
 async function loadOurTeam(btn) {
   document.querySelectorAll('.match-item').forEach(el=>el.classList.remove('active'));
   if(btn) btn.classList.add('active');
-  if(!OUR_TEAM_BIN_ID){
-    document.getElementById('main-panel').innerHTML=`<div style="padding:44px 52px;max-width:600px"><div class="match-title" style="margin-bottom:16px">Tornknäckarna${consoleCursor()}</div><div style="color:var(--ink-3);font-size:14px;line-height:1.7">No team bin configured yet.</div></div>`;
+  if(!OUR_TEAM_GIST_ID){
+    document.getElementById('main-panel').innerHTML=`<div style="padding:44px 52px;max-width:600px"><div class="match-title" style="margin-bottom:16px">Tornknäckarna${consoleCursor()}</div><div style="color:var(--ink-3);font-size:14px;line-height:1.7">No team gist configured yet.</div></div>`;
     return;
   }
   document.getElementById('main-panel').innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:70vh;color:var(--ink-4);gap:10px"><div style="font-size:14px">Loading Tornknäckarna roster…</div></div>`;
   let data;
-  try{data=await fetchBin(OUR_TEAM_BIN_ID);}
+  try{data=await fetchGist(OUR_TEAM_GIST_ID);}
   catch(e){document.getElementById('main-panel').innerHTML=`<div style="padding:44px 52px;color:var(--loss)"><strong>Error:</strong> ${e.message}</div>`;return;}
   _currentMatchData={...data};
   _currentMatchContext={isSelf:true};
@@ -970,8 +980,8 @@ async function loadMatch(binId, meetingId, btn) {
   const opponent=btn?btn.querySelector('.mi-opponent').textContent:'…';
   document.getElementById('main-panel').innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:70vh;color:var(--ink-4);gap:10px"><div style="font-size:14px">Loading scouting report for <strong>${opponent}</strong>…</div></div>`;
   let data;
-  try{data=await fetchBin(binId);}
-  catch(e){document.getElementById('main-panel').innerHTML=`<div style="padding:44px 52px;color:var(--loss)"><strong>Error:</strong> Could not load bin ${binId}: ${e.message}</div>`;return;}
+  try{data=await fetchGist(binId);}
+  catch(e){document.getElementById('main-panel').innerHTML=`<div style="padding:44px 52px;color:var(--loss)"><strong>Error:</strong> Could not load gist ${binId}: ${e.message}</div>`;return;}
   _currentMatchData={...data};
   _currentMatchContext={meetingId,isSelf:false};
   runBootSequence(()=>_renderMatchPanel(data,meetingId));
@@ -1010,12 +1020,12 @@ function _renderMatchPanel(data, meetingId) {
 // ── Boot ──────────────────────────────────────────────────────────────────────
 (async()=>{
   let index;
-  try{index=await fetchBin(INDEX_BIN_ID);}
+  try{index=await fetchGist(INDEX_GIST_ID);}
   catch(e){document.getElementById('sidebar-content').innerHTML=`<div style="padding:20px 22px;color:var(--loss);font-size:13px">Failed to load index: ${e.message}</div>`;return;}
   const matches=index.matches||[];
   buildSidebar(matches);
   const first=matches.find(m=>m.status==='upcoming')||matches[0];
-  if(first) loadMatch(first.binId,first.meetingId||'',document.querySelector(`[data-bin="${first.binId}"]`));
+  if(first) loadMatch(first.gistId,first.meetingId||'',document.querySelector(`[data-bin="${first.gistId}"]`));
 })();
 </script>
 </body>

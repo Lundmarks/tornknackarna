@@ -21,7 +21,7 @@ import opendota
 import player_map
 import steam
 from esparven import EsparvenClient
-from jsonbin import JSONBinClient
+from gist import GistClient
 
 load_dotenv()
 
@@ -48,9 +48,11 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 
 ESPARVEN_KEY      = os.environ["ESPARVEN_KEY"]
 ESPARVEN_TEAM_ID  = int(os.environ["ESPARVEN_TEAM_ID"])
-JSONBIN_KEY       = os.environ["JSONBIN_KEY"]
-INDEX_BIN_ID      = os.environ.get("JSONBIN_INDEX_BIN_ID") or None
+GITHUB_TOKEN      = os.environ["GITHUB_TOKEN"]
+GITHUB_USERNAME   = os.environ.get("GITHUB_USERNAME", "Lundmarks")
+INDEX_GIST_ID     = os.environ.get("GIST_INDEX_ID") or None
 CURRENT_SEASON_ID = 67  # update each season
+EXTRA_SEASONS     = [6, 17, 27, 43, 60]  # additional seasons to include; set to [] for current season only
 
 STATE_PATH     = Path(__file__).parent / "state.json"
 OUR_TEAM_ID    = ESPARVEN_TEAM_ID
@@ -89,7 +91,7 @@ def run():
     log.info("[bold]Starting bot cycle[/]")
     state = load_state()
     esp   = EsparvenClient(ESPARVEN_KEY)
-    jb    = JSONBinClient(JSONBIN_KEY)
+    jb    = GistClient(GITHUB_TOKEN, GITHUB_USERNAME)
 
     _section("OpenDota: hero list")
     heroes = opendota.get_heroes()
@@ -139,7 +141,7 @@ def run():
 
         index_entries.append({
             "meetingId": meeting_id,
-            "binId":     bin_id,
+            "gistId":     bin_id,
             "opponent":  opponent_name,
             "date":      meeting_date,
             "status":    "upcoming",
@@ -153,20 +155,20 @@ def run():
     except Exception as e:
         log.error(f"Failed to update our team bin: {e}")
 
-    _section("JSONbin: writing index")
+    _section("Gist: writing index")
     index_data = {"updatedAt": datetime.now(timezone.utc).isoformat(), "matches": index_entries}
-    idx_bin    = state.get("index_bin_id") or INDEX_BIN_ID
+    idx_bin    = state.get("index_bin_id") or INDEX_GIST_ID
     idx_bin    = jb.create_or_update(idx_bin, index_data, name="tornknackarna-index")
     state["index_bin_id"] = idx_bin
-    _step("[green]✓[/]", f"Index bin: [dim]{idx_bin}[/]")
+    _step("[green]✓[/]", f"Index gist: [dim]{idx_bin}[/]")
 
     save_state(state)
-    console.print(f"\n[bold green]✓ Cycle complete.[/] Index bin: [cyan]{idx_bin}[/]\n")
-    if not INDEX_BIN_ID:
-        console.print(f"[yellow]Add to .env:[/] [bold]JSONBIN_INDEX_BIN_ID={idx_bin}[/]\n")
+    console.print(f"\n[bold green]✓ Cycle complete.[/] Index gist: [cyan]{idx_bin}[/]\n")
+    if not INDEX_GIST_ID:
+        console.print(f"[yellow]Add to .env:[/] [bold]GIST_INDEX_ID={idx_bin}[/]\n")
     our_bin = state.get("our_team_bin_id")
     if our_bin:
-        console.print(f"[yellow]Set in index.html:[/] [bold]OUR_TEAM_BIN_ID = '{our_bin}'[/]\n")
+        console.print(f"[yellow]Set in index.html:[/] [bold]OUR_TEAM_GIST_ID = '{our_bin}'[/]\n")
 
 
 def _update_our_team_bin(esp, jb, state, heroes):
@@ -213,7 +215,9 @@ def _update_our_team_bin(esp, jb, state, heroes):
     all_parsed = []
     for meeting in our_past:
         all_parsed.extend(_parse_match_data(meeting))
-    log.info(f"Parsed [bold]{len(all_parsed)}[/] of our own tournament game(s)")
+    allowed = {CURRENT_SEASON_ID} | set(EXTRA_SEASONS)
+    all_parsed = [m for m in all_parsed if m.get("seasonId") in allowed]
+    log.info(f"Parsed [bold]{len(all_parsed)}[/] of our own tournament game(s) (seasons: {sorted(allowed)})")
 
     eligible = [m for m in members if m.get("inGameName")]
     players = []
@@ -242,11 +246,6 @@ def _update_our_team_bin(esp, jb, state, heroes):
         players.append(player_data)
 
     history = _build_history_from_data(all_parsed, opponent_account_ids=set())
-
-    for entry in history:
-        if entry.get("seasonId") != CURRENT_SEASON_ID:
-            entry["picks"] = []
-            entry["bans"]  = []
 
     our_bin_data = {
         "opponent":        "Tornknäckarna",
@@ -286,7 +285,7 @@ def _process_past_meetings(esp, jb, state, heroes, index_entries):
             _step("[dim]~[/]", f"[dim]Skipping frozen: vs {opponent_name} ({result})[/]")
             index_entries.append({
                 "meetingId": meeting_id,
-                "binId":     meeting_ref["bin_id"],
+                "gistId":     meeting_ref["bin_id"],
                 "opponent":  opponent_name,
                 "date":      meeting_date,
                 "status":    result,
@@ -319,7 +318,7 @@ def _process_past_meetings(esp, jb, state, heroes, index_entries):
         }
         index_entries.append({
             "meetingId": meeting_id,
-            "binId":     bin_id,
+            "gistId":     bin_id,
             "opponent":  opponent_name,
             "date":      meeting_date,
             "status":    result,
@@ -548,9 +547,11 @@ def build_scout_data(
                         parsed_matches.append(pm)
                         seen_match_ids.add(pm["matchId"])
             current = sum(1 for m in parsed_matches if m.get("seasonId") == CURRENT_SEASON_ID)
+            allowed = {CURRENT_SEASON_ID} | set(EXTRA_SEASONS)
+            parsed_matches = [m for m in parsed_matches if m.get("seasonId") in allowed]
             log.info(
                 f"Loaded [bold]{len(parsed_matches)}[/] game(s) total "
-                f"([bold]{current}[/] from current season)"
+                f"([bold]{current}[/] from current season, allowed seasons: {sorted(allowed)})"
             )
         except Exception as e:
             import traceback; traceback.print_exc()
@@ -595,13 +596,6 @@ def build_scout_data(
         players.append(player_data)
 
     history = _build_history_from_data(parsed_matches, opponent_account_ids)
-
-    # Strip picks/bans from older-season entries to keep bin size within JSONbin limits.
-    # Hero pool stats (the main value) are derived from players[], not picks/bans.
-    for entry in history:
-        if entry.get("seasonId") != CURRENT_SEASON_ID:
-            entry["picks"] = []
-            entry["bans"]  = []
 
     return {
         "meetingId":       meeting["id"],
