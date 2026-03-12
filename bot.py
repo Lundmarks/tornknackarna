@@ -64,7 +64,9 @@ OPENDOTA_DELAY = 2.5
 def load_state() -> dict:
     if STATE_PATH.exists():
         with open(STATE_PATH) as f:
-            return json.load(f)
+            content = f.read().strip()
+            if content:
+                return json.loads(content)
     return {"meetings": {}, "index_bin_id": None}
 
 
