@@ -1,6 +1,6 @@
 # Tornknäckarna · Scouting Dashboard
 
-A scouting and match-tracking system for Tornknäckarna, competing in Dota 2 Captain's Mode on [E-Sparven](https://esparven.se). A Python bot runs daily, pulls match data and pub stats, and writes everything to GitHub Gists. A static GitHub Pages frontend reads from those Gists and presents it as a scouting report.
+A scouting and match intelligence system for Tornknäckarna, competing in Dota 2 Captain's Mode on [E-Sparven](https://esparven.se). A Python bot runs daily, analyses opponent and team data, and writes to GitHub Gists. A static GitHub Pages frontend reads from those Gists and presents scouting reports, draft analysis, and match history.
 
 Live at: **[lundmarks.github.io/tornknackarna](https://lundmarks.github.io/tornknackarna/)**
 
@@ -9,128 +9,154 @@ Live at: **[lundmarks.github.io/tornknackarna](https://lundmarks.github.io/tornk
 ## How it works
 
 Each day the bot:
+
 1. Fetches upcoming and past meetings from E-Sparven
-2. Resolves opponent Steam IDs (via page scraping, then OpenDota search as fallback)
-3. Parses tournament picks/bans and player performance directly from E-Sparven match data
-4. Fetches pub stats and rank from OpenDota
-5. Writes one secret GitHub Gist per opponent, plus an index Gist the frontend reads on load
-6. Builds a self-scouting Gist for Tornknäckarna's own roster
+2. Resolves opponent Steam IDs via page scraping, with OpenDota search as fallback
+3. Parses tournament picks, bans, and player performance from E-Sparven match data
+4. Fetches pub stats, rank, and hero pool data from OpenDota
+5. Computes draft tendencies — most picked and most banned heroes per team
+6. Generates ticker snippets summarising key intel for each opponent
+7. Writes one secret GitHub Gist per opponent, a self-scouting Gist for Tornknäckarna, and an index Gist the frontend reads on load
 
-Past meetings are frozen after first write — they won't be re-processed unless you delete `state.json`.
-
-Hero pool and history data covers the current season plus any seasons listed in `EXTRA_SEASONS` in `bot.py`.
+Past meetings are frozen after first write and skipped on subsequent runs unless `state.json` is deleted. Upcoming matches are re-scouted on every run.
 
 ---
 
 ## Project structure
 
 ```
-bot.py           Main orchestration loop
-esparven.py      E-Sparven API client + HTML scraper
-opendota.py      OpenDota API client
-gist.py          GitHub Gist storage client
-steam.py         Steam32/64 ID conversion
-player_map.py    Persistent name → Steam ID cache (player_map.json)
-index.html       GitHub Pages frontend
-medals/          Rank medal images (herald.png … immortal.png)
-state.json       Local run state — gist IDs, frozen flags (gitignored)
+bot.py            Main orchestration loop
+esparven.py       E-Sparven API client and HTML scraper
+opendota.py       OpenDota API client
+gist.py           GitHub Gist storage client
+steam.py          Steam32/64 ID conversion utilities
+player_map.py     Persistent name to Steam ID cache (player_map.json)
+index.html        GitHub Pages frontend (single file, no build step)
+medals/           Rank medal images (herald.png through immortal.png)
+media/            Static assets (password-image.png etc.)
+state.json        Local run state — gist IDs, frozen flags (gitignored)
+player_map.json   Steam ID cache (gitignored)
+Dockerfile        Container definition for server deployment
 ```
 
 ---
 
 ## Setup
 
-**Requirements:** Python 3.11+, Docker (for deployment)
+**Requirements:** Python 3.11+, Docker (optional, for deployment)
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Create a `.env` file:
+**Create a `.env` file:**
 
 ```
 ESPARVEN_KEY=your_esparven_api_key
 ESPARVEN_TEAM_ID=67
 GITHUB_TOKEN=ghp_...
-GITHUB_USERNAME=Lundmarks
-GIST_INDEX_ID=        # filled in automatically on first run, then paste here
+GITHUB_USERNAME=your_github_username
+GIST_INDEX_ID=        # leave blank on first run, paste in after
 ```
 
 **Creating a GitHub token:**
-Go to GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens. Under Account permissions, set Gists to Read and write.
+GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens. Under Account permissions, set Gists to Read and write.
 
-Run once to test:
+**First run:**
 
 ```bash
 python bot.py --run-once
 ```
 
-On first run the bot will print two IDs:
+At the end of the first run, the bot prints:
 
 ```
 Add to .env:       GIST_INDEX_ID=<id>
 Set in index.html: OUR_TEAM_GIST_ID = '<id>'
 ```
 
-Paste `GIST_INDEX_ID` into `.env` (prevents re-creating the index Gist if `state.json` is ever deleted).
-
-Paste both IDs into the top of the `<script>` block in `index.html`:
+Paste `GIST_INDEX_ID` into `.env`. Then update the two constants at the top of the `<script>` block in `index.html`:
 
 ```javascript
 const INDEX_GIST_ID    = '<id from .env>';
 const OUR_TEAM_GIST_ID = '<id from bot output>';
 ```
 
-Then push `index.html` to GitHub.
+Push `index.html` to GitHub to deploy.
 
 ---
 
-## Seasons
+## Season configuration
 
-Edit these constants at the top of `bot.py` each season:
+Update these two constants at the top of `bot.py` at the start of each season:
 
 ```python
-CURRENT_SEASON_ID = 67       # update to new season ID
-EXTRA_SEASONS     = [64, 65] # past seasons to include; set to [] for current only
+CURRENT_SEASON_ID = 67       # the active E-Sparven season ID
+EXTRA_SEASONS     = [64, 65] # older seasons to include in hero pool data
+                             # set to [] for current season only
 ```
+
+After changing season, delete `state.json` and re-run to regenerate all bins.
 
 ---
 
 ## Deployment
 
-The bot runs in Docker on a daily schedule (06:00 server time):
+The bot runs in Docker on a daily schedule at 06:00 server time.
 
 ```bash
-docker build -t tornknackarna-bot .
-docker run -d --name tornknackarna-bot --restart unless-stopped --env-file .env tornknackarna-bot
+# Build
+docker build -t tornknackarna-scouter .
+
+# Run with persistent state
+docker run -d \
+  --name tornknackarna-scouter \
+  --restart unless-stopped \
+  -v $(pwd)/state.json:/app/state.json \
+  -v $(pwd)/player_map.json:/app/player_map.json \
+  --env-file .env \
+  tornknackarna-scouter
 ```
 
-To force a full refresh (e.g. after schema changes or a new season):
+**Force a full refresh** (after schema changes or a new season):
 
 ```bash
 rm state.json && python bot.py --run-once
 ```
 
-Or inside Docker:
+**Check logs:**
 
 ```bash
-docker run --rm --env-file .env tornknackarna-bot python bot.py --run-once
+docker logs -f tornknackarna-scouter
 ```
 
 ---
 
 ## Frontend
 
-The dashboard is a single `index.html` with no build step. It reads all data from GitHub Gists at load time.
+The dashboard is a single `index.html` with no build step or dependencies. All data is fetched from GitHub Gists at load time.
 
-- Dark / light / console theme, persisted in localStorage
-- Per-opponent scouting reports: rank, pub winrate, CM hero pool, recent form
-- Season toggle: current season only vs all tracked seasons
-- Ban suggestions scored by CM winrate, games played, and delta vs pub winrate
-- Match history with picks/bans, OPP/vs side labels, and W/L per game
-- Tornknäckarna roster view under "Our team"
+**Sidebar:**
+- Upcoming and past matches for the current season
+- Tornknäckarna roster shortcut (password protected)
+- Spinning 3D logo with drag-to-rotate and match countdown timer
+- Live ticker feed with bot-generated intel snippets
 
-To develop locally:
+**Match panel:**
+- Opponent roster with rank medals, pub winrate, recent form, and CM hero pool
+- Ban suggestions scored by CM winrate, games played, delta vs pub winrate, and recency — grouped into Priority, Moderate, and Situational tiers
+- Draft presence section showing most picked and most banned heroes
+- Match history with picks, bans, side labels, and result per game
+- Season toggle between current season and all tracked seasons
+
+**Our team panel** (password: `tor`):
+- Tornknäckarna roster with the same player cards and hero pool data
+- Draft presence for our own picks and bans
+- Full match history
+
+**Themes:** Dark, Light, Console — persisted in localStorage. The Console theme includes a green 3D spinning logo and boot sequence animation.
+
+**Local development:**
 
 ```bash
 python3 -m http.server 8080
@@ -138,9 +164,23 @@ python3 -m http.server 8080
 
 ---
 
+## Player ID mapping
+
+Steam IDs are resolved automatically where possible. For players with no numeric ID on E-Sparven, add them manually to `player_map.json`:
+
+```json
+{
+  "PlayerName": { "account_id": 12345678, "confirmed": true }
+}
+```
+
+`player_map.json` is gitignored — back it up alongside `state.json`.
+
+---
+
 ## Notes
 
 - `cdn.dota2.com` is unreliable for hero images — the frontend uses `steamcdn-a.akamaihd.net` instead
-- `player_map.json` and `state.json` are gitignored; back them up if you care about confirmed Steam ID mappings
-- Gists are created as secret (unlisted) but not private — anyone with the URL can read them, same as the previous JSONbin setup
-- GitHub raw Gist URLs always serve the latest revision with no versioning or caching issues
+- Gists are secret (unlisted) but not private — anyone with the URL can read them
+- The bot uses `state.json` to track gist IDs and frozen status — deleting it causes everything to be regenerated from scratch on the next run
+- `OPENDOTA_DELAY = 2.5` seconds between OpenDota API calls to stay within rate limits

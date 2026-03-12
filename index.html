@@ -265,8 +265,8 @@
 
   .console-sidebar-footer { display:none; flex-direction:column; border-top:1px solid var(--line); flex-shrink:0; }
   [data-theme="console"] .console-sidebar-footer { display:flex; }
-  .console-minimap-wrap { padding:8px 0 0; border-bottom:1px solid var(--line); }
-  #console-minimap { display:block; width:100%; image-rendering:pixelated; }
+  .console-logo-wrap { padding:8px 0 0; border-bottom:1px solid var(--line); }
+  #console-logo { display:block; width:100%; image-rendering:pixelated; }
   .console-termlog-wrap { padding:8px 12px 10px; }
   .console-termlog-label { font-family:'Orbitron',monospace; font-size:8px; letter-spacing:2px; color:var(--ink-4); margin-bottom:5px; }
   .console-termlog { height:90px; overflow:hidden; font-family:'Share Tech Mono',monospace; font-size:9.5px; line-height:1.55; }
@@ -274,6 +274,15 @@
   .tl-line.ok { color:var(--win); }
   .tl-line.warn { color:var(--upcoming); }
   .tl-line.err { color:var(--loss); }
+
+  /* Clean spinning logo for dark/light themes */
+  .clean-logo-wrap { display:none; padding:20px 16px 16px; border-top:1px solid var(--border); align-items:center; justify-content:center; flex-direction:column; gap:12px; }
+  [data-theme="dark"] .clean-logo-wrap, [data-theme="light"] .clean-logo-wrap { display:flex; }
+  #clean-logo-canvas { display:block; border-radius:8px; }
+  .countdown-wrap { text-align:center; }
+  .countdown-label { font-size:9px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-4); margin-bottom:4px; }
+  .countdown-time { font-size:13px; font-weight:600; color:var(--ink-2); font-variant-numeric:tabular-nums; letter-spacing:.03em; }
+  .countdown-opponent { font-size:10px; color:var(--ink-4); margin-top:2px; }
 
   #boot-overlay { display:none; position:fixed; inset:0; background:#020a02; z-index:99999; flex-direction:column; align-items:center; justify-content:center; font-family:'Share Tech Mono',monospace; font-size:13px; color:#00ff41; gap:0; }
   #boot-overlay.active { display:flex; }
@@ -321,10 +330,18 @@
     </div>
     <div id="sidebar-content"><div style="padding:28px 22px;color:var(--ink-4);font-size:13px">Loading matches…</div></div>
     <div class="console-sidebar-footer">
-      <div class="console-minimap-wrap"><canvas id="console-minimap"></canvas></div>
+      <div class="console-logo-wrap"><canvas id="console-logo"></canvas></div>
       <div class="console-termlog-wrap">
         <div class="console-termlog-label">// INTEL FEED</div>
         <div class="console-termlog" id="console-termlog"></div>
+      </div>
+    </div>
+    <div class="clean-logo-wrap">
+      <canvas id="clean-logo-canvas"></canvas>
+      <div class="countdown-wrap" id="countdown-wrap" style="display:none">
+        <div class="countdown-label">Next match</div>
+        <div class="countdown-time" id="countdown-time">--:--:--</div>
+        <div class="countdown-opponent" id="countdown-opponent"></div>
       </div>
     </div>
   </aside>
@@ -339,11 +356,25 @@
 <script>
 const GIST_USER       = 'Lundmarks';
 const INDEX_GIST_ID   = 'bd51bdad423fb0050aef6f7adea11c4e';
-const OUR_TEAM_GIST_ID= '5ace550ee3310d0295fda5ed77727652';
+const OUR_TEAM_GIST_ID= '7a1f24612e970a6d4245afd44b745f06';
 const MEDALS_BASE     = 'medals/';
 
 function gistUrl(gistId) {
   return `https://gist.githubusercontent.com/${GIST_USER}/${gistId}/raw/data.json`;
+}
+
+// ── Next match state (used by logo speed + countdown) ─────────────────────────
+let _nextMatchDate = null; // Date object or null
+
+function getLogoSpeed() {
+  const BASE = 0.50, MAX = 2.2;
+  if(!_nextMatchDate) return BASE;
+  const msLeft = _nextMatchDate - Date.now();
+  if(msLeft <= 0) return MAX;
+  const days = msLeft / (1000 * 60 * 60 * 24);
+  // ramps from BASE at 14+ days to MAX at 0 days
+  const t = Math.max(0, Math.min(1, 1 - days / 14));
+  return BASE + (MAX - BASE) * t;
 }
 
 // ── Season filter state ───────────────────────────────────────────────────────
@@ -362,7 +393,8 @@ function applyTheme(t) {
   document.documentElement.setAttribute('data-theme',t);
   const btn=document.getElementById('theme-toggle');
   if(btn) btn.textContent=THEME_LABELS[t]||t;
-  if(t==='console') setTimeout(startMinimap,0);
+  if(t==='console') setTimeout(startConsoleLogo,0);
+  if(t==='dark'||t==='light') setTimeout(startCleanLogo,0);
 }
 function cycleTheme() {
   const cur=document.documentElement.getAttribute('data-theme')||'dark';
@@ -568,7 +600,53 @@ function renderBanSection(players) {
   </div>`;
 }
 
-// ── Render: hero rows ─────────────────────────────────────────────────────────
+// ── Render: draft tendencies ──────────────────────────────────────────────────
+function renderDraftTendencies(tendencies) {
+  if (!tendencies || !tendencies.totalGames) return '';
+  const isConsole = document.documentElement.getAttribute('data-theme') === 'console';
+  const total = tendencies.totalGames;
+
+  const heroIconSmall = (name, iconUrl) => {
+    const src = heroIconUrl(name, iconUrl||'') || '';
+    return src ? `<img src="${src}" alt="${name}" style="width:20px;height:20px;border-radius:3px;object-fit:cover;flex-shrink:0" onerror="this.style.display='none'">` : '';
+  };
+
+  const row = (item) => {
+    const pct = Math.round(item.count / total * 100);
+    const barW = Math.min(100, pct);
+    return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+      <div style="width:20px;height:20px;flex-shrink:0">${heroIconSmall(item.name, item.iconUrl||'')}</div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
+          <span style="font-size:12px;color:var(--ink-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${item.name}</span>
+          <span style="font-size:11px;color:var(--ink-3);flex-shrink:0;margin-left:8px">${item.count}×&nbsp;<span style="color:var(--ink-4)">${pct}%</span></span>
+        </div>
+        <div style="height:3px;background:var(--surface-2);border-radius:2px">
+          <div style="height:3px;width:${barW}%;background:var(--accent);border-radius:2px;opacity:0.7"></div>
+        </div>
+      </div>
+    </div>`;
+  };
+
+  const col = (title, items, color) => !items||!items.length ? '' : `
+    <div style="flex:1;min-width:180px">
+      <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:${color};margin-bottom:10px;${isConsole?'font-family:Orbitron,monospace;letter-spacing:3px;':''}">
+        ${isConsole?'// ':''}${title}
+      </div>
+      ${items.map(row).join('')}
+    </div>`;
+
+  return `<div class="ban-section" style="margin-top:28px">
+    <div class="section-title" style="margin-bottom:4px">${isConsole?'// ':''}Draft presence</div>
+    <div style="font-size:11px;color:var(--ink-4);margin-bottom:16px">Based on ${total} tracked game${total===1?'':'s'}</div>
+    <div style="display:flex;gap:32px;flex-wrap:wrap">
+      ${col('Most picked', tendencies.mostPicked, 'var(--win)')}
+      ${col('Most banned', tendencies.mostBanned, 'var(--loss)')}
+    </div>
+  </div>`;
+}
+
+
 function wrClass(wr) { return wr>=60?'high':wr<45?'low':''; }
 
 function renderHeroRows(heroes, isTournament, isSelf) {
@@ -704,18 +782,23 @@ const TICKER_ITEMS=[
   'SMOKE ROTATIONS // SECURE OBJECTIVES','NET WORTH DELTA // KEY METRIC',
   'CM DRAFT PHASE // 5 BANS EACH SIDE','ANALYSIS: PUSH LINEUPS STRONG PATCH',
 ];
-function buildTicker(matches) {
-  const parts=[...TICKER_ITEMS];
-  const upcoming=matches.filter(m=>m.status==='upcoming');
-  const past=matches.filter(m=>m.status!=='upcoming');
-  if(upcoming.length) parts.unshift(`NEXT MATCH // ${upcoming[0].opponent.toUpperCase()} // ${fmtDate(upcoming[0].date).toUpperCase()}`);
-  const lastWin=past.find(m=>m.status==='win');
-  const lastLoss=past.find(m=>m.status==='loss');
-  if(lastWin) parts.unshift(`LAST WIN // ${lastWin.opponent.toUpperCase()}`);
-  if(lastLoss) parts.unshift(`LAST LOSS // ${lastLoss.opponent.toUpperCase()}`);
-  const full=[...parts,...parts].join('   ///   ');
-  const el=document.getElementById('sidebar-ticker-text');
-  if(el) el.textContent=full;
+function buildTicker(matches, tickerSnippets) {
+  const parts = tickerSnippets && tickerSnippets.length
+    ? [...tickerSnippets]
+    : [...TICKER_ITEMS];
+
+  // Always prepend next match and recent results from live index data
+  const upcoming = matches.filter(m=>m.status==='upcoming');
+  const past     = matches.filter(m=>m.status!=='upcoming');
+  if(upcoming.length) parts.unshift(`NEXT MATCH ${upcoming[0].opponent.toUpperCase()} ${fmtDate(upcoming[0].date).toUpperCase()}`);
+  const lastWin  = past.find(m=>m.status==='win');
+  const lastLoss = past.find(m=>m.status==='loss');
+  if(lastWin)  parts.unshift(`LAST WIN ${lastWin.opponent.toUpperCase()}`);
+  if(lastLoss) parts.unshift(`LAST LOSS ${lastLoss.opponent.toUpperCase()}`);
+
+  const full = [...parts,...parts].join('   ///   ');
+  const el = document.getElementById('sidebar-ticker-text');
+  if(el) el.textContent = full;
 }
 
 // ── Boot sequence ─────────────────────────────────────────────────────────────
@@ -777,13 +860,233 @@ function startTermLog(){
 }
 startTermLog();
 
-// ── 3D minimap ────────────────────────────────────────────────────────────────
-let minimapRunning=false;
-function startMinimap(){
-  if(minimapRunning)return;
-  const canvas=document.getElementById('console-minimap');
+// ── Clean logo (dark/light themes) ───────────────────────────────────────────
+let cleanLogoRunning = false;
+let consoleLogoRunning   = false;
+function startCleanLogo() {
+  if(cleanLogoRunning) return;
+  const canvas = document.getElementById('clean-logo-canvas');
+  if(!canvas) return;
+  cleanLogoRunning = true;
+
+  const ART=`                                                                                                    
+                                                                                                    
+                                                                                                    
+            ##                          ##*************#*      #*#****#**#####  ## #                
+     ##**********************##########*******************#    #**********************#*****#       
+     ##*****************************************************#*********************************      
+     ###**************************************************************************************#     
+      ########################################################################################      
+      ########################################################################################      
+      ########################################################################################      
+      #########################################################################################     
+      ##############*+*########################################################################     
+      #########*=..     .:*######################################*+-... ..+####################     
+      ##########*:         .=#############################*+-:..           .:*#################     
+      ############+.         .:*###########################+:.             .-+#################     
+      ##############=.         .==###########################*-.            .*#################     
+      ###############*:          ..:*###########################=.          .##################     
+      #################*.             .+##########################*:        =##################     
+      ###################+.             .:*##########################-.    .*##################     
+      #####################-.              .=*#########################+=- .*##################     
+       #####################*:                .+##########################+-################        
+       #######################+.                .:*##########################################       
+       #########################-                 ..-######################################         
+       ##########################*:                  ..=####################################        
+       ############################*.                   .:*##################################       
+       ##############################+=.                   .-################################       
+        ###############################+.                     .=##############################      
+       ##################################-.                     .:+##########################       
+      ####################################*..                      .-*########################      
+      ######################################+.                        .+#####################       
+      ########################################-:                        .-###################       
+      ##########################################:..                     ....-*#################     
+      ###########################################+::                          .=###############     
+      ###############*..=###########################-                           ..+############     
+       #############*.   .+##########################*.                            .###########     
+        ############:.     .+##########################+.                          -###########     
+        ###########-        .:*#########################+.                        .*###########     
+        ##########+.          .:*#########################=.                      :############     
+        #########*.             .:*#########################:.                    +############     
+        #########:                 -#########################*.                  :#############     
+      ###########.                   -#########################=.               .##############     
+      ############+.                  .=#########################:.           ..*##############     
+      ###############:.          ...-*#############################-..        .*###############     
+      #################+.:.  .:+########################################*+===+#################     
+      #########################################################################################     
+      #########################################################################################     
+      #########################################################################################     
+      #########################################################################################     
+      #########################################################################################     
+      #########################################################################################     
+        ####### ## ##%##   ####### #####################################################    ###     
+                                          ##############     #####                                  
+                                                                                                    
+                                                                                                    
+                                                                                                    `;
+
+  const artLines = ART.split('\n');
+  const ART_H = artLines.length;
+  const ART_W = Math.max(...artLines.map(l=>l.length));
+  const mask = new Uint8Array(ART_W * ART_H);
+  for(let row=0;row<ART_H;row++){
+    const line=artLines[row]||'';
+    for(let col=0;col<ART_W;col++){
+      mask[row*ART_W+col]=(line[col]||' ')!==' '?1:0;
+    }
+  }
+  function sampleMask(u,v){
+    const col=Math.floor(u*ART_W),row=Math.floor(v*ART_H);
+    if(col<0||col>=ART_W||row<0||row>=ART_H)return 0;
+    return mask[row*ART_W+col];
+  }
+
+  const SIZE = 180;
+  const ASPECT = ART_H/ART_W*1.85;
+  const DISP_W = SIZE, DISP_H = Math.round(SIZE*ASPECT);
+  canvas.width = DISP_W; canvas.height = DISP_H;
+  canvas.style.width  = DISP_W  + 'px';
+  canvas.style.height = DISP_H + 'px';
+
+  const ctx = canvas.getContext('2d');
+  const imgData = ctx.createImageData(DISP_W, DISP_H);
+  const buf = imgData.data;
+
+  const DEPTH = 0.22;
+  const LD = (()=>{const v=[0.6,-0.5,0.6];const l=Math.sqrt(v[0]**2+v[1]**2+v[2]**2);return v.map(x=>x/l);})();
+
+  function getThemeColors() {
+    const theme = document.documentElement.getAttribute('data-theme');
+    if(theme === 'light') {
+      return { fg: [120,20,40], fgDim: [180,80,100], bg: [0,0,0,0] };
+    }
+    // dark theme — wine red
+    return { fg: [160,30,55], fgDim: [100,20,35], bg: [0,0,0,0] };
+  }
+
+  function render(ay, ax) {
+    const {fg, fgDim} = getThemeColors();
+    const Cy=Math.cos(ay),Sy=Math.sin(ay),Cx=Math.cos(ax),Sx=Math.sin(ax);
+    function w2m(wx,wy,wz){const rx1=wx*Cy-wz*Sy,ry1=wy,rz1=wx*Sy+wz*Cy;return[rx1,ry1*Cx+rz1*Sx,-ry1*Sx+rz1*Cx];}
+    const[ddx,ddy,ddz]=w2m(0,0,1);
+    const HZ=DEPTH*0.5;
+    buf.fill(0);
+    for(let py=0;py<DISP_H;py++){
+      const sy_ndc=-((py/(DISP_H-1))*2-1);
+      for(let px2=0;px2<DISP_W;px2++){
+        const sx=(px2/(DISP_W-1))*2-1;
+        const[ox,oy,oz]=w2m(sx,sy_ndc,-3.0);
+        if(Math.abs(ddz)<1e-7)continue;
+        const t_front=(HZ-oz)/ddz,t_back=(-HZ-oz)/ddz;
+        const t_near=Math.min(t_front,t_back),t_far=Math.max(t_front,t_back);
+        let hitColor=null;
+        for(const tf of[t_near,t_far]){
+          if(hitColor)break;
+          const mx=ox+tf*ddx,my=oy+tf*ddy;
+          const u=(mx+1)*0.5,v=1-(my/ASPECT+1)*0.5;
+          if(u<0||u>=1||v<0||v>=1)continue;
+          if(!sampleMask(u,v))continue;
+          const nz_m=(tf===t_near)?Math.sign(ddz):-Math.sign(ddz);
+          const nwx=nz_m*Cx*Sy,nwy=-nz_m*Sx,nwz=nz_m*Cx*Cy;
+          const diff=Math.max(0,nwx*LD[0]+nwy*LD[1]+nwz*LD[2]);
+          const b=Math.min(1,0.25+diff*0.75)*(tf===t_near?1.0:0.35);
+          const c = tf===t_near?fg:fgDim;
+          hitColor=[Math.round(c[0]*b),Math.round(c[1]*b),Math.round(c[2]*b),255];
+        }
+        if(!hitColor){
+          const WSTEPS=8;
+          for(let s=0;s<=WSTEPS&&!hitColor;s++){
+            const tf=t_near+(t_far-t_near)*(s/WSTEPS);
+            const mx=ox+tf*ddx,my=oy+tf*ddy;
+            const u=(mx+1)*0.5,v=1-(my/ASPECT+1)*0.5;
+            if(u<0||u>=1||v<0||v>=1)continue;
+            if(!sampleMask(u,v))continue;
+            const eps2=1.5/ART_W;
+            const gx=sampleMask(u-eps2,v)-sampleMask(u+eps2,v);
+            const gy=sampleMask(u,v-eps2*(ART_W/ART_H)*1.85)-sampleMask(u,v+eps2*(ART_W/ART_H)*1.85);
+            const gl=Math.sqrt(gx*gx+gy*gy)||1;
+            const nm_x=gx/gl,nm_y=gy/gl;
+            const nwx=nm_x*Cy,nwz2=nm_y*Sx+(-nm_x*Sy)*Cx,nwy=nm_y*Cx-(-nm_x*Sy)*Sx;
+            const diff=Math.max(0,nwx*LD[0]+nwy*LD[1]+nwz2*LD[2]);
+            const b=Math.min(1,0.08+diff*0.55)*(1-(s/WSTEPS)*0.4)*0.7;
+            hitColor=[Math.round(fgDim[0]*b),Math.round(fgDim[1]*b),Math.round(fgDim[2]*b),Math.round(b*255*3)];
+          }
+        }
+        if(hitColor){
+          const i=(py*DISP_W+px2)*4;
+          buf[i]=hitColor[0];buf[i+1]=hitColor[1];buf[i+2]=hitColor[2];buf[i+3]=hitColor[3]??255;
+        }
+      }
+    }
+    ctx.clearRect(0,0,DISP_W,DISP_H);
+    ctx.putImageData(imgData,0,0);
+  }
+
+  // ── state ──────────────────────────────────────────────────────────────────
+  let autoAngleY = 0;
+  let dragAngleY = 0, dragAngleX = 0;
+  let isDragging = false;
+  let lastMX = 0, lastMY = 0;
+  let dragVelY = 0, dragVelX = 0;
+
+  // ── drag events ────────────────────────────────────────────────────────────
+  canvas.style.cursor = 'grab';
+  canvas.addEventListener('mousedown', e => {
+    isDragging = true; lastMX = e.clientX; lastMY = e.clientY;
+    dragVelY = 0; dragVelX = 0; canvas.style.cursor = 'grabbing';
+    e.preventDefault();
+  });
+  window.addEventListener('mousemove', e => {
+    if(!isDragging) return;
+    dragVelY = -(e.clientX - lastMX) * 0.012;
+    dragVelX = -(e.clientY - lastMY) * 0.012;
+    dragAngleY += dragVelY; dragAngleX += dragVelX;
+    dragAngleX = Math.max(-0.8, Math.min(0.8, dragAngleX));
+    lastMX = e.clientX; lastMY = e.clientY;
+  });
+  window.addEventListener('mouseup', () => { isDragging = false; canvas.style.cursor = 'grab'; });
+  canvas.addEventListener('touchstart', e => {
+    isDragging = true; lastMX = e.touches[0].clientX; lastMY = e.touches[0].clientY;
+    dragVelY = 0; dragVelX = 0; e.preventDefault();
+  }, {passive:false});
+  canvas.addEventListener('touchmove', e => {
+    if(!isDragging) return;
+    dragVelY = -(e.touches[0].clientX - lastMX) * 0.012;
+    dragVelX = -(e.touches[0].clientY - lastMY) * 0.012;
+    dragAngleY += dragVelY; dragAngleX += dragVelX;
+    dragAngleX = Math.max(-0.8, Math.min(0.8, dragAngleX));
+    lastMX = e.touches[0].clientX; lastMY = e.touches[0].clientY;
+    e.preventDefault();
+  }, {passive:false});
+  canvas.addEventListener('touchend', () => { isDragging = false; });
+
+  // ── tick ───────────────────────────────────────────────────────────────────
+  let lastTs = null;
+  function tick(ts) {
+    const dt = lastTs ? Math.min((ts - lastTs) / 1000, 0.05) : 0.016;
+    lastTs = ts;
+    const speed = getLogoSpeed();
+    if(!isDragging) {
+      dragAngleY += dragVelY; dragAngleX += dragVelX;
+      dragVelY *= 0.88; dragVelX *= 0.88;
+      dragAngleX *= 0.96;
+      autoAngleY += speed * dt;
+    }
+    render(autoAngleY + dragAngleY, dragAngleX);
+    requestAnimationFrame(tick);
+  }
+
+  // redefine render to accept explicit ay, ax
+  requestAnimationFrame(tick);
+}
+
+
+
+function startConsoleLogo(){
+  if(consoleLogoRunning)return;
+  const canvas=document.getElementById('console-logo');
   if(!canvas)return;
-  minimapRunning=true;
+  consoleLogoRunning=true;
   const ART=`                                                                                                    
                                                                                                     
                                                                                                     
@@ -909,8 +1212,49 @@ function startMinimap(){
 }
 
 // ── Sidebar ───────────────────────────────────────────────────────────────────
-function buildSidebar(matches) {
-  buildTicker(matches);
+function startCountdown(nextMatch) {
+  const wrap     = document.getElementById('countdown-wrap');
+  const timeEl   = document.getElementById('countdown-time');
+  const oppEl    = document.getElementById('countdown-opponent');
+  if(!wrap || !timeEl) return;
+
+  if(!nextMatch || !nextMatch.date) {
+    wrap.style.display = 'none';
+    return;
+  }
+
+  const matchDate = new Date(nextMatch.date);
+  if(isNaN(matchDate)) { wrap.style.display = 'none'; return; }
+
+  wrap.style.display = 'block';
+  if(oppEl) oppEl.textContent = `vs ${nextMatch.opponent}`;
+
+  function pad(n){ return String(n).padStart(2,'0'); }
+  function tick() {
+    const diff = matchDate - Date.now();
+    if(diff <= 0) {
+      timeEl.textContent = 'Match day';
+      return;
+    }
+    const d = Math.floor(diff / 86400000);
+    const h = Math.floor((diff % 86400000) / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+    timeEl.textContent = d > 0
+      ? `${d}d ${pad(h)}h ${pad(m)}m`
+      : `${pad(h)}:${pad(m)}:${pad(s)}`;
+    setTimeout(tick, 1000);
+  }
+  tick();
+}
+
+function buildSidebar(matches, tickerSnippets) {
+  buildTicker(matches, tickerSnippets);
+
+  // Set next match date for logo speed + countdown
+  const nextMatch = matches.find(m => m.status === 'upcoming');
+  _nextMatchDate = nextMatch && nextMatch.date ? new Date(nextMatch.date) : null;
+  startCountdown(nextMatch);
   const upcoming=matches.filter(m=>m.status==='upcoming');
   const past=matches.filter(m=>m.status!=='upcoming').reverse();
   const item=m=>{
@@ -947,6 +1291,77 @@ async function loadOurTeam(btn) {
     document.getElementById('main-panel').innerHTML=`<div style="padding:44px 52px;max-width:600px"><div class="match-title" style="margin-bottom:16px">Tornknäckarna${consoleCursor()}</div><div style="color:var(--ink-3);font-size:14px;line-height:1.7">No team gist configured yet.</div></div>`;
     return;
   }
+  if(sessionStorage.getItem('scout_auth') !== 'tor') {
+    _renderPasswordScreen();
+    return;
+  }
+  _loadOurTeamData();
+}
+
+function _renderPasswordScreen(error) {
+  const isConsole = document.documentElement.getAttribute('data-theme') === 'console';
+  document.getElementById('main-panel').innerHTML = `
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;min-height:70vh;gap:24px">
+      <img src="media/password-image.png" alt="" style="width:160px;height:160px;object-fit:contain;opacity:0.85;border-radius:8px" onerror="this.style.display='none'">
+      <div style="text-align:center">
+        <div style="font-size:15px;font-weight:600;color:var(--ink-1);margin-bottom:4px;${isConsole?'font-family:Orbitron,monospace;letter-spacing:2px;':''}">
+          ${isConsole?'// ':''}Tornknäckarna
+        </div>
+        <div style="font-size:12px;color:var(--ink-4)">Internal scouting — enter password to continue</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+        <input
+          id="pw-input"
+          type="password"
+          placeholder="Password"
+          autocomplete="current-password"
+          style="
+            background:var(--surface-2);
+            border:1px solid ${error?'var(--loss)':'var(--border)'};
+            border-radius:6px;
+            color:var(--ink-1);
+            font-size:14px;
+            padding:10px 14px;
+            width:200px;
+            outline:none;
+            text-align:center;
+            font-family:inherit;
+          "
+          onkeydown="if(event.key==='Enter') _submitPassword()"
+        >
+        ${error?`<div style="font-size:12px;color:var(--loss)">${error}</div>`:''}
+        <button
+          onclick="_submitPassword()"
+          style="
+            background:var(--accent);
+            border:none;
+            border-radius:6px;
+            color:#fff;
+            cursor:pointer;
+            font-size:13px;
+            font-weight:600;
+            padding:9px 24px;
+            width:200px;
+            font-family:inherit;
+          "
+        >Enter</button>
+      </div>
+    </div>`;
+  setTimeout(()=>{const el=document.getElementById('pw-input');if(el)el.focus();},50);
+}
+
+function _submitPassword() {
+  const el = document.getElementById('pw-input');
+  if(!el) return;
+  if(el.value === 'tor') {
+    sessionStorage.setItem('scout_auth','tor');
+    _loadOurTeamData();
+  } else {
+    _renderPasswordScreen('Incorrect password');
+  }
+}
+
+async function _loadOurTeamData() {
   document.getElementById('main-panel').innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:70vh;color:var(--ink-4);gap:10px"><div style="font-size:14px">Loading Tornknäckarna roster…</div></div>`;
   let data;
   try{data=await fetchGist(OUR_TEAM_GIST_ID);}
@@ -966,6 +1381,7 @@ function _renderOurTeamPanel(data) {
       <div class="notice notice-snapshot" style="margin-top:8px">Refreshed daily by the bot</div>
       ${seasonToggleHTML()}
     </div>
+    ${data.draftTendencies?`<div class="page-section page-section-bans">${renderDraftTendencies(data.draftTendencies)}</div>`:''}
     <div class="page-section page-section-roster">
       <div class="section-title" style="margin-bottom:16px">${isConsole?'// ':''}Our roster</div>
       <div class="player-grid">${(data.players||[]).map(p=>renderPlayerCard(p,true)).join('')}</div>
@@ -1009,7 +1425,7 @@ function _renderMatchPanel(data, meetingId) {
       ${notice}
       ${seasonToggleHTML()}
     </div>
-    ${status==='upcoming'?`<div class="page-section page-section-bans">${renderBanSection(data.players||[])}</div>`:''}
+    ${status==='upcoming'?`<div class="page-section page-section-bans">${renderBanSection(data.players||[])}${renderDraftTendencies(data.draftTendencies)}</div>`:''}
     <div class="page-section page-section-roster">
       <div class="section-title" style="margin-bottom:16px">${isConsole?'// ':''}Opponent roster</div>
       <div class="player-grid">${(data.players||[]).map(p=>renderPlayerCard(p,false)).join('')}</div>
@@ -1023,9 +1439,10 @@ function _renderMatchPanel(data, meetingId) {
   try{index=await fetchGist(INDEX_GIST_ID);}
   catch(e){document.getElementById('sidebar-content').innerHTML=`<div style="padding:20px 22px;color:var(--loss);font-size:13px">Failed to load index: ${e.message}</div>`;return;}
   const matches=index.matches||[];
-  buildSidebar(matches);
-  const first=matches.find(m=>m.status==='upcoming')||matches[0];
-  if(first) loadMatch(first.gistId,first.meetingId||'',document.querySelector(`[data-bin="${first.gistId}"]`));
+  const tickerSnippets=index.tickerSnippets||[];
+  buildSidebar(matches, tickerSnippets);
+  const first = matches.find(m=>m.status==='upcoming') || [...matches].reverse().find(m=>m.status!=='upcoming');
+  if(first) loadMatch(first.gistId, first.meetingId||'', document.querySelector(`[data-bin="${first.gistId}"]`));
 })();
 </script>
 </body>

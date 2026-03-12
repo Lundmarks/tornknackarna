@@ -138,6 +138,12 @@ def run():
         state["meetings"].setdefault(str(meeting_id), {})["bin_id"] = bin_id
         state["meetings"][str(meeting_id)]["opponent"] = opponent_name
         state["meetings"][str(meeting_id)]["frozen"]   = False
+        state["meetings"][str(meeting_id)]["tickerSnippets"] = _generate_ticker_snippets(
+            opponent_name,
+            scout.get("players", []),
+            scout.get("draftTendencies", {}),
+            "upcoming",
+        )
 
         index_entries.append({
             "meetingId": meeting_id,
@@ -156,7 +162,15 @@ def run():
         log.error(f"Failed to update our team bin: {e}")
 
     _section("Gist: writing index")
-    index_data = {"updatedAt": datetime.now(timezone.utc).isoformat(), "matches": index_entries}
+    ticker_snippets = []
+    for ref in state.get("meetings", {}).values():
+        ticker_snippets.extend(ref.get("tickerSnippets", []))
+
+    index_data = {
+        "updatedAt":      datetime.now(timezone.utc).isoformat(),
+        "matches":        index_entries,
+        "tickerSnippets": ticker_snippets,
+    }
     idx_bin    = state.get("index_bin_id") or INDEX_GIST_ID
     idx_bin    = jb.create_or_update(idx_bin, index_data, name="tornknackarna-index")
     state["index_bin_id"] = idx_bin
@@ -247,6 +261,13 @@ def _update_our_team_bin(esp, jb, state, heroes):
 
     history = _build_history_from_data(all_parsed, opponent_account_ids=set())
 
+    our_account_ids = {
+        str(player_map.get_account_id(m["inGameName"]))
+        for m in members
+        if m.get("inGameName") and player_map.get_account_id(m["inGameName"])
+    }
+    tendencies = _draft_tendencies(all_parsed, our_account_ids)
+
     our_bin_data = {
         "opponent":        "Tornknäckarna",
         "date":            datetime.now(timezone.utc).isoformat(),
@@ -255,6 +276,7 @@ def _update_our_team_bin(esp, jb, state, heroes):
         "currentSeasonId": CURRENT_SEASON_ID,
         "players":         players,
         "history":         history,
+        "draftTendencies": tendencies,
     }
 
     our_bin_id = state.get("our_team_bin_id")
@@ -310,11 +332,19 @@ def _process_past_meetings(esp, jb, state, heroes, index_entries):
         bin_id = jb.create_or_update(bin_id, scout, name=f"{opponent_name} ({result})")
         _step("[green]✓[/]", f"Bin frozen: [dim]{bin_id}[/]")
 
+        snippets = _generate_ticker_snippets(
+            opponent_name,
+            scout.get("players", []),
+            scout.get("draftTendencies", {}),
+            result,
+        )
+
         meeting_date = meeting.get("matches", [{}])[0].get("matchDate", "")
         state["meetings"][str(meeting_id)] = {
-            "bin_id":   bin_id,
-            "opponent": opponent_name,
-            "frozen":   True,
+            "bin_id":          bin_id,
+            "opponent":        opponent_name,
+            "frozen":          True,
+            "tickerSnippets":  snippets,
         }
         index_entries.append({
             "meetingId": meeting_id,
@@ -510,7 +540,104 @@ def _build_history_from_data(
     return history
 
 
-# ── CHANGED: build_scout_data fetches all seasons for opponent history ────────
+# ── Draft tendencies ─────────────────────────────────────────────────────────
+def _draft_tendencies(parsed_matches: list[dict], opponent_account_ids: set) -> dict:
+    """
+    Compute pick and ban frequency for the opponent team across all parsed matches.
+    opponentTeam is determined the same way as in _build_history_from_data.
+    """
+    from collections import Counter
+    opp_picks = Counter()
+    opp_bans  = Counter()
+    total     = 0
+
+    for match in parsed_matches:
+        opponent_team = None
+        if opponent_account_ids:
+            for p in match.get("players", []):
+                if str(p.get("AccountID")) in opponent_account_ids:
+                    opponent_team = 0 if p.get("IsRadiant") else 1
+                    break
+
+        if opponent_team is None:
+            continue
+        total += 1
+
+        for pb in match.get("picksBans", []):
+            hero = pb.get("HeroName")
+            if not hero:
+                continue
+            is_opp = pb.get("Team") == opponent_team
+            if not is_opp:
+                continue
+            if pb.get("IsPick"):
+                opp_picks[hero] += 1
+            else:
+                opp_bans[hero] += 1
+
+    def fmt(counter, n=5):
+        return [{"name": h, "count": c} for h, c in counter.most_common(n)]
+
+    return {
+        "totalGames": total,
+        "mostPicked": fmt(opp_picks),
+        "mostBanned": fmt(opp_bans),
+    }
+
+
+def _generate_ticker_snippets(opponent_name: str, players: list, tendencies: dict, status: str) -> list[str]:
+    """
+    Generate short ticker snippets from scouted data.
+    No slashes in text — the frontend uses slashes as message dividers.
+    """
+    snippets = []
+
+    total = tendencies.get("totalGames", 0)
+    if total:
+        snippets.append(f"INTEL {opponent_name.upper()} {total} CM GAMES ANALYSED")
+
+    # Most picked hero
+    picks = tendencies.get("mostPicked", [])
+    if picks:
+        top = picks[0]
+        pct = round(top["count"] / total * 100) if total else 0
+        snippets.append(f"DRAFT TENDENCY {opponent_name.upper()} FAVOURS {top['name'].upper()} IN {pct}% OF GAMES")
+
+    # Most banned hero
+    bans = tendencies.get("mostBanned", [])
+    if bans:
+        top = bans[0]
+        snippets.append(f"BAN PATTERN {opponent_name.upper()} CONSISTENTLY BANS {top['name'].upper()}")
+
+    # High winrate players
+    for p in players:
+        wr = p.get("winrate")
+        name = p.get("name", "")
+        if wr and wr >= 55:
+            snippets.append(f"THREAT {name.upper()} PUB WINRATE {wr}% ABOVE AVERAGE")
+
+    # Top CM hero per player (current season)
+    for p in players:
+        t_heroes = p.get("tournamentHeroes", [])
+        if not t_heroes:
+            continue
+        top = t_heroes[0]
+        games = top.get("currentSeasonGames") or top.get("tournamentGames", 0)
+        wr    = top.get("currentSeasonWR")    or top.get("tournamentWR", 0)
+        if games >= 3 and wr >= 60:
+            snippets.append(f"KEY PICK {p['name'].upper()} {top['name'].upper()} {games} GAMES {wr}% WINRATE")
+
+    # Result flavour
+    if status == "win":
+        snippets.append(f"RESULT WIN AGAINST {opponent_name.upper()} LOGGED")
+    elif status == "loss":
+        snippets.append(f"RESULT LOSS AGAINST {opponent_name.upper()} LOGGED")
+    elif status == "tie":
+        snippets.append(f"RESULT DRAW AGAINST {opponent_name.upper()}")
+
+    return snippets
+
+
 def build_scout_data(
     meeting: dict,
     opponent: dict,
@@ -596,6 +723,7 @@ def build_scout_data(
         players.append(player_data)
 
     history = _build_history_from_data(parsed_matches, opponent_account_ids)
+    tendencies = _draft_tendencies(parsed_matches, opponent_account_ids)
 
     return {
         "meetingId":       meeting["id"],
@@ -603,9 +731,10 @@ def build_scout_data(
         "date":            date_str,
         "status":          status,
         "snapshotAt":      datetime.now(timezone.utc).isoformat(),
-        "currentSeasonId": CURRENT_SEASON_ID,  # CHANGED: stored for frontend
+        "currentSeasonId": CURRENT_SEASON_ID,
         "players":         players,
         "history":         history,
+        "draftTendencies": tendencies,
     }
 
 
