@@ -4,6 +4,10 @@ A scouting and match intelligence system for Tornknäckarna, competing in Dota 2
 
 Live at: **[lundmarks.github.io/tornknackarna](https://lundmarks.github.io/tornknackarna/)**
 
+<p align="center">
+  <img src="favicon.svg" width="80" height="80" alt="Radar">
+</p>
+
 ---
 
 ## How it works
@@ -107,28 +111,8 @@ The bot runs in Docker on a daily schedule at 06:00 server time.
 ```bash
 # Build
 docker build -t tornknackarna-scouter .
-
-# Run with persistent state
-docker run -d \
-  --name tornknackarna-scouter \
-  --restart unless-stopped \
-  -v $(pwd)/state.json:/app/state.json \
-  -v $(pwd)/player_map.json:/app/player_map.json \
-  --env-file .env \
-  tornknackarna-scouter
 ```
 
-**Force a full refresh** (after schema changes or a new season):
-
-```bash
-rm state.json && python bot.py --run-once
-```
-
-**Check logs:**
-
-```bash
-docker logs -f tornknackarna-scouter
-```
 
 ---
 
@@ -149,8 +133,8 @@ The dashboard is a single `index.html` with no build step or dependencies. All d
 - Match history with picks, bans, side labels, and result per game
 - Season toggle between current season and all tracked seasons
 
-**Our team panel** (password: `tor`):
-- Tornknäckarna roster with the same player cards and hero pool data
+**Our team panel**
+- Own team roster with the same player cards and hero pool data
 - Draft presence for our own picks and bans
 - Full match history
 
@@ -177,10 +161,3 @@ Steam IDs are resolved automatically where possible. For players with no numeric
 `player_map.json` is gitignored — back it up alongside `state.json`.
 
 ---
-
-## Notes
-
-- `cdn.dota2.com` is unreliable for hero images — the frontend uses `steamcdn-a.akamaihd.net` instead
-- Gists are secret (unlisted) but not private — anyone with the URL can read them
-- The bot uses `state.json` to track gist IDs and frozen status — deleting it causes everything to be regenerated from scratch on the next run
-- `OPENDOTA_DELAY = 2.5` seconds between OpenDota API calls to stay within rate limits
