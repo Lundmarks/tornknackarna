@@ -4,8 +4,8 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Tornknäckarna · Scouting</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@400;500&family=Share+Tech+Mono&family=VT323&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1426,7 +1426,7 @@ function _renderMatchPanel(data, meetingId) {
       ${notice}
       ${seasonToggleHTML()}
     </div>
-    ${status==='upcoming'?`<div class="page-section page-section-bans">${renderBanSection(data.players||[])}${renderDraftTendencies(data.draftTendencies)}</div>`:''}
+    ${status==='upcoming'?`<div class="page-section page-section-bans">${renderBanSection(data.players||[])}${renderDraftTendencies(data.draftTendencies)}</div>`:`<div class="page-section page-section-bans">${renderDraftTendencies(data.draftTendencies)}</div>`}
     <div class="page-section page-section-roster">
       <div class="section-title" style="margin-bottom:16px">${isConsole?'// ':''}Opponent roster</div>
       <div class="player-grid">${(data.players||[]).map(p=>renderPlayerCard(p,false)).join('')}</div>
