@@ -4,8 +4,8 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Tornknäckarna · Scouting</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@400;500&family=Share+Tech+Mono&family=VT323&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -357,7 +357,7 @@
 <script>
 const GIST_USER       = 'Lundmarks';
 const INDEX_GIST_ID   = 'bd51bdad423fb0050aef6f7adea11c4e';
-const OUR_TEAM_GIST_ID= '19898267cd1746a6de7315c6e1a31ed6';
+const OUR_TEAM_GIST_ID= '6bb4217e29ad303db186fc70a5bac583';
 const MEDALS_BASE     = 'medals/';
 
 function gistUrl(gistId) {
@@ -481,7 +481,9 @@ const HERO_SLUG = {
   'Ring Master':'ringmaster','Riki':'riki','Sand King':'sand_king','Silencer':'silencer',
   'Slark':'slark','Terrorblade':'terrorblade','Treant Protector':'treant','Tusk':'tusk',
   'Underlord':'underlord','Undying':'undying','Venomancer':'venomancer','Visage':'visage',
-  'Zeus':'zuus',
+  'Zeus':'zuus','Necrophos':'necrolyte','Naga Siren':'naga_siren',
+  'Dark Seer':'dark_seer','Witch Doctor':'witch_doctor','Underlord':'underlord',
+  'Snapfire':'snapfire','Ringmaster':'ringmaster',
 };
 function heroIconUrl(name,directUrl) {
   if(directUrl) return directUrl.startsWith('http')?directUrl:`https://steamcdn-a.akamaihd.net${directUrl}`;
@@ -602,6 +604,79 @@ function renderBanSection(players) {
 }
 
 // ── Render: draft tendencies ──────────────────────────────────────────────────
+function renderDraftOrderPatterns(patterns) {
+  if (!patterns || !patterns.length) return '';
+  const isConsole = document.documentElement.getAttribute('data-theme') === 'console';
+
+  const bans  = patterns.filter(p => !p.isPick);
+  const picks = patterns.filter(p =>  p.isPick);
+
+  const firstBan  = bans.find(p => p.slot === 0);
+  const firstPick = picks.find(p => p.slot === 0);
+
+  const spotlight = (p, color, label) => {
+    if (!p) return '';
+    const src = heroIconUrl(p.hero, p.iconUrl || '') || '';
+    const icon = src
+      ? `<img src="${src}" alt="${p.hero}" style="width:32px;height:32px;border-radius:5px;object-fit:cover;flex-shrink:0" onerror="this.style.display='none'">`
+      : `<div style="width:32px;height:32px;border-radius:5px;background:var(--line-2);flex-shrink:0"></div>`;
+    return `<div style="display:flex;align-items:center;gap:10px;flex:1;min-width:140px;padding:10px 14px;background:var(--surface);border:1px solid var(--line);border-left:3px solid ${color};border-radius:${isConsole?'0':'8px'}">
+      ${icon}
+      <div style="min-width:0">
+        <div style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:${color};margin-bottom:2px;${isConsole?'font-family:Orbitron,monospace;':''}">
+          ${label}
+        </div>
+        <div style="font-size:13px;font-weight:600;color:var(--ink-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.hero}</div>
+        <div style="font-size:10px;color:var(--ink-4);font-family:var(--mono)">${p.pct}% of games</div>
+      </div>
+    </div>`;
+  };
+
+  const chip = (p) => {
+    const src = heroIconUrl(p.hero, p.iconUrl || '') || '';
+    const icon = src
+      ? `<img src="${src}" alt="${p.hero}" style="width:18px;height:18px;border-radius:3px;object-fit:cover;flex-shrink:0" onerror="this.style.display='none'">`
+      : '';
+    const color = p.isPick ? 'var(--win)' : 'var(--loss)';
+    return `<div style="display:flex;align-items:center;gap:6px;padding:5px 8px;background:var(--surface);border:1px solid var(--line);border-radius:${isConsole?'0':'6px'};min-width:0">
+      <span style="font-size:9px;font-weight:700;letter-spacing:.05em;color:var(--ink-4);white-space:nowrap;min-width:52px;${isConsole?'font-family:Orbitron,monospace;font-size:8px;':''}">
+        ${p.label.toUpperCase()}
+      </span>
+      ${icon}
+      <span style="font-size:12px;color:var(--ink-1);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.hero}</span>
+      <span style="font-size:10px;color:${color};font-weight:600;flex-shrink:0;font-family:var(--mono)">${p.pct}%</span>
+    </div>`;
+  };
+
+  const col = (title, items, color) => !items.length ? '' : `
+    <div style="flex:1;min-width:180px">
+      <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:${color};margin-bottom:8px;${isConsole?'font-family:Orbitron,monospace;letter-spacing:3px;':''}">
+        ${isConsole?'// ':''}${title}
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px">${items.map(chip).join('')}</div>
+    </div>`;
+
+  const spotlightHtml = (firstBan || firstPick) ? `
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
+      ${spotlight(firstBan,  'var(--loss)', 'First ban')}
+      ${spotlight(firstPick, 'var(--win)',  'First pick')}
+    </div>` : '';
+
+  const fullBreakdown = (bans.length > 1 || picks.length > 1) ? `
+    <div style="display:flex;gap:20px;flex-wrap:wrap">
+      ${col('Ban order', bans, 'var(--loss)')}
+      ${col('Pick order', picks, 'var(--win)')}
+    </div>` : '';
+
+  return `<div style="margin-top:20px">
+    <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-4);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--line);${isConsole?'font-family:Orbitron,monospace;letter-spacing:3px;':''}">
+      ${isConsole?'// ':''}Draft order tendencies
+    </div>
+    ${spotlightHtml}
+    ${fullBreakdown}
+  </div>`;
+}
+
 function renderDraftTendencies(tendencies) {
   if (!tendencies || !tendencies.totalGames) return '';
   const isConsole = document.documentElement.getAttribute('data-theme') === 'console';
@@ -644,6 +719,7 @@ function renderDraftTendencies(tendencies) {
       ${col('Most picked', tendencies.mostPicked, 'var(--win)')}
       ${col('Most banned', tendencies.mostBanned, 'var(--loss)')}
     </div>
+    ${renderDraftOrderPatterns(tendencies.orderPatterns)}
   </div>`;
 }
 
@@ -1426,7 +1502,7 @@ function _renderMatchPanel(data, meetingId) {
       ${notice}
       ${seasonToggleHTML()}
     </div>
-    ${status==='upcoming'?`<div class="page-section page-section-bans">${renderBanSection(data.players||[])}${renderDraftTendencies(data.draftTendencies)}</div>`:''}
+    ${status==='upcoming'?`<div class="page-section page-section-bans">${renderBanSection(data.players||[])}${renderDraftTendencies(data.draftTendencies)}</div>`:`<div class="page-section page-section-bans">${renderDraftTendencies(data.draftTendencies)}</div>`}
     <div class="page-section page-section-roster">
       <div class="section-title" style="margin-bottom:16px">${isConsole?'// ':''}Opponent roster</div>
       <div class="player-grid">${(data.players||[]).map(p=>renderPlayerCard(p,false)).join('')}</div>

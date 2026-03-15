@@ -66,7 +66,10 @@ def load_state() -> dict:
         with open(STATE_PATH) as f:
             content = f.read().strip()
             if content:
-                return json.loads(content)
+                data = json.loads(content)
+                data.setdefault("meetings", {})
+                data.setdefault("index_bin_id", None)
+                return data
     return {"meetings": {}, "index_bin_id": None}
 
 
@@ -88,9 +91,12 @@ def _step(icon: str, msg: str) -> None:
     console.print(f"   {icon} {msg}")
 
 
-def run():
+def run(skip_opendota: bool = False):
     _print_banner()
-    log.info("[bold]Starting bot cycle[/]")
+    if skip_opendota:
+        log.info("[bold]Starting bot cycle[/] [yellow](--no-opendota: pub stats skipped)[/]")
+    else:
+        log.info("[bold]Starting bot cycle[/]")
     state = load_state()
     esp   = EsparvenClient(ESPARVEN_KEY)
     jb    = GistClient(GITHUB_TOKEN, GITHUB_USERNAME)
@@ -130,7 +136,7 @@ def run():
         members = opponent.get("members", [])
         _resolve_steam_ids(esp, meeting_id, opponent_id, members)
 
-        scout = build_scout_data(meeting, opponent, members, heroes, status="upcoming", esp=esp)
+        scout = build_scout_data(meeting, opponent, members, heroes, status="upcoming", esp=esp, skip_opendota=skip_opendota)
 
         _step("↑", f"Writing bin for [yellow]{opponent_name}[/] (upcoming)...")
         bin_id = state["meetings"].get(str(meeting_id), {}).get("bin_id")
@@ -155,11 +161,11 @@ def run():
             "status":    "upcoming",
         })
 
-    _process_past_meetings(esp, jb, state, heroes, index_entries)
+    _process_past_meetings(esp, jb, state, heroes, index_entries, skip_opendota=skip_opendota)
 
     _section("Our team: self-scouting bin")
     try:
-        _update_our_team_bin(esp, jb, state, heroes)
+        _update_our_team_bin(esp, jb, state, heroes, skip_opendota=skip_opendota)
     except Exception as e:
         log.error(f"Failed to update our team bin: {e}")
 
@@ -187,7 +193,7 @@ def run():
         console.print(f"[yellow]Set in index.html:[/] [bold]OUR_TEAM_GIST_ID = '{our_bin}'[/]\n")
 
 
-def _update_our_team_bin(esp, jb, state, heroes):
+def _update_our_team_bin(esp, jb, state, heroes, skip_opendota: bool = False):
     """Build and write self-scouting bin for Tornknäckarna."""
     try:
         our_past = esp.get_team_past_meetings(OUR_TEAM_ID, COMPETITION) or []
@@ -249,7 +255,7 @@ def _update_our_team_bin(esp, jb, state, heroes):
             "rankMedal": None, "rankStars": None, "winrate": None,
             "form": [], "tournamentHeroes": [], "pubHeroes": [],
         }
-        if account_id:
+        if account_id and not skip_opendota:
             try:
                 player_data = _fetch_player_data(name, account_id, confirmed, all_parsed, heroes)
                 rank = player_data.get("rankLabel") or "?"
@@ -259,6 +265,10 @@ def _update_our_team_bin(esp, jb, state, heroes):
                 _step("   [green]✓[/]", f"[dim]{rank} | pub WR {wr_s} | CM: {t_heroes}[/]")
             except Exception as e:
                 _step("   [red]✗[/]", f"[red]{e}[/]")
+        elif skip_opendota and account_id:
+            t_heroes = _get_tournament_heroes_from_data(account_id, all_parsed, [], CURRENT_SEASON_ID)
+            player_data["tournamentHeroes"] = t_heroes
+            _step("   [dim]–[/]", f"[dim]OpenDota skipped[/]")
         players.append(player_data)
 
     history = _build_history_from_data(all_parsed, opponent_account_ids=set())
@@ -287,7 +297,7 @@ def _update_our_team_bin(esp, jb, state, heroes):
     _step("[green]✓[/]", f"Our team bin: [dim]{our_bin_id}[/]")
 
 
-def _process_past_meetings(esp, jb, state, heroes, index_entries):
+def _process_past_meetings(esp, jb, state, heroes, index_entries, skip_opendota: bool = False):
     _section("E-Sparven: past meetings")
     try:
         past = esp.get_team_past_meetings(OUR_TEAM_ID, COMPETITION)
@@ -327,7 +337,7 @@ def _process_past_meetings(esp, jb, state, heroes, index_entries):
 
         _section(f"Past: vs {opponent_name} ({result})")
         _resolve_steam_ids(esp, meeting_id, opponent_id, members)
-        scout = build_scout_data(meeting, opponent, members, heroes, status=result, esp=esp)
+        scout = build_scout_data(meeting, opponent, members, heroes, status=result, esp=esp, skip_opendota=skip_opendota)
 
         _step("↑", f"Writing bin for [yellow]{opponent_name}[/] ({result})...")
         bin_id = meeting_ref.get("bin_id")
@@ -397,13 +407,9 @@ def _try_opendota_search(name: str) -> list:
         return []
 
 
-# ── CHANGED: _parse_match_data now tags every match with seasonId ─────────────
 def _parse_match_data(meeting: dict) -> list[dict]:
-    """
-    Parse all jsonMatchData entries from a meeting into structured dicts.
-    Each returned dict now includes seasonId from the meeting.
-    """
-    season_id = meeting.get("seasonID")  # CHANGED: capture season
+    """Parse all jsonMatchData entries from a meeting into structured dicts, tagged with seasonId."""
+    season_id = meeting.get("seasonID")
     parsed = []
     for match in meeting.get("matches", []):
         raw = match.get("jsonMatchData")
@@ -422,12 +428,12 @@ def _parse_match_data(meeting: dict) -> list[dict]:
             "patch":      data.get("Patch"),
             "players":    data.get("Players", []),
             "picksBans":  [pb for pb in (data.get("PicksBans") or []) if pb.get("HeroName")],
-            "seasonId":   season_id,  # CHANGED: tag with season
+            "seasonId":   season_id,
         })
     return parsed
 
 
-# ── CHANGED: tracks current-season stats separately per hero ─────────────────
+# ── Tournament hero pool ──────────────────────────────────────────────────────
 def _get_tournament_heroes_from_data(
     account_id: int,
     parsed_matches: list[dict],
@@ -435,20 +441,15 @@ def _get_tournament_heroes_from_data(
     current_season_id: int = CURRENT_SEASON_ID,
 ) -> list[dict]:
     """
-    Build tournament hero pool. Now tracks all-time AND current-season stats
-    per hero so the frontend toggle can switch between views.
-
-    New fields added to each hero entry:
-      currentSeasonGames  — games played in current season
-      currentSeasonWR     — winrate in current season
-      recentSeason        — True if any current-season game exists
+    Build tournament hero pool with all-time and current-season stats per hero
+    so the frontend season toggle can switch between views.
     """
     account_id_str = str(account_id)
     hero_stats: dict[str, dict] = {}
 
     for match in parsed_matches:
         radiant_win = match["radiantWin"]
-        is_current  = match.get("seasonId") == current_season_id  # CHANGED
+        is_current  = match.get("seasonId") == current_season_id
         for p in match["players"]:
             if p.get("AccountID") != account_id_str:
                 continue
@@ -460,13 +461,15 @@ def _get_tournament_heroes_from_data(
             if hero_name not in hero_stats:
                 hero_stats[hero_name] = {
                     "games": 0, "wins": 0,
-                    "csGames": 0, "csWins": 0,  # CHANGED: current-season counters
+                    "csGames": 0, "csWins": 0,
                     "iconUrl": p.get("HeroIconUrl", ""),
                 }
+            elif p.get("HeroIconUrl") and not hero_stats[hero_name]["iconUrl"]:
+                hero_stats[hero_name]["iconUrl"] = p["HeroIconUrl"]
             hero_stats[hero_name]["games"] += 1
             if won:
                 hero_stats[hero_name]["wins"] += 1
-            if is_current:  # CHANGED: track current-season separately
+            if is_current:
                 hero_stats[hero_name]["csGames"] += 1
                 if won:
                     hero_stats[hero_name]["csWins"] += 1
@@ -488,11 +491,11 @@ def _get_tournament_heroes_from_data(
         result.append({
             "name":               hero_name,
             "iconUrl":            stats["iconUrl"],
-            "tournamentGames":    stats["games"],       # all seasons
-            "tournamentWR":       tournament_wr,        # all seasons
-            "currentSeasonGames": stats["csGames"],     # CHANGED: current season
-            "currentSeasonWR":    cs_wr,                # CHANGED: current season
-            "recentSeason":       stats["csGames"] > 0, # CHANGED: played this season?
+            "tournamentGames":    stats["games"],
+            "tournamentWR":       tournament_wr,
+            "currentSeasonGames": stats["csGames"],
+            "currentSeasonWR":    cs_wr,
+            "recentSeason":       stats["csGames"] > 0,
             "pubWR":              pub_wr,
             "pubGames":           pub_games,
         })
@@ -500,26 +503,18 @@ def _get_tournament_heroes_from_data(
     return result
 
 
-# ── CHANGED: history entries now include seasonId ────────────────────────────
 def _build_history_from_data(
     parsed_matches: list[dict],
     opponent_account_ids: set,
 ) -> list[dict]:
-    """
-    Build match history for the frontend.
-    Each entry now includes seasonId for frontend season filtering.
-    """
+    """Build match history entries for the frontend, including seasonId for filtering."""
     history = []
     for match in parsed_matches:
-        opponent_team = None
+        opponent_team = _resolve_opponent_team(match, opponent_account_ids)
         opponent_won  = None
-        if opponent_account_ids:
-            for p in match.get("players", []):
-                if str(p.get("AccountID")) in opponent_account_ids:
-                    opponent_team = 0 if p.get("IsRadiant") else 1
-                    radiant_win   = match.get("radiantWin", False)
-                    opponent_won  = radiant_win if opponent_team == 0 else not radiant_win
-                    break
+        if opponent_team is not None:
+            radiant_win  = match.get("radiantWin", False)
+            opponent_won = radiant_win if opponent_team == 0 else not radiant_win
 
         picks = [
             {"heroName": pb["HeroName"], "iconUrl": pb.get("HeroIconUrl", ""), "team": pb["Team"]}
@@ -533,7 +528,7 @@ def _build_history_from_data(
             "matchId":      str(match["matchId"]),
             "duration":     match["duration"],
             "patch":        match["patch"],
-            "seasonId":     match.get("seasonId"),  # CHANGED: include for frontend filtering
+            "seasonId":     match.get("seasonId"),
             "opponentTeam": opponent_team,
             "opponentWon":  opponent_won,
             "picks":        picks,
@@ -543,47 +538,117 @@ def _build_history_from_data(
 
 
 # ── Draft tendencies ─────────────────────────────────────────────────────────
+def _resolve_opponent_team(match: dict, opponent_account_ids: set) -> int | None:
+    """Return 0 (Radiant) or 1 (Dire) for the opponent team, or None if unknown."""
+    if not opponent_account_ids:
+        return None
+    for p in match.get("players", []):
+        if str(p.get("AccountID")) in opponent_account_ids:
+            return 0 if p.get("IsRadiant") else 1
+    return None
+
+
+# CM draft phase order slots — derived from the standard CM draft sequence.
+# Order index (0-based) maps to a human-readable phase label.
+# Phase 0-5 are bans, 6-7 are picks, 8-11 are bans, 12-13 are picks,
+# 14-19 are bans then picks. We label by relative position per team.
+_PHASE_LABELS = {
+    # (is_pick, opp_relative_slot): label
+    (False, 0): "1st ban",
+    (False, 1): "2nd ban",
+    (False, 2): "3rd ban",
+    (False, 3): "4th ban",
+    (False, 4): "5th ban",
+    (False, 5): "6th ban",
+    (False, 6): "7th ban",
+    (True,  0): "1st pick",
+    (True,  1): "2nd pick",
+    (True,  2): "3rd pick",
+    (True,  3): "4th pick",
+    (True,  4): "5th pick",
+}
+
+
 def _draft_tendencies(parsed_matches: list[dict], opponent_account_ids: set) -> dict:
     """
-    Compute pick and ban frequency for the opponent team across all parsed matches.
-    opponentTeam is determined the same way as in _build_history_from_data.
+    Compute pick/ban frequency and draft order patterns for the opponent team.
+
+    Returns:
+        totalGames  — number of matches with identifiable opponent team
+        mostPicked  — top 5 heroes picked overall [{name, count, iconUrl}]
+        mostBanned  — top 5 heroes banned overall [{name, count, iconUrl}]
+        orderPatterns — per-slot most common hero:
+                        [{slot, label, isPick, hero, count, pct, iconUrl}]
     """
-    from collections import Counter
-    opp_picks = Counter()
-    opp_bans  = Counter()
-    total     = 0
+    from collections import Counter, defaultdict
+
+    opp_picks: Counter = Counter()
+    opp_bans:  Counter = Counter()
+    icon_cache: dict[str, str] = {}
+
+    # slot_counters[(is_pick, opp_relative_slot)] -> Counter of hero names
+    slot_counters: dict[tuple, Counter] = defaultdict(Counter)
+    total = 0
 
     for match in parsed_matches:
-        opponent_team = None
-        if opponent_account_ids:
-            for p in match.get("players", []):
-                if str(p.get("AccountID")) in opponent_account_ids:
-                    opponent_team = 0 if p.get("IsRadiant") else 1
-                    break
-
+        opponent_team = _resolve_opponent_team(match, opponent_account_ids)
         if opponent_team is None:
             continue
         total += 1
 
-        for pb in match.get("picksBans", []):
-            hero = pb.get("HeroName")
+        pick_slot  = 0  # opponent's relative pick index
+        ban_slot   = 0  # opponent's relative ban index
+
+        for pb in sorted(match.get("picksBans", []), key=lambda x: x.get("Order", 0)):
+            hero     = pb.get("HeroName")
+            icon_url = pb.get("HeroIconUrl", "")
             if not hero:
                 continue
-            is_opp = pb.get("Team") == opponent_team
-            if not is_opp:
-                continue
-            if pb.get("IsPick"):
-                opp_picks[hero] += 1
-            else:
-                opp_bans[hero] += 1
+            if icon_url and hero not in icon_cache:
+                icon_cache[hero] = icon_url
+            is_opp  = pb.get("Team") == opponent_team
+            is_pick = bool(pb.get("IsPick"))
 
-    def fmt(counter, n=5):
-        return [{"name": h, "count": c} for h, c in counter.most_common(n)]
+            if is_opp:
+                if is_pick:
+                    slot_counters[(True,  pick_slot)][hero] += 1
+                    opp_picks[hero] += 1
+                    pick_slot += 1
+                else:
+                    slot_counters[(False, ban_slot)][hero] += 1
+                    opp_bans[hero] += 1
+                    ban_slot += 1
+
+    def fmt(counter: Counter, n: int = 5) -> list[dict]:
+        return [
+            {"name": h, "count": c, "iconUrl": icon_cache.get(h, "")}
+            for h, c in counter.most_common(n)
+        ]
+
+    # Build order patterns — only include slots that appeared in at least 2 games
+    order_patterns = []
+    for (is_pick, slot_idx), counter in sorted(slot_counters.items(), key=lambda x: (x[0][0], x[0][1])):
+        label = _PHASE_LABELS.get((is_pick, slot_idx))
+        if not label or not counter:
+            continue
+        top_hero, top_count = counter.most_common(1)[0]
+        if top_count < 2:
+            continue
+        order_patterns.append({
+            "slot":    slot_idx,
+            "label":   label,
+            "isPick":  is_pick,
+            "hero":    top_hero,
+            "count":   top_count,
+            "pct":     round(100 * top_count / total) if total else 0,
+            "iconUrl": icon_cache.get(top_hero, ""),
+        })
 
     return {
-        "totalGames": total,
-        "mostPicked": fmt(opp_picks),
-        "mostBanned": fmt(opp_bans),
+        "totalGames":    total,
+        "mostPicked":    fmt(opp_picks),
+        "mostBanned":    fmt(opp_bans),
+        "orderPatterns": order_patterns,
     }
 
 
@@ -647,21 +712,18 @@ def build_scout_data(
     heroes: dict[int, str],
     status: str,
     esp=None,
+    skip_opendota: bool = False,
 ) -> dict:
     """
     Build the full scouting JSON for one meeting.
-    For upcoming matches, now fetches ALL opponent past meetings (no season
-    filter) so the frontend all-seasons toggle has data to display.
-    The bin stores currentSeasonId so the frontend knows which is "current".
+    Fetches all opponent past meetings so the frontend all-seasons toggle has data.
+    The bin stores currentSeasonId so the frontend knows which season is current.
     """
     date_str    = meeting.get("matches", [{}])[0].get("matchDate", "")
     opponent_id = opponent["id"]
 
     parsed_matches = _parse_match_data(meeting)
 
-    # Always fetch the opponent's full history across all seasons so the
-    # all-seasons toggle has data. For past meetings the current meeting's
-    # games are already in parsed_matches; we extend with the rest.
     if esp is not None:
         log.info(f"Fetching [yellow]{opponent['name']}[/] full CM history (all seasons)")
         try:
@@ -683,11 +745,9 @@ def build_scout_data(
                 f"([bold]{current}[/] from current season, allowed seasons: {sorted(allowed)})"
             )
         except Exception as e:
-            import traceback; traceback.print_exc()
             log.warning(f"Could not fetch opponent past meetings: {e}")
 
-    n_games = len(parsed_matches)
-    log.info(f"Parsed [bold]{n_games}[/] tournament game(s) total")
+    log.info(f"Parsed [bold]{len(parsed_matches)}[/] tournament game(s) total")
 
     opponent_account_ids = {
         str(player_map.get_account_id(m["inGameName"]))
@@ -696,7 +756,10 @@ def build_scout_data(
     }
 
     eligible = [m for m in members if m.get("inGameName")]
-    log.info(f"Fetching OpenDota stats for [bold]{len(eligible)}[/] player(s)...")
+    if skip_opendota:
+        log.info(f"Skipping OpenDota — building {len(eligible)} player(s) from E-Sparven data only")
+    else:
+        log.info(f"Fetching OpenDota stats for [bold]{len(eligible)}[/] player(s)...")
 
     players = []
     for i, member in enumerate(eligible, 1):
@@ -711,7 +774,7 @@ def build_scout_data(
             "rankMedal": None, "rankStars": None, "winrate": None,
             "form": [], "tournamentHeroes": [], "pubHeroes": [],
         }
-        if account_id:
+        if account_id and not skip_opendota:
             try:
                 player_data = _fetch_player_data(name, account_id, confirmed, parsed_matches, heroes)
                 rank = player_data.get("rankLabel") or "?"
@@ -722,6 +785,10 @@ def build_scout_data(
             except Exception as e:
                 _step("   [red]✗[/]", f"[red]{e}[/]")
                 log.error(f"Failed to fetch data for {name!r} ({account_id}): {e}")
+        elif skip_opendota and account_id:
+            t_heroes = _get_tournament_heroes_from_data(account_id, parsed_matches, [], CURRENT_SEASON_ID)
+            player_data["tournamentHeroes"] = t_heroes
+            _step("   [dim]–[/]", f"[dim]OpenDota skipped[/]")
         players.append(player_data)
 
     history = _build_history_from_data(parsed_matches, opponent_account_ids)
@@ -818,14 +885,15 @@ def _calc_winrate(profile: dict) -> int | None:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--run-once", action="store_true")
+    parser.add_argument("--run-once",    action="store_true", help="Run once then exit")
+    parser.add_argument("--no-opendota", action="store_true", help="Skip OpenDota API calls (fast debug mode — pub stats will be blank)")
     args = parser.parse_args()
     if args.run_once:
-        run()
+        run(skip_opendota=args.no_opendota)
     else:
         console.print(f"[dim]Scheduling daily run at [bold]{RUN_AT}[/][/]")
         schedule.every().day.at(RUN_AT).do(run)
-        run()
+        run(skip_opendota=args.no_opendota)
         while True:
             schedule.run_pending()
             time.sleep(60)
