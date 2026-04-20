@@ -361,8 +361,8 @@ function profileLinks(accountId){if(!accountId)return '';return`<div class="play
 const RANK_THEME={Herald:{lbg:'#f3f4f6',lc:'#374151',dbg:'#1c1f27',dc:'#9ca3af'},Guardian:{lbg:'#f0fdf4',lc:'#166534',dbg:'#0d2b1a',dc:'#4ade80'},Crusader:{lbg:'#fffbeb',lc:'#92400e',dbg:'#271a05',dc:'#fbbf24'},Archon:{lbg:'#fff7ed',lc:'#9a3412',dbg:'#2a1208',dc:'#fb923c'},Legend:{lbg:'#fff1f2',lc:'#9f1239',dbg:'#2a0a10',dc:'#fb7185'},Ancient:{lbg:'#f5f3ff',lc:'#6d28d9',dbg:'#1a1040',dc:'#a78bfa'},Divine:{lbg:'#fefce8',lc:'#854d0e',dbg:'#201a04',dc:'#fde047'},Immortal:{lbg:'#ecfeff',lc:'#0e7490',dbg:'#042028',dc:'#22d3ee'},Unknown:{lbg:'#f3f4f6',lc:'#6b7280',dbg:'#1c1f27',dc:'#6b7280'}};
 function rankBadgeHTML(rankMedal,rankLabel){const medal=rankMedal||'Unknown';const cfg=RANK_THEME[medal]||RANK_THEME.Unknown;const isLight=document.documentElement.getAttribute('data-theme')==='light';const bg=isLight?cfg.lbg:cfg.dbg,color=isLight?cfg.lc:cfg.dc;const imgUrl=`${MEDALS_BASE}${medal.toLowerCase().replace(/\s+/g,'_')}.png`;return`<div class="rank-badge" style="background:${bg};color:${color}"><img class="rank-medal-img" src="${imgUrl}" alt="${medal}" onerror="this.style.display='none'">${rankLabel||'Unknown'}</div>`;}
 
-const HERO_SLUG={'Anti-Mage':'antimage','Axe':'axe','Beastmaster':'beastmaster','Bristleback':'bristleback','Centaur':'centaur','Centaur Warrunner':'centaur','Chen':'chen','Clockwerk':'rattletrap','Crystal Maiden':'crystal_maiden','Dark Willow':'dark_willow','Death Prophet':'death_prophet','Dragon Knight':'dragon_knight','Drow Ranger':'drow_ranger','Earth Spirit':'earth_spirit','Earthshaker':'earthshaker','Ember Spirit':'ember_spirit','Enigma':'enigma','Huskar':'huskar','Invoker':'invoker','Jakiro':'jakiro','Juggernaut':'juggernaut','Leshrac':'leshrac','Lina':'lina','Lion':'lion','Lycan':'lycan','Magnus':'magnataur','Mars':'mars','Medusa':'medusa','Muerta':'muerta','Naga Siren':'naga_siren',"Nature's Prophet":'furion','Omniknight':'omniknight','Phantom Assassin':'phantom_assassin','Phantom Lancer':'phantom_lancer','Phoenix':'phoenix','Pudge':'pudge','Puck':'puck','Queen of Pain':'queenofpain','Razor':'razor','Rubick':'rubick','Shadow Demon':'shadow_demon','Shadow Fiend':'nevermore','Shadow Shaman':'shadow_shaman','Slardar':'slardar','Snapfire':'snapfire','Spectre':'spectre','Spirit Breaker':'spirit_breaker','Storm Spirit':'storm_spirit','Techies':'techies','Templar Assassin':'templar_assassin','Timbersaw':'shredder','Tinker':'tinker','Tidehunter':'tidehunter','Troll Warlord':'troll_warlord','Ursa':'ursa','Vengeful Spirit':'vengefulspirit','Viper':'viper','Void Spirit':'void_spirit','Warlock':'warlock','Weaver':'weaver','Winter Wyvern':'winter_wyvern','Witch Doctor':'witch_doctor','Wraith King':'skeleton_king','Clinkz':'clinkz','Disruptor':'disruptor','Gyrocopter':'gyrocopter','Skywrath Mage':'skywrath_mage','Tiny':'tiny','Pugna':'pugna','Lich':'lich','Windranger':'windrunner','Sven':'sven','Bounty Hunter':'bounty_hunter','Legion Commander':'legion_commander','Mirana':'mirana','Hoodwink':'hoodwink','Bane':'bane','Dazzle':'dazzle','Abaddon':'abaddon','Alchemist':'alchemist','Ancient Apparition':'ancient_apparition','Arc Warden':'arc_warden','Batrider':'batrider','Bloodseeker':'bloodseeker','Brewmaster':'brewmaster','Broodmother':'broodmother','Chaos Knight':'chaos_knight','Doom':'doom','Elder Titan':'elder_titan','Faceless Void':'faceless_void','Grimstroke':'grimstroke','Io':'wisp','Keeper of the Light':'keeper_of_the_light','Kunkka':'kunkka','Lifestealer':'life_stealer','Lone Druid':'lone_druid','Marci':'marci','Meepo':'meepo','Monkey King':'monkey_king','Morphling':'morphling','Night Stalker':'night_stalker','Nyx Assassin':'nyx_assassin','Ogre Magi':'ogre_magi','Oracle':'oracle','Outworld Destroyer':'obsidian_destroyer','Pangolier':'pangolier','Primal Beast':'primal_beast','Ring Master':'ringmaster','Riki':'riki','Sand King':'sand_king','Silencer':'silencer','Slark':'slark','Terrorblade':'terrorblade','Treant Protector':'treant','Tusk':'tusk','Underlord':'underlord','Undying':'undying','Venomancer':'venomancer','Visage':'visage','Zeus':'zuus','Necrophos':'necrolyte','Dark Seer':'dark_seer','Ringmaster':'ringmaster'};
-function heroIconUrl(name,directUrl){if(directUrl)return directUrl.startsWith('http')?directUrl:`https://steamcdn-a.akamaihd.net${directUrl}`;const slug=HERO_SLUG[name];return slug?`https://steamcdn-a.akamaihd.net/apps/dota2/images/dota_react/heroes/icons/${slug}.png`:null;}
+const HERO_SLUG={'Anti-Mage':'antimage','Axe':'axe','Beastmaster':'beastmaster','Bristleback':'bristleback','Centaur':'centaur','Centaur Warrunner':'centaur','Chen':'chen','Clockwerk':'rattletrap','Crystal Maiden':'crystal_maiden','Dark Willow':'dark_willow','Death Prophet':'death_prophet','Dragon Knight':'dragon_knight','Drow Ranger':'drow_ranger','Earth Spirit':'earth_spirit','Earthshaker':'earthshaker','Ember Spirit':'ember_spirit','Enigma':'enigma','Huskar':'huskar','Invoker':'invoker','Jakiro':'jakiro','Juggernaut':'juggernaut','Leshrac':'leshrac','Lina':'lina','Lion':'lion','Lycan':'lycan','Magnus':'magnataur','Mars':'mars','Medusa':'medusa','Muerta':'muerta','Naga Siren':'naga_siren',"Nature's Prophet":'furion','Omniknight':'omniknight','Phantom Assassin':'phantom_assassin','Phantom Lancer':'phantom_lancer','Phoenix':'phoenix','Pudge':'pudge','Puck':'puck','Queen of Pain':'queenofpain','Razor':'razor','Rubick':'rubick','Shadow Demon':'shadow_demon','Shadow Fiend':'nevermore','Shadow Shaman':'shadow_shaman','Slardar':'slardar','Snapfire':'snapfire','Spectre':'spectre','Spirit Breaker':'spirit_breaker','Storm Spirit':'storm_spirit','Techies':'techies','Templar Assassin':'templar_assassin','Timbersaw':'shredder','Tinker':'tinker','Tidehunter':'tidehunter','Troll Warlord':'troll_warlord','Ursa':'ursa','Vengeful Spirit':'vengefulspirit','Viper':'viper','Void Spirit':'void_spirit','Warlock':'warlock','Weaver':'weaver','Winter Wyvern':'winter_wyvern','Witch Doctor':'witch_doctor','Wraith King':'skeleton_king','Clinkz':'clinkz','Disruptor':'disruptor','Gyrocopter':'gyrocopter','Skywrath Mage':'skywrath_mage','Tiny':'tiny','Pugna':'pugna','Lich':'lich','Windranger':'windrunner','Sven':'sven','Bounty Hunter':'bounty_hunter','Legion Commander':'legion_commander','Mirana':'mirana','Hoodwink':'hoodwink','Bane':'bane','Dazzle':'dazzle','Abaddon':'abaddon','Alchemist':'alchemist','Ancient Apparition':'ancient_apparition','Arc Warden':'arc_warden','Batrider':'batrider','Bloodseeker':'bloodseeker','Brewmaster':'brewmaster','Broodmother':'broodmother','Chaos Knight':'chaos_knight','Doom':'doom','Elder Titan':'elder_titan','Faceless Void':'faceless_void','Grimstroke':'grimstroke','Io':'wisp','Keeper of the Light':'keeper_of_the_light','Kunkka':'kunkka','Lifestealer':'life_stealer','Lone Druid':'lone_druid','Marci':'marci','Meepo':'meepo','Monkey King':'monkey_king','Morphling':'morphling','Night Stalker':'night_stalker','Nyx Assassin':'nyx_assassin','Ogre Magi':'ogre_magi','Oracle':'oracle','Outworld Destroyer':'obsidian_destroyer','Pangolier':'pangolier','Primal Beast':'primal_beast','Ring Master':'ringmaster','Riki':'riki','Sand King':'sand_king','Silencer':'silencer','Slark':'slark','Terrorblade':'terrorblade','Treant Protector':'treant','Tusk':'tusk','Underlord':'underlord','Undying':'undying','Venomancer':'venomancer','Visage':'visage','Zeus':'zuus','Necrophos':'necrolyte','Sniper':'sniper','Luna':'luna','Enchantress':'enchantress','Kez':'kez','Dawnbreaker':'dawnbreaker','Largo':'largo','Dark Seer':'dark_seer','Ringmaster':'ringmaster'};
+function heroIconUrl(name,directUrl){if(directUrl)return directUrl.startsWith('http')?directUrl:`https://steamcdn-a.akamaihd.net${directUrl}`;const slug=HERO_SLUG[name];if(slug)return`https://steamcdn-a.akamaihd.net/apps/dota2/images/dota_react/heroes/icons/${slug}.png`;return DA.heroIconMap[name]||null;}
 function heroIconTag(name,wrapClass,directUrl){const url=heroIconUrl(name,directUrl);return`<div class="${wrapClass}">${url?`<img src="${url}" alt="${name}" loading="lazy" onerror="this.parentElement.style.opacity='0.3'">`:''}</div>`;}
 
 function resolveHeroStats(h){if(currentSeasonOnly){return{games:h.currentSeasonGames??h.tournamentGames,wr:h.currentSeasonWR??h.tournamentWR};}return{games:h.tournamentGames,wr:h.tournamentWR};}
@@ -545,9 +545,11 @@ function _submitPassword(){const el=document.getElementById('pw-input');if(!el)r
 
 async function _loadOurTeamData(){document.getElementById('main-panel').innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:70vh;color:var(--ink-4);gap:10px"><div style="font-size:14px">Loading Tornkn\u00e4ckarna roster\u2026</div></div>`;let data;try{data=await fetchGist(OUR_TEAM_GIST_ID);}catch(e){document.getElementById('main-panel').innerHTML=`<div style="padding:44px 52px;color:var(--loss)"><strong>Error:</strong> ${e.message}</div>`;return;}_currentMatchData={...data};_currentMatchContext={isSelf:true};runBootSequence(()=>_renderOurTeamPanel(data));}
 
+async function loadMatch(binId,meetingId,btn){document.querySelectorAll('.match-item').forEach(el=>el.classList.remove('active'));if(btn)btn.classList.add('active');const opponent=btn?btn.querySelector('.mi-opponent').textContent:'…';document.getElementById('main-panel').innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:70vh;color:var(--ink-4);gap:10px"><div style="font-size:14px">Loading scouting report for <strong>${opponent}</strong>…</div></div>`;let data;try{data=await fetchGist(binId);}catch(e){document.getElementById('main-panel').innerHTML=`<div style="padding:44px 52px;color:var(--loss)"><strong>Error:</strong> Could not load gist ${binId}: ${e.message}</div>`;return;}_currentMatchData={...data};_currentMatchContext={meetingId,isSelf:false};runBootSequence(()=>_renderMatchPanel(data,meetingId));}
+
 function _renderOurTeamPanel(data){const isConsole=document.documentElement.getAttribute('data-theme')==='console';const currentSeasonId=data.currentSeasonId??null;document.getElementById('main-panel').innerHTML=`<div class="match-header"><div class="match-title"><strong>Tornkn\u00e4ckarna</strong>${consoleCursor()}</div><div class="match-meta"><span>Dota 2 \u00b7 Captain\'s Mode \u00b7 E-Sparven</span></div><div class="notice notice-snapshot" style="margin-top:8px">Refreshed daily by the bot</div>${seasonToggleHTML()}</div>${data.draftTendencies?`<div class="page-section page-section-bans">${renderDraftTendencies(data.draftTendencies)}${renderMatchupStats(data.history,currentSeasonId)}</div>`:''}<div class="page-section page-section-roster"><div class="section-title" style="margin-bottom:16px">${isConsole?'// ':''}Our roster</div><div class="player-grid">${(data.players||[]).map(p=>renderPlayerCard(p,true)).join('')}</div></div>${renderHistory(data.history,currentSeasonId)}`;}
 
-function _renderMatchPanel(data,meetingId){const status=data.status||'upcoming';const badgeClass={upcoming:'badge-upcoming',win:'badge-win',loss:'badge-loss',tie:'badge-loss'}[status]||'badge-upcoming';const badgeText={upcoming:'Upcoming',win:'Win',loss:'Loss',tie:'Tie'}[status]||status;const notice=status==='upcoming'?`<div class="notice notice-live">Live data \u00b7 refreshed daily until match day</div>`:`<div class="notice notice-snapshot">Snapshot \u00b7 ${fmtDate(data.snapshotAt)}</div>`;const esparvenUrl=meetingId?`https://esparven.se/none/Meeting/Details/${meetingId}`:null;const isConsole=document.documentElement.getAttribute('data-theme')==='console';const currentSeasonId=data.currentSeasonId??null;document.getElementById('main-panel').innerHTML=`<div class="match-header"><div style="margin-bottom:10px"><span class="mi-badge ${badgeClass}" style="font-size:11px">${badgeText}</span></div><div class="match-title">vs <strong>${data.opponent}</strong>${consoleCursor()}</div><div class="match-meta"><span>${fmtDate(data.date)}</span><span>Dota 2 \u00b7 Captain\'s Mode</span>${esparvenUrl?`<a href="${esparvenUrl}" target="_blank" style="color:var(--accent);text-decoration:none;font-size:13px">E-Sparven</a>`:''}</div>${notice}${seasonToggleHTML()}</div>${status==='upcoming'?`<div class="page-section page-section-bans">${renderBanSection(data.players||[])}${renderDraftTendencies(data.draftTendencies)}${renderMatchupStats(data.history,currentSeasonId)}</div>`:`<div class="page-section page-section-bans">${renderDraftTendencies(data.draftTendencies)}${renderMatchupStats(data.history,currentSeasonId)}</div>`}<div class="page-section page-section-roster"><div class="section-title" style="margin-bottom:16px">${isConsole?'// ':''}Opponent roster</div><div class="player-grid">${(data.players||[]).map(p=>renderPlayerCard(p,false)).join('')}</div></div>${renderHistory(data.history,currentSeasonId)}<div id="draft-assistant-anchor"></div>${renderDraftAssistantToggle(data)}`;initDraftAssistant(data);}
+function _renderMatchPanel(data,meetingId){const status=data.status||'upcoming';const badgeClass={upcoming:'badge-upcoming',win:'badge-win',loss:'badge-loss',tie:'badge-loss'}[status]||'badge-upcoming';const badgeText={upcoming:'Upcoming',win:'Win',loss:'Loss',tie:'Tie'}[status]||status;const notice=status==='upcoming'?`<div class="notice notice-live">Live data \u00b7 refreshed daily until match day</div>`:`<div class="notice notice-snapshot">Snapshot \u00b7 ${fmtDate(data.snapshotAt)}</div>`;const esparvenUrl=meetingId?`https://esparven.se/none/Meeting/Details/${meetingId}`:null;const isConsole=document.documentElement.getAttribute('data-theme')==='console';const currentSeasonId=data.currentSeasonId??null;document.getElementById('main-panel').innerHTML=`<div class="match-header"><div style="margin-bottom:10px"><span class="mi-badge ${badgeClass}" style="font-size:11px">${badgeText}</span></div><div class="match-title">vs <strong>${data.opponent}</strong>${consoleCursor()}</div><div class="match-meta"><span>${fmtDate(data.date)}</span><span>Dota 2 \u00b7 Captain\'s Mode</span>${esparvenUrl?`<a href="${esparvenUrl}" target="_blank" style="color:var(--accent);text-decoration:none;font-size:13px">E-Sparven</a>`:''}</div>${notice}${seasonToggleHTML()}</div>${renderDraftAssistantToggle(data)}${status==='upcoming'?`<div class="page-section page-section-bans">${renderBanSection(data.players||[])}${renderDraftTendencies(data.draftTendencies)}${renderMatchupStats(data.history,currentSeasonId)}</div>`:`<div class="page-section page-section-bans">${renderDraftTendencies(data.draftTendencies)}${renderMatchupStats(data.history,currentSeasonId)}</div>`}<div class="page-section page-section-roster"><div class="section-title" style="margin-bottom:16px">${isConsole?'// ':''}Opponent roster</div><div class="player-grid">${(data.players||[]).map(p=>renderPlayerCard(p,false)).join('')}</div></div>${renderHistory(data.history,currentSeasonId)}`;initDraftAssistant(data);}
 
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -572,9 +574,11 @@ const DA = {
   pubWeighting:  true,    // default ON
   slots:         Array(24).fill(null), // { heroName, heroId, isUs, isBan }
   heroList:      null,    // fetched from OpenDota once
+  heroIconMap:   {},      // localized_name -> full CDN icon URL, built from heroList
   matchupCache:  {},      // hero_id -> matchup array
   ourPubHeroes:  null,    // fetched from OUR_TEAM_GIST once per session
   scoutData:     null,    // current match gist data
+  laneFilter:    null,    // null = all lanes, or 'safe','mid','off','soft','hard'
 };
 
 // ── CM draft sequence (7.34) ─────────────────────────────────────────────────
@@ -618,14 +622,22 @@ const CM_SLOTS = [
 function heroToLane(h) {
   const roles = h.roles || [];
   const has = r => roles.includes(r);
-  if (has('Carry') && !has('Support')) return 'safe';
-  if (has('Nuker') && (has('Escape') || has('Disabler')) && !has('Durable')) return 'mid';
-  if (has('Durable') || has('Initiator')) return 'off';
-  if (has('Support') && (has('Disabler') || has('Nuker') || has('Escape'))) return 'soft';
-  if (has('Support') || has('Healer')) return 'hard';
+  // Support role is checked first — it's the strongest classifier signal.
+  // Hard support: healer, or pure support with no mobility/initiation.
+  if (has('Support') && has('Healer')) return 'hard';
+  // Soft support: support with utility — disabler, initiator, nuker, or escape.
+  if (has('Support') && (has('Disabler') || has('Initiator') || has('Nuker') || has('Escape'))) return 'soft';
+  if (has('Support')) return 'hard';
+  // Safe lane: carry without a strong initiation focus.
+  if (has('Carry') && !has('Initiator')) return 'safe';
+  // Mid: mobile damage dealers — nuker or escape, not durable or initiator.
+  if ((has('Nuker') || has('Escape')) && !has('Durable') && !has('Initiator')) return 'mid';
+  // Off lane: initiators and durable frontliners.
+  if (has('Initiator') || has('Durable')) return 'off';
+  // Carry with initiation falls back to safe.
   if (has('Carry')) return 'safe';
   if (has('Pusher') || has('Jungler')) return 'off';
-  return 'mid'; // fallback
+  return 'mid';
 }
 
 const LANE_LABELS = {safe:'Safe lane',mid:'Mid lane',off:'Off lane',soft:'Soft support',hard:'Hard support'};
@@ -637,6 +649,15 @@ async function daFetchHeroList() {
   try {
     const r = await fetch('https://api.opendota.com/api/heroes');
     DA.heroList = await r.json();
+    // Build name -> icon URL map for all heroes, including new ones not in HERO_SLUG
+    for (const h of DA.heroList) {
+      if (h.localized_name && h.icon) {
+        const url = h.icon.startsWith('http')
+          ? h.icon
+          : `https://steamcdn-a.akamaihd.net${h.icon}`;
+        DA.heroIconMap[h.localized_name] = url;
+      }
+    }
   } catch(e) {
     DA.heroList = [];
   }
@@ -700,9 +721,21 @@ function daScoreHero(candidateId, enemyMatchupSets, pubList, candidateName) {
 
 // ── Render toggle button ──────────────────────────────────────────────────────
 function renderDraftAssistantToggle(data) {
-  return `<div id="da-toggle-wrap" style="margin-top:12px;margin-bottom:4px">
-    <button onclick="toggleDraftAssistant()" style="background:var(--line-2);border:1px solid var(--line);border-radius:var(--radius-sm);cursor:pointer;font-family:inherit;font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--ink-3);padding:7px 18px;transition:background var(--tr),color var(--tr)">
-      ⚔ Draft assistant
+  const isConsole = document.documentElement.getAttribute('data-theme') === 'console';
+  return `<div id="da-toggle-wrap" style="margin-bottom:28px">
+    <button onclick="toggleDraftAssistant()" id="da-toggle-btn" style="
+      display:block;width:100%;
+      background:var(--surface);
+      border:1px solid var(--accent);
+      border-radius:var(--radius);
+      cursor:pointer;font-family:inherit;
+      font-size:12px;font-weight:600;letter-spacing:.06em;
+      color:var(--accent);
+      padding:12px 24px;
+      transition:background var(--tr),color var(--tr),border-color var(--tr);
+      ${isConsole?'border-radius:0;font-family:Orbitron,monospace;font-size:9px;letter-spacing:3px;':''}
+    ">
+      ⚔ Draft assistant
     </button>
   </div>
   <div id="da-panel" style="display:none"></div>`;
@@ -715,17 +748,28 @@ function toggleDraftAssistant() {
   if (!panel) return;
   if (DA.open) {
     panel.style.display = 'block';
-    if (btn) btn.textContent = '✕ Close draft assistant';
+    if (btn) {
+      btn.textContent = '✕ Close draft assistant';
+      btn.style.background = 'var(--accent)';
+      btn.style.color = '#fff';
+      btn.style.borderColor = 'var(--accent)';
+    }
     renderDraftBoard();
     daUpdateBanHints();
     daUpdateSuggestions();
   } else {
     panel.style.display = 'none';
-    if (btn) btn.textContent = '⚔ Draft assistant';
+    if (btn) {
+      btn.textContent = '⚔ Draft assistant';
+      btn.style.background = 'var(--surface)';
+      btn.style.color = 'var(--accent)';
+      btn.style.borderColor = 'var(--accent)';
+    }
     // Reset state on close
     DA.slots = Array(24).fill(null);
     DA.weAreFirst = true;
     DA.pubWeighting = true;
+    DA.laneFilter = null;
   }
 }
 
@@ -813,9 +857,9 @@ function renderDraftBoard() {
       <div>
         <div style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-4);margin-bottom:6px;${isConsole?'font-family:Orbitron,monospace;':''}">Suggestions</div>
         <div style="display:inline-flex;border:1px solid var(--line);border-radius:var(--radius-sm);overflow:hidden;background:var(--line-2)">
-          <button class="season-toggle-btn${DA.pubWeighting?' active':''}" onclick="daSetWeighting(true)">Our pool</button>
+          <button class="season-toggle-btn da-weight-btn${DA.pubWeighting?' active':''}" data-weight="on" onclick="daSetWeighting(true)">Our pool</button>
           <div class="season-divider"></div>
-          <button class="season-toggle-btn${!DA.pubWeighting?' active':''}" onclick="daSetWeighting(false)">General</button>
+          <button class="season-toggle-btn da-weight-btn${!DA.pubWeighting?' active':''}" data-weight="off" onclick="daSetWeighting(false)">General</button>
         </div>
       </div>
       <div style="margin-left:auto">
@@ -883,9 +927,9 @@ function daFilterHeroes() {
   const q = (search ? search.value : '').toLowerCase();
   const taken = new Set(DA.slots.filter(Boolean).map(s => s.heroName));
 
-  const filtered = DA.heroList
+  const filtered = [...DA.heroList]
     .filter(h => h.localized_name.toLowerCase().includes(q))
-    .slice(0, 60);
+    .sort((a, b) => a.localized_name.localeCompare(b.localized_name));
 
   grid.innerHTML = filtered.map(h => {
     const url = heroIconUrl(h.localized_name, '');
@@ -931,8 +975,21 @@ function daSetSide(isFirst) {
   daUpdateSuggestions();
 }
 
+function daSetLaneFilter(lane) {
+  DA.laneFilter = lane;
+  daUpdateSuggestions();
+}
+
 function daSetWeighting(on) {
   DA.pubWeighting = on;
+  // Update button active states without full re-render
+  const panel = document.getElementById('da-panel');
+  if (panel) {
+    panel.querySelectorAll('.da-weight-btn').forEach(btn => {
+      const wantsOn = btn.dataset.weight === 'on';
+      btn.classList.toggle('active', wantsOn === on);
+    });
+  }
   daUpdateSuggestions();
 }
 
@@ -999,14 +1056,52 @@ async function daUpdateSuggestions() {
 
   const maxScore = scored[0]?.score || 1;
 
-  // Top 3 per lane
-  const byLane = {};
-  for (const lane of LANE_ORDER) byLane[lane] = [];
-  for (const s of scored) {
-    if (byLane[s.lane] && byLane[s.lane].length < 3) byLane[s.lane].push(s);
+  // Flat top suggestions — filtered by lane if set, capped at 5
+  // Weighting: Our pool mode prioritises heroes players have 10+ games on (pass 1),
+  // then fills with best general picks (pass 2). General = pure matchup score.
+  let pool;
+  if (DA.pubWeighting && pubList.length) {
+    const inPool    = scored.filter(s => s.pubPlayers.length > 0);
+    const notInPool = scored.filter(s => s.pubPlayers.length === 0);
+    pool = [...inPool, ...notInPool];
+  } else {
+    pool = scored;
   }
 
-  // Enemy picks summary
+  // Apply lane filter
+  const visible = DA.laneFilter
+    ? pool.filter(s => s.lane === DA.laneFilter)
+    : pool;
+
+  const top = visible.slice(0, 5);
+
+  // Lane filter buttons
+  const laneFilterHTML = () => {
+    const btn = (lane, label) => {
+      const active = DA.laneFilter === lane;
+      return `<button onclick="daSetLaneFilter(${lane?`'${lane}'`:'null'})" style="
+        background:${active?'var(--accent)':'var(--line-2)'};
+        color:${active?'#fff':'var(--ink-3)'};
+        border:1px solid ${active?'var(--accent)':'var(--line)'};
+        border-radius:var(--radius-sm);
+        cursor:pointer;font-family:inherit;
+        font-size:10px;font-weight:600;letter-spacing:.04em;
+        padding:4px 10px;white-space:nowrap;
+        transition:background .12s,color .12s;
+      ">${label}</button>`;
+    };
+    return `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;align-items:center">
+      <span style="font-size:10px;color:var(--ink-4);flex-shrink:0">Lane:</span>
+      ${btn(null,      'All')}
+      ${btn('safe',    'Safe')}
+      ${btn('mid',     'Mid')}
+      ${btn('off',     'Off')}
+      ${btn('soft',    'Soft supp')}
+      ${btn('hard',    'Hard supp')}
+    </div>`;
+  };
+
+  // Enemy picks chips
   const enemySummary = enemyPicks.map(ep => {
     const url = heroIconUrl(ep.heroName, '');
     return `<span style="display:inline-flex;align-items:center;gap:4px;background:var(--loss-bg);border:1px solid var(--loss);border-radius:4px;padding:2px 7px 2px 3px;font-size:11px;color:var(--loss)">
@@ -1015,50 +1110,60 @@ async function daUpdateSuggestions() {
     </span>`;
   }).join('');
 
-  let html = `<div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-4);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--line);${isConsole?'font-family:Orbitron,monospace;':''}">
-    Counterpick suggestions
-  </div>
-  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;align-items:center">
-    <span style="font-size:10px;color:var(--ink-4)">Against:</span>
-    ${enemySummary}
-  </div>`;
+  // Suggestion cards
+  const suggCard = (s, rank) => {
+    const url = heroIconUrl(s.hero.localized_name, '');
+    const barW = Math.round((s.score / maxScore) * 100);
+    const laneLabel = LANE_LABELS[s.lane] || s.lane;
+    const counterText = s.counters.length ? s.counters.join(', ') : '';
+    const playerText  = s.pubPlayers.length
+      ? s.pubPlayers.map(p => `${p.playerName} · ${p.games}g ${p.wr}%`).join('  ·  ')
+      : '';
+    const inPool = s.pubPlayers.length > 0;
 
-  for (const lane of LANE_ORDER) {
-    const entries = byLane[lane];
-    if (!entries.length) continue;
-
-    html += `<div style="margin-bottom:20px">
-      <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin-bottom:8px;${isConsole?'font-family:Orbitron,monospace;':''}">
-        ${LANE_LABELS[lane]}
+    return `<div style="
+      display:flex;align-items:center;gap:12px;
+      padding:12px 14px;
+      background:var(--surface);
+      border:1px solid ${inPool && DA.pubWeighting ? 'var(--win)' : 'var(--line)'};
+      border-left:3px solid ${inPool && DA.pubWeighting ? 'var(--win)' : 'var(--line)'};
+      border-radius:${isConsole?'0':'8px'};
+      margin-bottom:8px;
+    ">
+      <div style="font-size:11px;font-weight:700;color:var(--ink-4);width:18px;text-align:center;flex-shrink:0">${rank}</div>
+      ${url
+        ? `<img src="${url}" style="width:40px;height:40px;border-radius:6px;object-fit:cover;flex-shrink:0">`
+        : `<div style="width:40px;height:40px;background:var(--line-2);border-radius:6px;flex-shrink:0"></div>`}
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:4px">
+          <span style="font-size:14px;font-weight:600;color:var(--ink)">${s.hero.localized_name}</span>
+          <span style="font-size:10px;color:var(--ink-4);background:var(--line-2);padding:1px 6px;border-radius:3px">${laneLabel}</span>
+          ${inPool && DA.pubWeighting ? `<span style="font-size:10px;color:var(--win)">In our pool</span>` : ''}
+        </div>
+        <div style="height:3px;background:var(--line);border-radius:2px;margin-bottom:6px;overflow:hidden">
+          <div style="height:3px;width:${barW}%;background:var(--win);border-radius:2px"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:2px">
+          ${counterText ? `<div style="font-size:11px;color:var(--win)">✓ Counters: ${counterText}</div>` : ''}
+          ${playerText  ? `<div style="font-size:11px;color:var(--ink-3)">${playerText}</div>` : ''}
+        </div>
       </div>
-      ${entries.map(s => {
-        const url = heroIconUrl(s.hero.localized_name, '');
-        const barW = Math.round((s.score / maxScore) * 100);
-        const counterText = s.counters.length
-          ? `Counters: ${s.counters.join(', ')}`
-          : '';
-        const playerText = s.pubPlayers.length
-          ? s.pubPlayers.map(p => `${p.playerName} (${p.games}g ${p.wr}%)`).join(', ')
-          : '';
-
-        return `<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;padding:10px 12px;background:var(--surface);border:1px solid var(--line);border-radius:${isConsole?'0':'8px'}">
-          ${url?`<img src="${url}" style="width:36px;height:36px;border-radius:5px;object-fit:cover;flex-shrink:0">` : '<div style="width:36px;height:36px;background:var(--line-2);border-radius:5px;flex-shrink:0"></div>'}
-          <div style="flex:1;min-width:0">
-            <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:3px">${s.hero.localized_name}</div>
-            <div style="height:4px;background:var(--line);border-radius:2px;margin-bottom:5px;overflow:hidden">
-              <div style="height:4px;width:${barW}%;background:var(--win);border-radius:2px;opacity:.8"></div>
-            </div>
-            ${counterText?`<div style="font-size:10px;color:var(--win);margin-bottom:2px">\u2713 ${counterText}</div>`:''}
-            ${playerText?`<div style="font-size:10px;color:var(--ink-3)">\uD83C\uDFAE ${playerText}</div>`:''}
-          </div>
-        </div>`;
-      }).join('')}
     </div>`;
-  }
+  };
 
-  if (!LANE_ORDER.some(l => byLane[l].length)) {
-    html += '<div style="font-size:12px;color:var(--ink-4)">No strong counterpick data found for the current enemy picks.</div>';
-  }
+  let html = `
+    <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-4);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--line);${isConsole?'font-family:Orbitron,monospace;':''}">
+      Counterpick suggestions
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
+      <span style="font-size:10px;color:var(--ink-4);flex-shrink:0">Against:</span>
+      ${enemySummary}
+    </div>
+    ${laneFilterHTML()}
+    ${top.length
+      ? top.map((s, i) => suggCard(s, i + 1)).join('')
+      : `<div style="font-size:12px;color:var(--ink-4)">No suggestions for this filter — try a different lane or add more enemy picks.</div>`}
+  `;
 
   el.innerHTML = html;
 }
@@ -1318,7 +1423,9 @@ async function daUpdateBanHints() {
 })();
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
-(async()=>{let index;try{index=await fetchGist(INDEX_GIST_ID);}catch(e){document.getElementById('sidebar-content').innerHTML=`<div style="padding:20px 22px;color:var(--loss);font-size:13px">Failed to load index: ${e.message}</div>`;return;}const matches=index.matches||[];const tickerSnippets=index.tickerSnippets||[];buildSidebar(matches,tickerSnippets);const first=matches.find(m=>m.status==='upcoming')||[...matches].reverse().find(m=>m.status!=='upcoming');if(first)loadMatch(first.gistId,first.meetingId||'',document.querySelector(`[data-bin="${first.gistId}"]`));})();
+(async()=>{// Fetch hero icon map and index gist in parallel
+daFetchHeroList();// fire-and-forget — populates DA.heroIconMap before panels render
+let index;try{index=await fetchGist(INDEX_GIST_ID);}catch(e){document.getElementById('sidebar-content').innerHTML=`<div style="padding:20px 22px;color:var(--loss);font-size:13px">Failed to load index: ${e.message}</div>`;return;}const matches=index.matches||[];const tickerSnippets=index.tickerSnippets||[];buildSidebar(matches,tickerSnippets);const first=matches.find(m=>m.status==='upcoming')||[...matches].reverse().find(m=>m.status!=='upcoming');if(first)loadMatch(first.gistId,first.meetingId||'',document.querySelector(`[data-bin="${first.gistId}"]`));})();
 </script>
 </body>
 </html>
