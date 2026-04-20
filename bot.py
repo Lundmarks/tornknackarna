@@ -6,6 +6,7 @@ See inline comments for what changed vs previous version.
 import argparse
 import json
 import logging
+import math
 import os
 import time
 from datetime import datetime, timezone
@@ -20,6 +21,7 @@ from rich.theme import Theme
 import opendota
 import player_map
 import steam
+import webhook
 from esparven import EsparvenClient
 from gist import GistClient
 
@@ -91,6 +93,41 @@ def _step(icon: str, msg: str) -> None:
     console.print(f"   {icon} {msg}")
 
 
+# ── Webhook helper ────────────────────────────────────────────────────────────
+def _keyPickScore_for_webhook(h: dict) -> float:
+    """
+    Lightweight ban-scoring used only for ranking heroes in Discord embeds.
+    Mirrors the frontend keyPickScore logic without depending on UI state.
+    """
+    games = h.get("currentSeasonGames") or h.get("tournamentGames") or 0
+    wr    = h.get("currentSeasonWR") or h.get("tournamentWR") or 0
+    if not games:
+        return 0.0
+    pub_wr     = h.get("pubWR") or wr
+    delta      = max(0, wr - pub_wr)
+    delta_mult = 1 + (delta / 40)
+    recency    = 1.2 if h.get("recentSeason") else 1.0
+    return (wr / 100) * math.log(games + 1) * delta_mult * recency
+
+
+def _top_bans_for_embed(players: list[dict], n: int = 3) -> list[dict]:
+    """Return top-n ban candidates from a scout data players list."""
+    cands = []
+    for p in players:
+        for h in (p.get("tournamentHeroes") or []):
+            score = _keyPickScore_for_webhook(h)
+            if score:
+                cands.append({"hero": h, "player": p["name"], "score": score})
+    cands.sort(key=lambda x: -x["score"])
+    seen, deduped = set(), []
+    for b in cands:
+        name = b["hero"]["name"]
+        if name not in seen:
+            seen.add(name)
+            deduped.append(b)
+    return deduped[:n]
+
+
 def run(skip_opendota: bool = False):
     _print_banner()
     if skip_opendota:
@@ -100,6 +137,9 @@ def run(skip_opendota: bool = False):
     state = load_state()
     esp   = EsparvenClient(ESPARVEN_KEY)
     jb    = GistClient(GITHUB_TOKEN, GITHUB_USERNAME)
+
+    # Snapshot which meeting IDs existed before this run so we can detect new ones
+    known_meeting_ids = set(state["meetings"].keys())
 
     _section("OpenDota: hero list")
     heroes = opendota.get_heroes()
@@ -153,6 +193,15 @@ def run(skip_opendota: bool = False):
             "upcoming",
         )
 
+        # Notify Discord if this is a newly discovered match
+        if str(meeting_id) not in known_meeting_ids:
+            webhook.notify_new_match(
+                opponent_name=opponent_name,
+                match_date=meeting_date,
+                meeting_id=meeting_id,
+                top_bans=_top_bans_for_embed(scout.get("players", [])),
+            )
+
         index_entries.append({
             "meetingId": meeting_id,
             "gistId":     bin_id,
@@ -160,6 +209,22 @@ def run(skip_opendota: bool = False):
             "date":      meeting_date,
             "status":    "upcoming",
         })
+
+    # Match day reminder — fires once per match on the day of the match
+    today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    for meeting in our_meetings:
+        meeting_id   = meeting["id"]
+        meeting_date = meeting.get("matches", [{}])[0].get("matchDate", "")
+        opponent     = _find_opponent(meeting, OUR_TEAM_ID)
+        if not opponent:
+            continue
+        already_notified = state["meetings"].get(str(meeting_id), {}).get("match_day_notified", False)
+        if meeting_date.startswith(today_str) and not already_notified:
+            webhook.notify_match_day(
+                opponent_name=opponent["name"],
+                meeting_id=meeting_id,
+            )
+            state["meetings"].setdefault(str(meeting_id), {})["match_day_notified"] = True
 
     _process_past_meetings(esp, jb, state, heroes, index_entries, skip_opendota=skip_opendota)
 
@@ -433,17 +498,12 @@ def _parse_match_data(meeting: dict) -> list[dict]:
     return parsed
 
 
-# ── Tournament hero pool ──────────────────────────────────────────────────────
 def _get_tournament_heroes_from_data(
     account_id: int,
     parsed_matches: list[dict],
     hero_stats_named: list,
     current_season_id: int = CURRENT_SEASON_ID,
 ) -> list[dict]:
-    """
-    Build tournament hero pool with all-time and current-season stats per hero
-    so the frontend season toggle can switch between views.
-    """
     account_id_str = str(account_id)
     hero_stats: dict[str, dict] = {}
 
@@ -507,7 +567,6 @@ def _build_history_from_data(
     parsed_matches: list[dict],
     opponent_account_ids: set,
 ) -> list[dict]:
-    """Build match history entries for the frontend, including seasonId for filtering."""
     history = []
     for match in parsed_matches:
         opponent_team = _resolve_opponent_team(match, opponent_account_ids)
@@ -537,9 +596,7 @@ def _build_history_from_data(
     return history
 
 
-# ── Draft tendencies ─────────────────────────────────────────────────────────
 def _resolve_opponent_team(match: dict, opponent_account_ids: set) -> int | None:
-    """Return 0 (Radiant) or 1 (Dire) for the opponent team, or None if unknown."""
     if not opponent_account_ids:
         return None
     for p in match.get("players", []):
@@ -548,12 +605,7 @@ def _resolve_opponent_team(match: dict, opponent_account_ids: set) -> int | None
     return None
 
 
-# CM draft phase order slots — derived from the standard CM draft sequence.
-# Order index (0-based) maps to a human-readable phase label.
-# Phase 0-5 are bans, 6-7 are picks, 8-11 are bans, 12-13 are picks,
-# 14-19 are bans then picks. We label by relative position per team.
 _PHASE_LABELS = {
-    # (is_pick, opp_relative_slot): label
     (False, 0): "1st ban",
     (False, 1): "2nd ban",
     (False, 2): "3rd ban",
@@ -570,23 +622,11 @@ _PHASE_LABELS = {
 
 
 def _draft_tendencies(parsed_matches: list[dict], opponent_account_ids: set) -> dict:
-    """
-    Compute pick/ban frequency and draft order patterns for the opponent team.
-
-    Returns:
-        totalGames  — number of matches with identifiable opponent team
-        mostPicked  — top 5 heroes picked overall [{name, count, iconUrl}]
-        mostBanned  — top 5 heroes banned overall [{name, count, iconUrl}]
-        orderPatterns — per-slot most common hero:
-                        [{slot, label, isPick, hero, count, pct, iconUrl}]
-    """
     from collections import Counter, defaultdict
 
     opp_picks: Counter = Counter()
     opp_bans:  Counter = Counter()
     icon_cache: dict[str, str] = {}
-
-    # slot_counters[(is_pick, opp_relative_slot)] -> Counter of hero names
     slot_counters: dict[tuple, Counter] = defaultdict(Counter)
     total = 0
 
@@ -596,8 +636,8 @@ def _draft_tendencies(parsed_matches: list[dict], opponent_account_ids: set) -> 
             continue
         total += 1
 
-        pick_slot  = 0  # opponent's relative pick index
-        ban_slot   = 0  # opponent's relative ban index
+        pick_slot  = 0
+        ban_slot   = 0
 
         for pb in sorted(match.get("picksBans", []), key=lambda x: x.get("Order", 0)):
             hero     = pb.get("HeroName")
@@ -625,7 +665,6 @@ def _draft_tendencies(parsed_matches: list[dict], opponent_account_ids: set) -> 
             for h, c in counter.most_common(n)
         ]
 
-    # Build order patterns — only include slots that appeared in at least 2 games
     order_patterns = []
     for (is_pick, slot_idx), counter in sorted(slot_counters.items(), key=lambda x: (x[0][0], x[0][1])):
         label = _PHASE_LABELS.get((is_pick, slot_idx))
@@ -653,37 +692,29 @@ def _draft_tendencies(parsed_matches: list[dict], opponent_account_ids: set) -> 
 
 
 def _generate_ticker_snippets(opponent_name: str, players: list, tendencies: dict, status: str) -> list[str]:
-    """
-    Generate short ticker snippets from scouted data.
-    No slashes in text — the frontend uses slashes as message dividers.
-    """
     snippets = []
 
     total = tendencies.get("totalGames", 0)
     if total:
         snippets.append(f"INTEL {opponent_name.upper()} {total} CM GAMES ANALYSED")
 
-    # Most picked hero
     picks = tendencies.get("mostPicked", [])
     if picks:
         top = picks[0]
         pct = round(top["count"] / total * 100) if total else 0
         snippets.append(f"DRAFT TENDENCY {opponent_name.upper()} FAVOURS {top['name'].upper()} IN {pct}% OF GAMES")
 
-    # Most banned hero
     bans = tendencies.get("mostBanned", [])
     if bans:
         top = bans[0]
         snippets.append(f"BAN PATTERN {opponent_name.upper()} CONSISTENTLY BANS {top['name'].upper()}")
 
-    # High winrate players
     for p in players:
         wr = p.get("winrate")
         name = p.get("name", "")
         if wr and wr >= 55:
             snippets.append(f"THREAT {name.upper()} PUB WINRATE {wr}% ABOVE AVERAGE")
 
-    # Top CM hero per player (current season)
     for p in players:
         t_heroes = p.get("tournamentHeroes", [])
         if not t_heroes:
@@ -694,7 +725,6 @@ def _generate_ticker_snippets(opponent_name: str, players: list, tendencies: dic
         if games >= 3 and wr >= 60:
             snippets.append(f"KEY PICK {p['name'].upper()} {top['name'].upper()} {games} GAMES {wr}% WINRATE")
 
-    # Result flavour
     if status == "win":
         snippets.append(f"RESULT WIN AGAINST {opponent_name.upper()} LOGGED")
     elif status == "loss":
@@ -714,11 +744,6 @@ def build_scout_data(
     esp=None,
     skip_opendota: bool = False,
 ) -> dict:
-    """
-    Build the full scouting JSON for one meeting.
-    Fetches all opponent past meetings so the frontend all-seasons toggle has data.
-    The bin stores currentSeasonId so the frontend knows which season is current.
-    """
     date_str    = meeting.get("matches", [{}])[0].get("matchDate", "")
     opponent_id = opponent["id"]
 

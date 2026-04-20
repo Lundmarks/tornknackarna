@@ -52,13 +52,11 @@
     --section-hist-bg:#f6faf7;--section-hist-bdr:#cce8d4;
     --active-item-bg:#edf2ff;--shadow-h:0 2px 8px rgba(0,0,0,.08),0 8px 32px rgba(0,0,0,.08);
   }
-
   html { scroll-behavior: smooth; }
   body { font-family: var(--sans); background: var(--bg); color: var(--ink); font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased; transition: background var(--tr), color var(--tr); }
   [data-theme="console"] body { font-family:'Share Tech Mono',monospace; font-size:13px; cursor:crosshair; }
   [data-theme="console"] body::before { content:''; position:fixed; top:0; left:0; width:100%; height:100%; background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.18) 2px,rgba(0,0,0,0.18) 4px); pointer-events:none; z-index:9999; }
   [data-theme="console"] body::after { content:''; position:fixed; top:0; left:0; width:100%; height:100%; background-image:linear-gradient(rgba(0,255,65,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,65,0.03) 1px,transparent 1px); background-size:40px 40px; pointer-events:none; z-index:0; }
-
   .shell { display:grid; grid-template-columns:272px 1fr; min-height:100vh; position:relative; z-index:1; }
   aside { background:var(--surface); border-right:1px solid var(--line); display:flex; flex-direction:column; position:sticky; top:0; height:100vh; overflow-y:auto; transition:background var(--tr),border-color var(--tr); }
   .sidebar-top { padding:28px 22px 20px; border-bottom:1px solid var(--line); display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
@@ -69,13 +67,11 @@
   [data-theme="console"] .team-sub { font-family:'Orbitron',monospace; font-size:9px; letter-spacing:2px; }
   [data-theme="console"] .team-dot { animation:console-pulse 2s ease-in-out infinite; }
   @keyframes console-pulse { 0%,100%{box-shadow:0 0 0 0 rgba(0,255,65,0.4)} 50%{box-shadow:0 0 0 5px rgba(0,255,65,0)} }
-
   .theme-toggle-wrap { display:flex; flex-direction:column; align-items:center; gap:3px; flex-shrink:0; }
   .theme-toggle { background:var(--line-2); border:1px solid var(--line); border-radius:var(--radius-sm); cursor:pointer; padding:4px 8px; color:var(--ink-3); font-size:9px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; transition:background var(--tr),color var(--tr),border-color var(--tr); white-space:nowrap; font-family:inherit; min-width:54px; text-align:center; }
   .theme-toggle:hover { background:var(--line); color:var(--ink); }
   [data-theme="console"] .theme-toggle { font-family:'Orbitron',monospace; border-color:var(--ink-4); color:var(--ink-3); background:rgba(0,20,0,0.8); letter-spacing:2px; }
   [data-theme="console"] .theme-toggle:hover { border-color:var(--accent); color:var(--accent); }
-
   .sidebar-section { padding:18px 22px 8px; }
   .sidebar-label { font-size:10px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-4); margin-bottom:6px; }
   .match-item { display:block; padding:10px 12px 10px 14px; border-radius:var(--radius-sm); cursor:pointer; transition:background var(--tr); border:none; border-left:3px solid transparent; background:none; width:100%; text-align:left; margin-bottom:2px; color:var(--ink); }
@@ -100,12 +96,10 @@
   [data-theme="console"] .badge-upcoming { border:1px solid var(--upcoming); background:transparent; }
   [data-theme="console"] .badge-win { border:1px solid var(--win); background:transparent; }
   [data-theme="console"] .badge-loss { border:1px solid var(--loss); background:transparent; }
-
   main { padding:44px 52px 80px; max-width:1120px; position:relative; z-index:1; }
   [data-theme="console"] main { padding:28px 32px 80px; max-width:none; }
-  [data-theme="console"] main::before { content:'◆ TORNKNÄCKARNA // SCOUTING WORKSTATION // CAPTAIN\'S MODE INTELLIGENCE // ESPARVEN DIVISION ◆'; display:block; background:var(--loss); color:#000; text-align:center; font-family:'Orbitron',monospace; font-weight:900; font-size:9px; letter-spacing:4px; padding:5px; margin-bottom:12px; animation:banner-pulse 3s ease-in-out infinite; }
+  [data-theme="console"] main::before { content:'\25C6 TORNKN\C4CKARNA // SCOUTING WORKSTATION // CAPTAIN\'S MODE INTELLIGENCE // ESPARVEN DIVISION \25C6'; display:block; background:var(--loss); color:#000; text-align:center; font-family:'Orbitron',monospace; font-weight:900; font-size:9px; letter-spacing:4px; padding:5px; margin-bottom:12px; animation:banner-pulse 3s ease-in-out infinite; }
   @keyframes banner-pulse { 0%,100%{opacity:1} 50%{opacity:0.75} }
-
   .match-header { margin-bottom:40px; opacity:0; transform:translateY(12px); animation:fadeUp .38s cubic-bezier(0.4,0,0.2,1) .04s forwards; }
   @keyframes fadeUp { to{opacity:1;transform:translateY(0)} }
   .match-title { font-size:30px; font-weight:300; letter-spacing:-.02em; color:var(--ink); line-height:1.2; margin-bottom:8px; }
@@ -120,8 +114,6 @@
   [data-theme="console"] .notice { border-radius:0; font-family:'Orbitron',monospace; font-size:9px; letter-spacing:2px; border:1px solid; }
   [data-theme="console"] .notice-live { border-color:var(--upcoming); background:transparent; }
   [data-theme="console"] .notice-snapshot { border-color:var(--ink-4); background:transparent; }
-
-  /* ── Season toggle ── */
   .season-toggle-wrap { display:inline-flex; align-items:center; margin-top:14px; border:1px solid var(--line); border-radius:var(--radius-sm); overflow:hidden; background:var(--line-2); }
   .season-toggle-btn { background:none; border:none; cursor:pointer; font-family:inherit; font-size:11px; font-weight:600; letter-spacing:.04em; color:var(--ink-4); padding:5px 14px; transition:background var(--tr),color var(--tr); white-space:nowrap; }
   .season-toggle-btn:hover { color:var(--ink-2); }
@@ -131,7 +123,6 @@
   [data-theme="console"] .season-toggle-wrap { border-radius:0; border-color:var(--ink-4); background:rgba(0,10,0,0.6); }
   [data-theme="console"] .season-toggle-btn { font-family:'Orbitron',monospace; font-size:8px; letter-spacing:2px; color:var(--ink-4); }
   [data-theme="console"] .season-toggle-btn.active { background:var(--accent); color:#000; }
-
   .section-title { font-size:10.5px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-4); margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid var(--line); }
   .page-section { padding:28px 32px; border-radius:14px; margin-bottom:28px; }
   .page-section-bans { background:var(--section-bans-bg); border:1px solid var(--section-bans-bdr); }
@@ -141,7 +132,6 @@
   [data-theme="console"] .page-section::before { content:''; position:absolute; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,var(--accent),transparent); }
   [data-theme="console"] .section-title { font-family:'Orbitron',monospace; font-size:9px; letter-spacing:3px; color:var(--ink-3); }
   [data-theme="console"] .page-section:hover { box-shadow:0 0 20px rgba(0,255,65,0.08); }
-
   .ban-section { margin-bottom:44px; }
   .ban-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; }
   .ban-card { background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px; display:flex; align-items:flex-start; gap:10px; transition:box-shadow var(--tr),transform var(--tr); opacity:0; animation:fadeUp .35s cubic-bezier(0.4,0,0.2,1) forwards; }
@@ -174,7 +164,6 @@
   [data-theme="console"] .priority-med .ban-priority-dot { animation:pulse-amber 1s ease-in-out infinite; }
   @keyframes pulse-red { 0%,100%{box-shadow:0 0 0 0 rgba(255,32,32,0.6)} 50%{box-shadow:0 0 0 4px rgba(255,32,32,0)} }
   @keyframes pulse-amber { 0%,100%{box-shadow:0 0 0 0 rgba(255,176,0,0.4)} 50%{box-shadow:0 0 0 4px rgba(255,176,0,0)} }
-
   .player-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:16px; margin-bottom:48px; }
   .player-card { background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:20px; transition:box-shadow var(--tr),transform var(--tr),border-color var(--tr); opacity:0; animation:fadeUp .35s cubic-bezier(0.4,0,0.2,1) forwards; }
   .player-card:nth-child(1){animation-delay:.10s}.player-card:nth-child(2){animation-delay:.15s}.player-card:nth-child(3){animation-delay:.20s}
@@ -194,7 +183,6 @@
   [data-theme="console"] .rank-badge { border-radius:0; font-family:'Share Tech Mono',monospace; font-size:10px; }
   [data-theme="console"] .wr-number { font-family:'VT323',monospace; font-size:32px; font-weight:400; letter-spacing:0; }
   [data-theme="console"] .wr-label { font-family:'Orbitron',monospace; font-size:8px; letter-spacing:2px; }
-
   .hero-section { margin-bottom:12px; }
   .hero-section-label { font-size:10px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-4); margin-bottom:7px; }
   .hero-row { display:flex; align-items:center; gap:8px; padding:5px 0; border-bottom:1px solid var(--line-2); }
@@ -213,7 +201,6 @@
   [data-theme="console"] .hero-name { font-family:'Share Tech Mono',monospace; font-size:11px; font-weight:400; }
   [data-theme="console"] .hero-games,[data-theme="console"] .hero-wr-pct { font-family:'Share Tech Mono',monospace; }
   [data-theme="console"] .hero-icon-wrap,[data-theme="console"] .hero-wr-bar,[data-theme="console"] .hero-wr-fill { border-radius:0; }
-
   .form-row { display:flex; align-items:center; gap:3px; margin-top:12px; padding-top:10px; border-top:1px solid var(--line-2); }
   .form-label { font-size:10px; color:var(--ink-4); font-weight:600; letter-spacing:.06em; text-transform:uppercase; margin-right:4px; white-space:nowrap; }
   .form-pip { width:15px; height:15px; border-radius:3px; font-size:8px; font-weight:700; display:flex; align-items:center; justify-content:center; color:#fff; flex-shrink:0; }
@@ -226,7 +213,6 @@
   [data-theme="console"] .form-label { font-family:'Orbitron',monospace; font-size:8px; letter-spacing:2px; }
   [data-theme="console"] .player-link { border-radius:0; font-family:'Share Tech Mono',monospace; font-size:10px; letter-spacing:1px; }
   [data-theme="console"] .player-link:hover { box-shadow:0 0 8px rgba(0,255,65,0.2); }
-
   .history-section { margin-bottom:48px; }
   .history-table { width:100%; border-collapse:collapse; font-size:13px; }
   .history-table th { text-align:left; font-size:10px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-4); padding:0 12px 10px; border-bottom:1px solid var(--line); }
@@ -249,12 +235,10 @@
   [data-theme="console"] .hero-chip { border-radius:0; font-family:'Share Tech Mono',monospace; border:1px solid var(--line); background:transparent; }
   [data-theme="console"] .hero-chip-icon { border-radius:0; }
   [data-theme="console"] .mono { font-family:'Share Tech Mono',monospace; }
-
   ::-webkit-scrollbar { width:5px; }
   ::-webkit-scrollbar-track { background:transparent; }
   ::-webkit-scrollbar-thumb { background:var(--line); border-radius:3px; }
   [data-theme="console"] ::-webkit-scrollbar-thumb { border-radius:0; }
-
   .sidebar-ticker-wrap { border-top:1px solid var(--line); background:var(--line-2); height:26px; display:flex; align-items:center; flex-shrink:0; }
   .sidebar-ticker-label { font-size:9px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--bg); background:var(--accent); padding:0 7px; height:100%; display:flex; align-items:center; flex-shrink:0; white-space:nowrap; position:relative; z-index:1; }
   .sidebar-ticker-scroll { flex:1; overflow:hidden; height:100%; display:flex; align-items:center; min-width:0; }
@@ -263,7 +247,6 @@
   [data-theme="console"] .sidebar-ticker-wrap { border-color:var(--line); background:rgba(0,10,0,0.8); height:22px; }
   [data-theme="console"] .sidebar-ticker-label { font-family:'Orbitron',monospace; font-size:8px; letter-spacing:2px; background:var(--loss); color:#000; }
   [data-theme="console"] .sidebar-ticker-text { font-family:'Share Tech Mono',monospace; font-size:10px; color:var(--ink-3); letter-spacing:.5px; }
-
   .console-sidebar-footer { display:none; flex-direction:column; border-top:1px solid var(--line); flex-shrink:0; }
   [data-theme="console"] .console-sidebar-footer { display:flex; }
   .console-logo-wrap { padding:8px 0 0; border-bottom:1px solid var(--line); }
@@ -275,8 +258,6 @@
   .tl-line.ok { color:var(--win); }
   .tl-line.warn { color:var(--upcoming); }
   .tl-line.err { color:var(--loss); }
-
-  /* Clean spinning logo for dark/light themes */
   .clean-logo-wrap { display:none; padding:20px 16px 16px; border-top:1px solid var(--border); align-items:center; justify-content:center; flex-direction:column; gap:12px; }
   [data-theme="dark"] .clean-logo-wrap, [data-theme="light"] .clean-logo-wrap { display:flex; }
   #clean-logo-canvas { display:block; border-radius:8px; }
@@ -284,7 +265,6 @@
   .countdown-label { font-size:9px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-4); margin-bottom:4px; }
   .countdown-time { font-size:13px; font-weight:600; color:var(--ink-2); font-variant-numeric:tabular-nums; letter-spacing:.03em; }
   .countdown-opponent { font-size:10px; color:var(--ink-4); margin-top:2px; }
-
   #boot-overlay { display:none; position:fixed; inset:0; background:#020a02; z-index:99999; flex-direction:column; align-items:center; justify-content:center; font-family:'Share Tech Mono',monospace; font-size:13px; color:#00ff41; gap:0; }
   #boot-overlay.active { display:flex; }
   .boot-line { opacity:0; width:420px; max-width:90vw; line-height:1.7; }
@@ -301,7 +281,6 @@
     95%{opacity:0.9;text-shadow:1px 0 10px rgba(0,255,65,0.7);transform:skewX(-0.5deg)}
     96%{opacity:1;text-shadow:0 0 15px rgba(0,255,65,0.4);transform:none}
   }
-
   @media (max-width:860px) {
     .shell { grid-template-columns:1fr; }
     aside { position:static; height:auto; border-right:none; border-bottom:1px solid var(--line); }
@@ -360,593 +339,87 @@ const INDEX_GIST_ID   = 'bd51bdad423fb0050aef6f7adea11c4e';
 const OUR_TEAM_GIST_ID= '6bb4217e29ad303db186fc70a5bac583';
 const MEDALS_BASE     = 'medals/';
 
-function gistUrl(gistId) {
-  return `https://gist.githubusercontent.com/${GIST_USER}/${gistId}/raw/data.json`;
-}
+function gistUrl(gistId){return`https://gist.githubusercontent.com/${GIST_USER}/${gistId}/raw/data.json`;}
 
-// ── Next match state (used by logo speed + countdown) ─────────────────────────
-let _nextMatchDate = null; // Date object or null
+let _nextMatchDate=null;
+function getLogoSpeed(){const BASE=0.50,MAX=2.2;if(!_nextMatchDate)return BASE;const msLeft=_nextMatchDate-Date.now();if(msLeft<=0)return MAX;const days=msLeft/(1000*60*60*24);const t=Math.max(0,Math.min(1,1-days/14));return BASE+(MAX-BASE)*t;}
 
-function getLogoSpeed() {
-  const BASE = 0.50, MAX = 2.2;
-  if(!_nextMatchDate) return BASE;
-  const msLeft = _nextMatchDate - Date.now();
-  if(msLeft <= 0) return MAX;
-  const days = msLeft / (1000 * 60 * 60 * 24);
-  // ramps from BASE at 14+ days to MAX at 0 days
-  const t = Math.max(0, Math.min(1, 1 - days / 14));
-  return BASE + (MAX - BASE) * t;
-}
+let currentSeasonOnly=true;
+let _currentMatchData=null;
+let _currentMatchContext=null;
 
-// ── Season filter state ───────────────────────────────────────────────────────
-// true  = current season only (default)
-// false = all seasons
-let currentSeasonOnly = true;
-
-// Cache the loaded bin so the toggle can re-render without re-fetching
-let _currentMatchData    = null;
-let _currentMatchContext = null; // { meetingId, isSelf }
-
-// ── Theme ─────────────────────────────────────────────────────────────────────
-const THEMES = ['dark','light','console'];
-const THEME_LABELS = {dark:'Dark',light:'Light',console:'Console'};
-function applyTheme(t) {
-  document.documentElement.setAttribute('data-theme',t);
-  const btn=document.getElementById('theme-toggle');
-  if(btn) btn.textContent=THEME_LABELS[t]||t;
-  if(t==='console') setTimeout(startConsoleLogo,0);
-  if(t==='dark'||t==='light') setTimeout(startCleanLogo,0);
-}
-function cycleTheme() {
-  const cur=document.documentElement.getAttribute('data-theme')||'dark';
-  const next=THEMES[(THEMES.indexOf(cur)+1)%THEMES.length];
-  localStorage.setItem('theme',next);
-  applyTheme(next);
-}
+const THEMES=['dark','light','console'];
+const THEME_LABELS={dark:'Dark',light:'Light',console:'Console'};
+function applyTheme(t){document.documentElement.setAttribute('data-theme',t);const btn=document.getElementById('theme-toggle');if(btn)btn.textContent=THEME_LABELS[t]||t;if(t==='console')setTimeout(startConsoleLogo,0);if(t==='dark'||t==='light')setTimeout(startCleanLogo,0);}
+function cycleTheme(){const cur=document.documentElement.getAttribute('data-theme')||'dark';const next=THEMES[(THEMES.indexOf(cur)+1)%THEMES.length];localStorage.setItem('theme',next);applyTheme(next);}
 applyTheme(localStorage.getItem('theme')||'dark');
 
-// ── Gist storage ─────────────────────────────────────────────────────────────
-async function fetchGist(gistId) {
-  const r = await fetch(gistUrl(gistId));
-  if(!r.ok) throw new Error(`Gist fetch ${r.status} for ${gistId}`);
-  return r.json();
-}
+async function fetchGist(gistId){const r=await fetch(gistUrl(gistId));if(!r.ok)throw new Error(`Gist fetch ${r.status} for ${gistId}`);return r.json();}
 
-// ── Profile links ─────────────────────────────────────────────────────────────
-function profileLinks(accountId) {
-  if(!accountId) return '';
-  return `<div class="player-links">
-    <a class="player-link" href="https://www.dotabuff.com/players/${accountId}" target="_blank">Dotabuff</a>
-    <a class="player-link" href="https://www.opendota.com/players/${accountId}" target="_blank">OpenDota</a>
-  </div>`;
-}
+function profileLinks(accountId){if(!accountId)return '';return`<div class="player-links"><a class="player-link" href="https://www.dotabuff.com/players/${accountId}" target="_blank">Dotabuff</a><a class="player-link" href="https://www.opendota.com/players/${accountId}" target="_blank">OpenDota</a></div>`;}
 
-// ── Rank badge ─────────────────────────────────────────────────────────────────
-const RANK_THEME = {
-  Herald:{lbg:'#f3f4f6',lc:'#374151',dbg:'#1c1f27',dc:'#9ca3af'},
-  Guardian:{lbg:'#f0fdf4',lc:'#166534',dbg:'#0d2b1a',dc:'#4ade80'},
-  Crusader:{lbg:'#fffbeb',lc:'#92400e',dbg:'#271a05',dc:'#fbbf24'},
-  Archon:{lbg:'#fff7ed',lc:'#9a3412',dbg:'#2a1208',dc:'#fb923c'},
-  Legend:{lbg:'#fff1f2',lc:'#9f1239',dbg:'#2a0a10',dc:'#fb7185'},
-  Ancient:{lbg:'#f5f3ff',lc:'#6d28d9',dbg:'#1a1040',dc:'#a78bfa'},
-  Divine:{lbg:'#fefce8',lc:'#854d0e',dbg:'#201a04',dc:'#fde047'},
-  Immortal:{lbg:'#ecfeff',lc:'#0e7490',dbg:'#042028',dc:'#22d3ee'},
-  Unknown:{lbg:'#f3f4f6',lc:'#6b7280',dbg:'#1c1f27',dc:'#6b7280'},
-};
-function rankBadgeHTML(rankMedal,rankLabel) {
-  const medal=rankMedal||'Unknown';
-  const cfg=RANK_THEME[medal]||RANK_THEME.Unknown;
-  const isLight=document.documentElement.getAttribute('data-theme')==='light';
-  const bg=isLight?cfg.lbg:cfg.dbg, color=isLight?cfg.lc:cfg.dc;
-  const imgUrl=`${MEDALS_BASE}${medal.toLowerCase().replace(/\s+/g,'_')}.png`;
-  return `<div class="rank-badge" style="background:${bg};color:${color}">
-    <img class="rank-medal-img" src="${imgUrl}" alt="${medal}" onerror="this.style.display='none'">
-    ${rankLabel||'Unknown'}
-  </div>`;
-}
+const RANK_THEME={Herald:{lbg:'#f3f4f6',lc:'#374151',dbg:'#1c1f27',dc:'#9ca3af'},Guardian:{lbg:'#f0fdf4',lc:'#166534',dbg:'#0d2b1a',dc:'#4ade80'},Crusader:{lbg:'#fffbeb',lc:'#92400e',dbg:'#271a05',dc:'#fbbf24'},Archon:{lbg:'#fff7ed',lc:'#9a3412',dbg:'#2a1208',dc:'#fb923c'},Legend:{lbg:'#fff1f2',lc:'#9f1239',dbg:'#2a0a10',dc:'#fb7185'},Ancient:{lbg:'#f5f3ff',lc:'#6d28d9',dbg:'#1a1040',dc:'#a78bfa'},Divine:{lbg:'#fefce8',lc:'#854d0e',dbg:'#201a04',dc:'#fde047'},Immortal:{lbg:'#ecfeff',lc:'#0e7490',dbg:'#042028',dc:'#22d3ee'},Unknown:{lbg:'#f3f4f6',lc:'#6b7280',dbg:'#1c1f27',dc:'#6b7280'}};
+function rankBadgeHTML(rankMedal,rankLabel){const medal=rankMedal||'Unknown';const cfg=RANK_THEME[medal]||RANK_THEME.Unknown;const isLight=document.documentElement.getAttribute('data-theme')==='light';const bg=isLight?cfg.lbg:cfg.dbg,color=isLight?cfg.lc:cfg.dc;const imgUrl=`${MEDALS_BASE}${medal.toLowerCase().replace(/\s+/g,'_')}.png`;return`<div class="rank-badge" style="background:${bg};color:${color}"><img class="rank-medal-img" src="${imgUrl}" alt="${medal}" onerror="this.style.display='none'">${rankLabel||'Unknown'}</div>`;}
 
-// ── Hero icons ─────────────────────────────────────────────────────────────────
-const HERO_SLUG = {
-  'Anti-Mage':'antimage','Axe':'axe','Beastmaster':'beastmaster','Bristleback':'bristleback',
-  'Centaur':'centaur','Centaur Warrunner':'centaur','Chen':'chen','Clockwerk':'rattletrap',
-  'Crystal Maiden':'crystal_maiden','Dark Willow':'dark_willow','Death Prophet':'death_prophet',
-  'Dragon Knight':'dragon_knight','Drow Ranger':'drow_ranger','Earth Spirit':'earth_spirit',
-  'Earthshaker':'earthshaker','Ember Spirit':'ember_spirit','Enigma':'enigma','Huskar':'huskar',
-  'Invoker':'invoker','Jakiro':'jakiro','Juggernaut':'juggernaut','Leshrac':'leshrac',
-  'Lina':'lina','Lion':'lion','Lycan':'lycan','Magnus':'magnataur','Mars':'mars',
-  'Medusa':'medusa','Muerta':'muerta','Naga Siren':'naga_siren',"Nature's Prophet":'furion',
-  'Omniknight':'omniknight','Phantom Assassin':'phantom_assassin','Phantom Lancer':'phantom_lancer',
-  'Phoenix':'phoenix','Pudge':'pudge','Puck':'puck','Queen of Pain':'queenofpain','Razor':'razor',
-  'Rubick':'rubick','Shadow Demon':'shadow_demon','Shadow Fiend':'nevermore',
-  'Shadow Shaman':'shadow_shaman','Slardar':'slardar','Snapfire':'snapfire','Spectre':'spectre',
-  'Spirit Breaker':'spirit_breaker','Storm Spirit':'storm_spirit','Techies':'techies',
-  'Templar Assassin':'templar_assassin','Timbersaw':'shredder','Tinker':'tinker',
-  'Tidehunter':'tidehunter','Troll Warlord':'troll_warlord','Ursa':'ursa',
-  'Vengeful Spirit':'vengefulspirit','Viper':'viper','Void Spirit':'void_spirit',
-  'Warlock':'warlock','Weaver':'weaver','Winter Wyvern':'winter_wyvern',
-  'Witch Doctor':'witch_doctor','Wraith King':'skeleton_king','Clinkz':'clinkz',
-  'Disruptor':'disruptor','Gyrocopter':'gyrocopter','Skywrath Mage':'skywrath_mage',
-  'Tiny':'tiny','Pugna':'pugna','Lich':'lich','Windranger':'windrunner','Sven':'sven',
-  'Bounty Hunter':'bounty_hunter','Legion Commander':'legion_commander','Mirana':'mirana',
-  'Hoodwink':'hoodwink','Bane':'bane','Dazzle':'dazzle','Abaddon':'abaddon',
-  'Alchemist':'alchemist','Ancient Apparition':'ancient_apparition','Arc Warden':'arc_warden',
-  'Batrider':'batrider','Bloodseeker':'bloodseeker','Brewmaster':'brewmaster',
-  'Broodmother':'broodmother','Chaos Knight':'chaos_knight','Doom':'doom',
-  'Elder Titan':'elder_titan','Faceless Void':'faceless_void','Grimstroke':'grimstroke',
-  'Io':'wisp','Keeper of the Light':'keeper_of_the_light','Kunkka':'kunkka',
-  'Lifestealer':'life_stealer','Lone Druid':'lone_druid','Marci':'marci','Meepo':'meepo',
-  'Monkey King':'monkey_king','Morphling':'morphling','Night Stalker':'night_stalker',
-  'Nyx Assassin':'nyx_assassin','Ogre Magi':'ogre_magi','Oracle':'oracle',
-  'Outworld Destroyer':'obsidian_destroyer','Pangolier':'pangolier','Primal Beast':'primal_beast',
-  'Ring Master':'ringmaster','Riki':'riki','Sand King':'sand_king','Silencer':'silencer',
-  'Slark':'slark','Terrorblade':'terrorblade','Treant Protector':'treant','Tusk':'tusk',
-  'Underlord':'underlord','Undying':'undying','Venomancer':'venomancer','Visage':'visage',
-  'Zeus':'zuus','Necrophos':'necrolyte','Naga Siren':'naga_siren',
-  'Dark Seer':'dark_seer','Witch Doctor':'witch_doctor','Underlord':'underlord',
-  'Snapfire':'snapfire','Ringmaster':'ringmaster',
-};
-function heroIconUrl(name,directUrl) {
-  if(directUrl) return directUrl.startsWith('http')?directUrl:`https://steamcdn-a.akamaihd.net${directUrl}`;
-  const slug=HERO_SLUG[name];
-  return slug?`https://steamcdn-a.akamaihd.net/apps/dota2/images/dota_react/heroes/icons/${slug}.png`:null;
-}
-function heroIconTag(name,wrapClass,directUrl) {
-  const url=heroIconUrl(name,directUrl);
-  return `<div class="${wrapClass}">${url?`<img src="${url}" alt="${name}" loading="lazy" onerror="this.parentElement.style.opacity='0.3'">`:''}</div>`;
-}
+const HERO_SLUG={'Anti-Mage':'antimage','Axe':'axe','Beastmaster':'beastmaster','Bristleback':'bristleback','Centaur':'centaur','Centaur Warrunner':'centaur','Chen':'chen','Clockwerk':'rattletrap','Crystal Maiden':'crystal_maiden','Dark Willow':'dark_willow','Death Prophet':'death_prophet','Dragon Knight':'dragon_knight','Drow Ranger':'drow_ranger','Earth Spirit':'earth_spirit','Earthshaker':'earthshaker','Ember Spirit':'ember_spirit','Enigma':'enigma','Huskar':'huskar','Invoker':'invoker','Jakiro':'jakiro','Juggernaut':'juggernaut','Leshrac':'leshrac','Lina':'lina','Lion':'lion','Lycan':'lycan','Magnus':'magnataur','Mars':'mars','Medusa':'medusa','Muerta':'muerta','Naga Siren':'naga_siren',"Nature's Prophet":'furion','Omniknight':'omniknight','Phantom Assassin':'phantom_assassin','Phantom Lancer':'phantom_lancer','Phoenix':'phoenix','Pudge':'pudge','Puck':'puck','Queen of Pain':'queenofpain','Razor':'razor','Rubick':'rubick','Shadow Demon':'shadow_demon','Shadow Fiend':'nevermore','Shadow Shaman':'shadow_shaman','Slardar':'slardar','Snapfire':'snapfire','Spectre':'spectre','Spirit Breaker':'spirit_breaker','Storm Spirit':'storm_spirit','Techies':'techies','Templar Assassin':'templar_assassin','Timbersaw':'shredder','Tinker':'tinker','Tidehunter':'tidehunter','Troll Warlord':'troll_warlord','Ursa':'ursa','Vengeful Spirit':'vengefulspirit','Viper':'viper','Void Spirit':'void_spirit','Warlock':'warlock','Weaver':'weaver','Winter Wyvern':'winter_wyvern','Witch Doctor':'witch_doctor','Wraith King':'skeleton_king','Clinkz':'clinkz','Disruptor':'disruptor','Gyrocopter':'gyrocopter','Skywrath Mage':'skywrath_mage','Tiny':'tiny','Pugna':'pugna','Lich':'lich','Windranger':'windrunner','Sven':'sven','Bounty Hunter':'bounty_hunter','Legion Commander':'legion_commander','Mirana':'mirana','Hoodwink':'hoodwink','Bane':'bane','Dazzle':'dazzle','Abaddon':'abaddon','Alchemist':'alchemist','Ancient Apparition':'ancient_apparition','Arc Warden':'arc_warden','Batrider':'batrider','Bloodseeker':'bloodseeker','Brewmaster':'brewmaster','Broodmother':'broodmother','Chaos Knight':'chaos_knight','Doom':'doom','Elder Titan':'elder_titan','Faceless Void':'faceless_void','Grimstroke':'grimstroke','Io':'wisp','Keeper of the Light':'keeper_of_the_light','Kunkka':'kunkka','Lifestealer':'life_stealer','Lone Druid':'lone_druid','Marci':'marci','Meepo':'meepo','Monkey King':'monkey_king','Morphling':'morphling','Night Stalker':'night_stalker','Nyx Assassin':'nyx_assassin','Ogre Magi':'ogre_magi','Oracle':'oracle','Outworld Destroyer':'obsidian_destroyer','Pangolier':'pangolier','Primal Beast':'primal_beast','Ring Master':'ringmaster','Riki':'riki','Sand King':'sand_king','Silencer':'silencer','Slark':'slark','Terrorblade':'terrorblade','Treant Protector':'treant','Tusk':'tusk','Underlord':'underlord','Undying':'undying','Venomancer':'venomancer','Visage':'visage','Zeus':'zuus','Necrophos':'necrolyte','Dark Seer':'dark_seer','Ringmaster':'ringmaster'};
+function heroIconUrl(name,directUrl){if(directUrl)return directUrl.startsWith('http')?directUrl:`https://steamcdn-a.akamaihd.net${directUrl}`;const slug=HERO_SLUG[name];return slug?`https://steamcdn-a.akamaihd.net/apps/dota2/images/dota_react/heroes/icons/${slug}.png`:null;}
+function heroIconTag(name,wrapClass,directUrl){const url=heroIconUrl(name,directUrl);return`<div class="${wrapClass}">${url?`<img src="${url}" alt="${name}" loading="lazy" onerror="this.parentElement.style.opacity='0.3'">`:''}</div>`;}
 
-// ── Season toggle ─────────────────────────────────────────────────────────────
-// Resolves the appropriate games/wr pair for a tournament hero based on toggle.
-// Falls back gracefully for old bins that only have tournamentGames/tournamentWR.
-function resolveHeroStats(h) {
-  if (currentSeasonOnly) {
-    return {
-      games: h.currentSeasonGames ?? h.tournamentGames,
-      wr:    h.currentSeasonWR    ?? h.tournamentWR,
-    };
-  }
-  return { games: h.tournamentGames, wr: h.tournamentWR };
-}
+function resolveHeroStats(h){if(currentSeasonOnly){return{games:h.currentSeasonGames??h.tournamentGames,wr:h.currentSeasonWR??h.tournamentWR};}return{games:h.tournamentGames,wr:h.tournamentWR};}
 
-function seasonToggleHTML() {
-  const isConsole = document.documentElement.getAttribute('data-theme') === 'console';
-  const csLabel   = isConsole ? 'CURRENT SEASON' : 'Current season';
-  const allLabel  = isConsole ? 'ALL SEASONS'    : 'All seasons';
-  return `<div class="season-toggle-wrap">
-    <button class="season-toggle-btn${currentSeasonOnly?' active':''}" onclick="setSeasonFilter(true)">${csLabel}</button>
-    <div class="season-divider"></div>
-    <button class="season-toggle-btn${!currentSeasonOnly?' active':''}" onclick="setSeasonFilter(false)">${allLabel}</button>
-  </div>`;
-}
+function seasonToggleHTML(){const isConsole=document.documentElement.getAttribute('data-theme')==='console';const csLabel=isConsole?'CURRENT SEASON':'Current season';const allLabel=isConsole?'ALL SEASONS':'All seasons';return`<div class="season-toggle-wrap"><button class="season-toggle-btn${currentSeasonOnly?' active':''}" onclick="setSeasonFilter(true)">${csLabel}</button><div class="season-divider"></div><button class="season-toggle-btn${!currentSeasonOnly?' active':''}" onclick="setSeasonFilter(false)">${allLabel}</button></div>`;}
 
-function setSeasonFilter(csOnly) {
-  if (currentSeasonOnly === csOnly) return;
-  currentSeasonOnly = csOnly;
-  if (_currentMatchData && _currentMatchContext) {
-    if (_currentMatchContext.isSelf) _renderOurTeamPanel(_currentMatchData);
-    else _renderMatchPanel(_currentMatchData, _currentMatchContext.meetingId);
-  }
-}
+function setSeasonFilter(csOnly){if(currentSeasonOnly===csOnly)return;currentSeasonOnly=csOnly;if(_currentMatchData&&_currentMatchContext){if(_currentMatchContext.isSelf)_renderOurTeamPanel(_currentMatchData);else _renderMatchPanel(_currentMatchData,_currentMatchContext.meetingId);}}
 
-// ── Ban scoring ───────────────────────────────────────────────────────────────
-function keyPickScore(h) {
-  const {games, wr} = resolveHeroStats(h);
-  if (!games) return 0;
-  const delta     = Math.max(0, wr - (h.pubWR || wr));
-  const deltaMult = 1 + (delta / 40);
-  const recency   = h.recentSeason ? 1.2 : 1.0;
-  return (wr / 100) * Math.log(games + 1) * deltaMult * recency;
-}
-function priorityLabel(s) { return s>=2.4?'high':s>=1.6?'med':'low'; }
-function banReason(h) {
-  const {games, wr} = resolveHeroStats(h);
-  const delta = Math.max(0, wr - (h.pubWR||wr));
-  const parts = [];
-  if (games>=4) parts.push(`${games} CM games`);
-  if (wr>=65)   parts.push(`${wr}% CM wr`);
-  if (delta>=15) parts.push(`+${delta}pp vs pub`);
-  return parts.join(' · ') || 'Moderate threat';
-}
-function computeBans(players) {
-  const cands=[];
-  for (const p of players)
-    for (const h of (p.tournamentHeroes||[])) {
-      const score=keyPickScore(h);
-      if(score) cands.push({hero:h,player:p.name,score,priority:priorityLabel(score)});
-    }
-  cands.sort((a,b)=>b.score-a.score);
-  const seen=new Set();
-  return cands.filter(c=>{if(seen.has(c.hero.name))return false;seen.add(c.hero.name);return true;}).slice(0,6);
-}
+function keyPickScore(h){const{games,wr}=resolveHeroStats(h);if(!games)return 0;const delta=Math.max(0,wr-(h.pubWR||wr));const deltaMult=1+(delta/40);const recency=h.recentSeason?1.2:1.0;return(wr/100)*Math.log(games+1)*deltaMult*recency;}
+function priorityLabel(s){return s>=2.4?'high':s>=1.6?'med':'low';}
+function banReason(h){const{games,wr}=resolveHeroStats(h);const delta=Math.max(0,wr-(h.pubWR||wr));const parts=[];if(games>=4)parts.push(`${games} CM games`);if(wr>=65)parts.push(`${wr}% CM wr`);if(delta>=15)parts.push(`+${delta}pp vs pub`);return parts.join(' \u00b7 ')||'Moderate threat';}
+function computeBans(players){const cands=[];for(const p of players)for(const h of(p.tournamentHeroes||[])){const score=keyPickScore(h);if(score)cands.push({hero:h,player:p.name,score,priority:priorityLabel(score)});}cands.sort((a,b)=>b.score-a.score);const seen=new Set();return cands.filter(c=>{if(seen.has(c.hero.name))return false;seen.add(c.hero.name);return true;}).slice(0,6);}
 
-// ── Render: ban section ───────────────────────────────────────────────────────
-function renderBanSection(players) {
-  const bans=computeBans(players);
-  const isConsole=document.documentElement.getAttribute('data-theme')==='console';
-  if(!bans.length) return '<div style="color:var(--ink-4);font-size:13px;margin-bottom:32px">No CM data yet — ban suggestions will appear after the opponent plays their first match.</div>';
-  const maxScore=bans[0].score||1;
-  const banCard=b=>{
-    const norm=Math.min(100,(b.score/maxScore)*100).toFixed(0);
-    const {games,wr}=resolveHeroStats(b.hero);
-    return `<div class="ban-card priority-${b.priority}">
-      <div class="ban-priority-dot"></div>
-      ${heroIconTag(b.hero.name,'ban-hero-icon',b.hero.iconUrl)}
-      <div class="ban-body">
-        <div class="ban-hero-name">${b.hero.name}</div>
-        <div class="ban-owner">${b.player}</div>
-        <div class="ban-stats">
-          <span class="ban-stat">${games} CM games</span>
-          <span class="ban-stat">${wr}% CM wr</span>
-          ${b.hero.pubWR?`<span class="ban-stat">${b.hero.pubWR}% pub wr`:''}
-        </div>
-        <div class="ban-reason">${banReason(b.hero)}</div>
-        <div class="ban-score-bar"><div class="ban-score-fill" style="width:${norm}%"></div></div>
-      </div>
-    </div>`;
-  };
-  const tier=(label,color,items)=>!items.length?'':`
-    <div style="margin-bottom:20px">
-      <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:${color};margin-bottom:8px;display:flex;align-items:center;gap:6px;${isConsole?'font-family:Orbitron,monospace;letter-spacing:3px;':''}">
-        <span style="display:inline-block;width:6px;height:6px;border-radius:${isConsole?'0':'50%'};background:${color}"></span>${label}
-      </div>
-      <div class="ban-grid">${items.map(banCard).join('')}</div>
-    </div>`;
-  const high=bans.filter(b=>b.priority==='high');
-  const med=bans.filter(b=>b.priority==='med');
-  const low=bans.filter(b=>b.priority==='low');
-  return `<div class="ban-section">
-    <div class="section-title">${isConsole?'// ':''}Suggested bans</div>
-    ${tier('Priority bans','var(--ban-high)',high)}
-    ${tier('Moderate threats','var(--ban-med)',med)}
-    ${tier('Situational','#9ca3af',low)}
-    <div style="font-size:11px;color:var(--ink-4);margin-top:4px;line-height:1.5${isConsole?';font-family:Share Tech Mono,monospace':''}">Scored by CM winrate, games played, delta vs pub winrate, and recency.</div>
-  </div>`;
-}
+function renderBanSection(players){const bans=computeBans(players);const isConsole=document.documentElement.getAttribute('data-theme')==='console';if(!bans.length)return'<div style="color:var(--ink-4);font-size:13px;margin-bottom:32px">No CM data yet \u2014 ban suggestions will appear after the opponent plays their first match.</div>';const maxScore=bans[0].score||1;const banCard=b=>{const norm=Math.min(100,(b.score/maxScore)*100).toFixed(0);const{games,wr}=resolveHeroStats(b.hero);return`<div class="ban-card priority-${b.priority}"><div class="ban-priority-dot"></div>${heroIconTag(b.hero.name,'ban-hero-icon',b.hero.iconUrl)}<div class="ban-body"><div class="ban-hero-name">${b.hero.name}</div><div class="ban-owner">${b.player}</div><div class="ban-stats"><span class="ban-stat">${games} CM games</span><span class="ban-stat">${wr}% CM wr</span>${b.hero.pubWR?`<span class="ban-stat">${b.hero.pubWR}% pub wr`:''}${''}</div><div class="ban-reason">${banReason(b.hero)}</div><div class="ban-score-bar"><div class="ban-score-fill" style="width:${norm}%"></div></div></div></div>`;};const tier=(label,color,items)=>!items.length?'':`<div style="margin-bottom:20px"><div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:${color};margin-bottom:8px;display:flex;align-items:center;gap:6px;${isConsole?'font-family:Orbitron,monospace;letter-spacing:3px;':''}"><span style="display:inline-block;width:6px;height:6px;border-radius:${isConsole?'0':'50%'};background:${color}"></span>${label}</div><div class="ban-grid">${items.map(banCard).join('')}</div></div>`;const high=bans.filter(b=>b.priority==='high');const med=bans.filter(b=>b.priority==='med');const low=bans.filter(b=>b.priority==='low');return`<div class="ban-section"><div class="section-title">${isConsole?'// ':''}Suggested bans</div>${tier('Priority bans','var(--ban-high)',high)}${tier('Moderate threats','var(--ban-med)',med)}${tier('Situational','#9ca3af',low)}<div style="font-size:11px;color:var(--ink-4);margin-top:4px;line-height:1.5${isConsole?';font-family:Share Tech Mono,monospace':''}">Scored by CM winrate, games played, delta vs pub winrate, and recency.</div></div>`;}
 
-// ── Render: draft tendencies ──────────────────────────────────────────────────
-function renderDraftOrderPatterns(patterns) {
-  if (!patterns || !patterns.length) return '';
-  const isConsole = document.documentElement.getAttribute('data-theme') === 'console';
+function renderDraftOrderPatterns(patterns){if(!patterns||!patterns.length)return'';const isConsole=document.documentElement.getAttribute('data-theme')==='console';const bans=patterns.filter(p=>!p.isPick);const picks=patterns.filter(p=>p.isPick);const firstBan=bans.find(p=>p.slot===0);const firstPick=picks.find(p=>p.slot===0);const spotlight=(p,color,label)=>{if(!p)return'';const src=heroIconUrl(p.hero,p.iconUrl||'')||'';const icon=src?`<img src="${src}" alt="${p.hero}" style="width:32px;height:32px;border-radius:5px;object-fit:cover;flex-shrink:0" onerror="this.style.display='none'">`:`<div style="width:32px;height:32px;border-radius:5px;background:var(--line-2);flex-shrink:0"></div>`;return`<div style="display:flex;align-items:center;gap:10px;flex:1;min-width:140px;padding:10px 14px;background:var(--surface);border:1px solid var(--line);border-left:3px solid ${color};border-radius:${isConsole?'0':'8px'}">${icon}<div style="min-width:0"><div style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:${color};margin-bottom:2px;${isConsole?'font-family:Orbitron,monospace;':''}">${label}</div><div style="font-size:13px;font-weight:600;color:var(--ink-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.hero}</div><div style="font-size:10px;color:var(--ink-4);font-family:var(--mono)">${p.pct}% of games</div></div></div>`;};const chip=p=>{const src=heroIconUrl(p.hero,p.iconUrl||'')||'';const icon=src?`<img src="${src}" alt="${p.hero}" style="width:18px;height:18px;border-radius:3px;object-fit:cover;flex-shrink:0" onerror="this.style.display='none'">`:'';;const color=p.isPick?'var(--win)':'var(--loss)';return`<div style="display:flex;align-items:center;gap:6px;padding:5px 8px;background:var(--surface);border:1px solid var(--line);border-radius:${isConsole?'0':'6px'};min-width:0"><span style="font-size:9px;font-weight:700;letter-spacing:.05em;color:var(--ink-4);white-space:nowrap;min-width:52px;${isConsole?'font-family:Orbitron,monospace;font-size:8px;':''}">${p.label.toUpperCase()}</span>${icon}<span style="font-size:12px;color:var(--ink-1);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.hero}</span><span style="font-size:10px;color:${color};font-weight:600;flex-shrink:0;font-family:var(--mono)">${p.pct}%</span></div>`;};
+// Bans left, picks right
+const col=(title,items,color)=>!items.length?'':`<div style="flex:1;min-width:180px"><div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:${color};margin-bottom:8px;${isConsole?'font-family:Orbitron,monospace;letter-spacing:3px;':''}">${isConsole?'// ':''}${title}</div><div style="display:flex;flex-direction:column;gap:4px">${items.map(chip).join('')}</div></div>`;const spotlightHtml=(firstBan||firstPick)?`<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">${spotlight(firstBan,'var(--loss)','First ban')}${spotlight(firstPick,'var(--win)','First pick')}</div>`:'';const fullBreakdown=(bans.length>1||picks.length>1)?`<div style="display:flex;gap:20px;flex-wrap:wrap">${col('Ban order',bans,'var(--loss)')}${col('Pick order',picks,'var(--win)')}</div>`:'';return`<div style="margin-top:20px"><div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-4);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--line);${isConsole?'font-family:Orbitron,monospace;letter-spacing:3px;':''}">${isConsole?'// ':''}Draft order tendencies</div>${spotlightHtml}${fullBreakdown}</div>`;}
 
-  const bans  = patterns.filter(p => !p.isPick);
-  const picks = patterns.filter(p =>  p.isPick);
+function renderDraftTendencies(tendencies){if(!tendencies||!tendencies.totalGames)return'';const isConsole=document.documentElement.getAttribute('data-theme')==='console';const total=tendencies.totalGames;const heroIconSmall=(name,iconUrl)=>{const src=heroIconUrl(name,iconUrl||'')||'';return src?`<img src="${src}" alt="${name}" style="width:20px;height:20px;border-radius:3px;object-fit:cover;flex-shrink:0" onerror="this.style.display='none'">`:'';}; const row=item=>{const pct=Math.round(item.count/total*100);const barW=Math.min(100,pct);return`<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><div style="width:20px;height:20px;flex-shrink:0">${heroIconSmall(item.name,item.iconUrl||'')}</div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px"><span style="font-size:12px;color:var(--ink-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${item.name}</span><span style="font-size:11px;color:var(--ink-3);flex-shrink:0;margin-left:8px">${item.count}\u00d7&nbsp;<span style="color:var(--ink-4)">${pct}%</span></span></div><div style="height:3px;background:var(--surface-2);border-radius:2px"><div style="height:3px;width:${barW}%;background:var(--accent);border-radius:2px;opacity:0.7"></div></div></div></div>`;};
+// CHANGE 1: bans column left, picks column right
+const col=(title,items,color)=>!items||!items.length?'':`<div style="flex:1;min-width:180px"><div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:${color};margin-bottom:10px;${isConsole?'font-family:Orbitron,monospace;letter-spacing:3px;':''}">${isConsole?'// ':''}${title}</div>${items.map(row).join('')}</div>`;return`<div class="ban-section" style="margin-top:28px"><div class="section-title" style="margin-bottom:4px">${isConsole?'// ':''}Draft presence</div><div style="font-size:11px;color:var(--ink-4);margin-bottom:16px">Based on ${total} tracked game${total===1?'':'s'}</div><div style="display:flex;gap:32px;flex-wrap:wrap">${col('Most banned',tendencies.mostBanned,'var(--loss)')}${col('Most picked',tendencies.mostPicked,'var(--win)')}</div>${renderDraftOrderPatterns(tendencies.orderPatterns)}</div>`;}
 
-  const firstBan  = bans.find(p => p.slot === 0);
-  const firstPick = picks.find(p => p.slot === 0);
+// ── Hero winrate breakdown: computed from history, per team ───────────────────
+// "with"    = scouted team picked hero X; did they win?
+// "against" = opponent picked hero X;     did scouted team win?
+// Skips history entries that lack opponentTeam/opponentWon (old bins).
+// Respects the season toggle.
 
-  const spotlight = (p, color, label) => {
-    if (!p) return '';
-    const src = heroIconUrl(p.hero, p.iconUrl || '') || '';
-    const icon = src
-      ? `<img src="${src}" alt="${p.hero}" style="width:32px;height:32px;border-radius:5px;object-fit:cover;flex-shrink:0" onerror="this.style.display='none'">`
-      : `<div style="width:32px;height:32px;border-radius:5px;background:var(--line-2);flex-shrink:0"></div>`;
-    return `<div style="display:flex;align-items:center;gap:10px;flex:1;min-width:140px;padding:10px 14px;background:var(--surface);border:1px solid var(--line);border-left:3px solid ${color};border-radius:${isConsole?'0':'8px'}">
-      ${icon}
-      <div style="min-width:0">
-        <div style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:${color};margin-bottom:2px;${isConsole?'font-family:Orbitron,monospace;':''}">
-          ${label}
-        </div>
-        <div style="font-size:13px;font-weight:600;color:var(--ink-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.hero}</div>
-        <div style="font-size:10px;color:var(--ink-4);font-family:var(--mono)">${p.pct}% of games</div>
-      </div>
-    </div>`;
-  };
+function computeMatchupStats(history,currentSeasonId){const withMap={};const againstMap={};for(const m of(history||[])){if(currentSeasonOnly&&m.seasonId!=null&&m.seasonId!==currentSeasonId)continue;if(m.opponentTeam==null||m.opponentWon==null)continue;const ourTeam=m.opponentTeam===0?1:0;const ourWon=!m.opponentWon;for(const pk of(m.picks||[])){const name=pk.heroName;if(!name)continue;const iconUrl=pk.iconUrl||'';if(pk.team===ourTeam){if(!withMap[name])withMap[name]={wins:0,games:0,iconUrl};withMap[name].games++;if(ourWon)withMap[name].wins++;}else{if(!againstMap[name])againstMap[name]={wins:0,games:0,iconUrl};againstMap[name].games++;if(ourWon)againstMap[name].wins++;}}}const toList=map=>Object.entries(map).map(([name,s])=>({name,iconUrl:s.iconUrl,games:s.games,wr:s.games>0?Math.round(100*s.wins/s.games):0}));return{withList:toList(withMap).sort((a,b)=>b.wr-a.wr||b.games-a.games),againstList:toList(againstMap).sort((a,b)=>a.wr-b.wr||b.games-a.games)};}
 
-  const chip = (p) => {
-    const src = heroIconUrl(p.hero, p.iconUrl || '') || '';
-    const icon = src
-      ? `<img src="${src}" alt="${p.hero}" style="width:18px;height:18px;border-radius:3px;object-fit:cover;flex-shrink:0" onerror="this.style.display='none'">`
-      : '';
-    const color = p.isPick ? 'var(--win)' : 'var(--loss)';
-    return `<div style="display:flex;align-items:center;gap:6px;padding:5px 8px;background:var(--surface);border:1px solid var(--line);border-radius:${isConsole?'0':'6px'};min-width:0">
-      <span style="font-size:9px;font-weight:700;letter-spacing:.05em;color:var(--ink-4);white-space:nowrap;min-width:52px;${isConsole?'font-family:Orbitron,monospace;font-size:8px;':''}">
-        ${p.label.toUpperCase()}
-      </span>
-      ${icon}
-      <span style="font-size:12px;color:var(--ink-1);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.hero}</span>
-      <span style="font-size:10px;color:${color};font-weight:600;flex-shrink:0;font-family:var(--mono)">${p.pct}%</span>
-    </div>`;
-  };
+function renderMatchupStats(history,currentSeasonId){if(!history||!history.length)return'';if(!history.some(m=>m.opponentTeam!=null&&m.opponentWon!=null))return'';const{withList,againstList}=computeMatchupStats(history,currentSeasonId);if(!withList.length&&!againstList.length)return'';const isConsole=document.documentElement.getAttribute('data-theme')==='console';const seasonNote=currentSeasonOnly?' \u00b7 current season':' \u00b7 all seasons';const heroRow=(h,colorVar)=>{const icon=heroIconUrl(h.name,h.iconUrl||'');const iconHtml=icon?`<img src="${icon}" alt="${h.name}" style="width:20px;height:20px;border-radius:${isConsole?'0':'3px'};object-fit:cover;flex-shrink:0" onerror="this.style.display='none'">`:`<div style="width:20px;height:20px;flex-shrink:0"></div>`;return`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--line-2)">${iconHtml}<span style="flex:1;font-size:12px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${h.name}</span><span style="font-size:9px;color:var(--ink-4);margin-left:4px">${h.games}g</span><span style="font-size:12px;font-weight:600;color:${colorVar};font-family:var(--mono);flex-shrink:0;min-width:32px;text-align:right">${h.wr}%</span></div>`;};const col=(title,items,colorVar,emptyMsg)=>`<div style="flex:1;min-width:180px"><div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:${colorVar};margin-bottom:10px;${isConsole?'font-family:Orbitron,monospace;letter-spacing:3px;':''}">${isConsole?'// ':''}${title}</div>${items.length?items.slice(0,5).map(h=>heroRow(h,colorVar)).join(''):`<div style="font-size:12px;color:var(--ink-4)">${emptyMsg}</div>`}</div>`;return`<div class="ban-section" style="margin-top:28px"><div class="section-title" style="margin-bottom:4px">${isConsole?'// ':''}Hero winrate breakdown</div><div style="font-size:11px;color:var(--ink-4);margin-bottom:16px">From E-Sparven match history${seasonNote}. Game count shown \u2014 small samples may not reflect true trends.</div><div style="display:flex;gap:32px;flex-wrap:wrap">${col('Highest winrate with',withList,'var(--win)','No data')}${col('Lowest winrate against',againstList,'var(--loss)','No data')}</div></div>`;}
 
-  const col = (title, items, color) => !items.length ? '' : `
-    <div style="flex:1;min-width:180px">
-      <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:${color};margin-bottom:8px;${isConsole?'font-family:Orbitron,monospace;letter-spacing:3px;':''}">
-        ${isConsole?'// ':''}${title}
-      </div>
-      <div style="display:flex;flex-direction:column;gap:4px">${items.map(chip).join('')}</div>
-    </div>`;
+function wrClass(wr){return wr>=60?'high':wr<45?'low':'';}
 
-  const spotlightHtml = (firstBan || firstPick) ? `
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
-      ${spotlight(firstBan,  'var(--loss)', 'First ban')}
-      ${spotlight(firstPick, 'var(--win)',  'First pick')}
-    </div>` : '';
+function renderHeroRows(heroes,isTournament,isSelf){if(!heroes||!heroes.length)return'<div style="font-size:12px;color:var(--ink-4);padding:4px 0">No data</div>';if(isTournament){heroes=[...heroes].sort((a,b)=>{const sa=resolveHeroStats(a),sb=resolveHeroStats(b);return sb.games-sa.games||sb.wr-sa.wr;});}let anyVisible=false;const rows=heroes.map(h=>{let wr,games;if(isTournament){const s=resolveHeroStats(h);wr=s.wr;games=s.games;if(games===0)return'';}else{wr=h.wr;games=h.games;}anyVisible=true;const isKey=!isSelf&&isTournament&&keyPickScore(h)>=2.4&&games>=3;return`<div class="hero-row">${heroIconTag(h.name,'hero-icon-wrap',h.iconUrl)}<div class="hero-name">${h.name}</div><div class="hero-games">${games}g</div><div class="hero-wr-bar"><div class="hero-wr-fill ${wrClass(wr)}" style="width:${wr}%"></div></div><div class="hero-wr-pct">${wr}%</div>${isKey?'<div class="key-pick-dot" title="Ban candidate"></div>':'<div style="width:6px"></div>'}</div>`;}).join('');return anyVisible?rows:'<div style="font-size:12px;color:var(--ink-4);padding:4px 0">No games this season</div>';}
 
-  const fullBreakdown = (bans.length > 1 || picks.length > 1) ? `
-    <div style="display:flex;gap:20px;flex-wrap:wrap">
-      ${col('Ban order', bans, 'var(--loss)')}
-      ${col('Pick order', picks, 'var(--win)')}
-    </div>` : '';
+function renderPlayerCard(p,isSelf){const form=(p.form||[]).map(r=>`<div class="form-pip ${r}">${r.toUpperCase()}</div>`).join('');const noId=!p.accountId?`<span style="font-size:9px;color:var(--ink-4);margin-left:6px;font-weight:600">no ID</span>`:'';const hasBanCandidate=!isSelf&&(p.tournamentHeroes||[]).some(h=>{const{games}=resolveHeroStats(h);return keyPickScore(h)>=2.4&&games>=3;});const isConsole=document.documentElement.getAttribute('data-theme')==='console';return`<div class="player-card"><div class="player-card-top"><div class="player-meta"><div class="player-name">${p.name}${noId}</div>${rankBadgeHTML(p.rankMedal||'Unknown',p.rankLabel)}</div><div class="player-wr">${p.winrate!=null?`<div class="wr-number">${p.winrate}%</div><div class="wr-label">${isConsole?'PUB WR':'pub wr'}</div>`:'<div class="wr-number" style="font-size:14px;color:var(--ink-4)">\u2014</div>'}</div></div><div class="hero-section"><div class="hero-section-label">${isConsole?'// ':''}CM picks (E-Sparven)${hasBanCandidate?`<span style="font-size:9px;color:var(--ban-high);margin-left:4px">\u25cf ban candidate</span>`:''}</div>${renderHeroRows(p.tournamentHeroes,true,isSelf)}</div><div class="hero-section"><div class="hero-section-label">${isConsole?'// ':''}Pub pool</div>${renderHeroRows(p.pubHeroes,false,isSelf)}</div>${form?`<div class="form-row"><div class="form-label">Form</div>${form}</div>`:''}${profileLinks(p.accountId)}</div>`;}
 
-  return `<div style="margin-top:20px">
-    <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-4);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--line);${isConsole?'font-family:Orbitron,monospace;letter-spacing:3px;':''}">
-      ${isConsole?'// ':''}Draft order tendencies
-    </div>
-    ${spotlightHtml}
-    ${fullBreakdown}
-  </div>`;
-}
+function renderHistory(history,currentSeasonId){if(!history||!history.length)return'';const isConsole=document.documentElement.getAttribute('data-theme')==='console';const filtered=history.filter(m=>{if(!currentSeasonOnly)return true;if(m.seasonId==null)return true;return m.seasonId===currentSeasonId;});const seasonLabel=currentSeasonOnly?' this season':'';const title=`${isConsole?'// ':''}Opponent's E-Sparven match history${seasonLabel}`;if(!filtered.length)return`<div class="page-section page-section-history history-section"><div class="section-title">${title}</div><div style="font-size:13px;color:var(--ink-4)">No games recorded${seasonLabel}.</div></div>`;const chipGroup=(picks,team)=>{const chips=(picks||[]).filter(pk=>pk.team===team).map(pk=>{const url=heroIconUrl(pk.heroName,pk.iconUrl);return`<span class="hero-chip"><div class="hero-chip-icon">${url?`<img src="${url}" alt="${pk.heroName}" loading="lazy">`:''}</div>${pk.heroName}</span>`;}).join('');return chips||'<span style="font-size:11px;color:var(--ink-4)">\u2014</span>';};const rows=filtered.map(m=>{const oppTeam=m.opponentTeam??null,oppWon=m.opponentWon??null;const resultBadge=oppWon===true?'<span class="result-badge win">W</span>':oppWon===false?'<span class="result-badge loss">L</span>':'';const sideLabel=t=>oppTeam===null?'':t===oppTeam?`<span style="font-size:9px;font-weight:700;letter-spacing:.05em;color:var(--upcoming);background:var(--upcoming-bg);padding:1px 5px;border-radius:${isConsole?'0':'3px'};margin-right:4px${isConsole?';font-family:Orbitron,monospace;letter-spacing:2px':''}">OPP</span>`:`<span style="font-size:9px;color:var(--ink-4);background:var(--line-2);padding:1px 5px;border-radius:${isConsole?'0':'3px'};margin-right:4px">vs</span>`;return`<tr><td class="mono">${m.duration||'\u2014'}</td><td>${resultBadge?`<span style="margin-right:6px">${resultBadge}</span>`:''}${sideLabel(0)}${chipGroup(m.picks,0)}</td><td>${sideLabel(1)}${chipGroup(m.picks,1)}</td><td class="mono" style="color:var(--ink-4)">${m.patch?`patch ${m.patch}`:''}</td><td style="white-space:nowrap"><a class="player-link" href="https://www.opendota.com/matches/${m.matchId}" target="_blank" style="font-size:10.5px;padding:2px 8px">Match</a></td></tr>`;}).join('');return`<div class="page-section page-section-history history-section"><div class="section-title">${title}</div><table class="history-table"><thead><tr><th>Duration</th><th>Radiant</th><th>Dire</th><th>Patch</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`;}
 
-function renderDraftTendencies(tendencies) {
-  if (!tendencies || !tendencies.totalGames) return '';
-  const isConsole = document.documentElement.getAttribute('data-theme') === 'console';
-  const total = tendencies.totalGames;
+function fmtDate(iso){if(!iso)return'\u2014';return new Date(iso).toLocaleDateString('sv-SE',{weekday:'short',day:'numeric',month:'short',year:'numeric'});}
 
-  const heroIconSmall = (name, iconUrl) => {
-    const src = heroIconUrl(name, iconUrl||'') || '';
-    return src ? `<img src="${src}" alt="${name}" style="width:20px;height:20px;border-radius:3px;object-fit:cover;flex-shrink:0" onerror="this.style.display='none'">` : '';
-  };
+const TICKER_ITEMS=['PATCH 7.37 // DARK WILLOW REWORKED','TORNKN\u00c4CKARNA // CAPTAIN\'S MODE','E-SPARVEN DIVISION // CURRENT SEASON','ENIGMA BLACK HOLE // HIGH BAN PRIORITY','INVOKER // WINRATE ELEVATED IN CM','REMEMBER: DRAFT TEMPO WINS GAMES','ROSHAN SPAWNS AT 00:00 // TRACK IT','OBSERVER WARDS // PLACE EARLY','SMOKE ROTATIONS // SECURE OBJECTIVES','NET WORTH DELTA // KEY METRIC','CM DRAFT PHASE // 5 BANS EACH SIDE','ANALYSIS: PUSH LINEUPS STRONG PATCH'];
+function buildTicker(matches,tickerSnippets){const parts=tickerSnippets&&tickerSnippets.length?[...tickerSnippets]:[...TICKER_ITEMS];const upcoming=matches.filter(m=>m.status==='upcoming');const past=matches.filter(m=>m.status!=='upcoming');if(upcoming.length)parts.unshift(`NEXT MATCH ${upcoming[0].opponent.toUpperCase()} ${fmtDate(upcoming[0].date).toUpperCase()}`);const lastWin=past.find(m=>m.status==='win');const lastLoss=past.find(m=>m.status==='loss');if(lastWin)parts.unshift(`LAST WIN ${lastWin.opponent.toUpperCase()}`);if(lastLoss)parts.unshift(`LAST LOSS ${lastLoss.opponent.toUpperCase()}`);const full=[...parts,...parts].join('   ///   ');const el=document.getElementById('sidebar-ticker-text');if(el)el.textContent=full;}
 
-  const row = (item) => {
-    const pct = Math.round(item.count / total * 100);
-    const barW = Math.min(100, pct);
-    return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-      <div style="width:20px;height:20px;flex-shrink:0">${heroIconSmall(item.name, item.iconUrl||'')}</div>
-      <div style="flex:1;min-width:0">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
-          <span style="font-size:12px;color:var(--ink-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${item.name}</span>
-          <span style="font-size:11px;color:var(--ink-3);flex-shrink:0;margin-left:8px">${item.count}×&nbsp;<span style="color:var(--ink-4)">${pct}%</span></span>
-        </div>
-        <div style="height:3px;background:var(--surface-2);border-radius:2px">
-          <div style="height:3px;width:${barW}%;background:var(--accent);border-radius:2px;opacity:0.7"></div>
-        </div>
-      </div>
-    </div>`;
-  };
+const BOOT_LINES=[{text:'> INITIALIZING SCOUTING WORKSTATION...',cls:'',delay:0},{text:'> AUTHENTICATING SESSION... OK',cls:'ok',delay:280},{text:'> FETCHING OPPONENT INTELLIGENCE...',cls:'',delay:520},{text:'> DECRYPTING HERO POOL DATA...',cls:'',delay:760},{text:'> CROSS-REFERENCING CM WINRATES...',cls:'',delay:980},{text:'> GENERATING BAN RECOMMENDATIONS...',cls:'warn',delay:1200},{text:'> ALL SYSTEMS NOMINAL. STAND BY.',cls:'ok',delay:1440}];
+function runBootSequence(cb){if(document.documentElement.getAttribute('data-theme')!=='console'){cb();return;}const overlay=document.getElementById('boot-overlay');const linesEl=document.getElementById('boot-lines');linesEl.innerHTML='';overlay.classList.add('active');BOOT_LINES.forEach(l=>{const div=document.createElement('div');div.className='boot-line';div.style.color=l.cls==='ok'?'#00ff41':l.cls==='warn'?'#ffb000':'#00aa2a';div.style.width='420px';div.style.maxWidth='90vw';div.style.lineHeight='1.7';div.style.fontFamily="'Share Tech Mono',monospace";div.style.fontSize='12px';linesEl.appendChild(div);setTimeout(()=>{div.classList.add('visible');div.textContent=l.text;},l.delay);});const total=BOOT_LINES[BOOT_LINES.length-1].delay+600;setTimeout(()=>{overlay.classList.remove('active');cb();},total);}
 
-  const col = (title, items, color) => !items||!items.length ? '' : `
-    <div style="flex:1;min-width:180px">
-      <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:${color};margin-bottom:10px;${isConsole?'font-family:Orbitron,monospace;letter-spacing:3px;':''}">
-        ${isConsole?'// ':''}${title}
-      </div>
-      ${items.map(row).join('')}
-    </div>`;
-
-  return `<div class="ban-section" style="margin-top:28px">
-    <div class="section-title" style="margin-bottom:4px">${isConsole?'// ':''}Draft presence</div>
-    <div style="font-size:11px;color:var(--ink-4);margin-bottom:16px">Based on ${total} tracked game${total===1?'':'s'}</div>
-    <div style="display:flex;gap:32px;flex-wrap:wrap">
-      ${col('Most picked', tendencies.mostPicked, 'var(--win)')}
-      ${col('Most banned', tendencies.mostBanned, 'var(--loss)')}
-    </div>
-    ${renderDraftOrderPatterns(tendencies.orderPatterns)}
-  </div>`;
-}
-
-
-function wrClass(wr) { return wr>=60?'high':wr<45?'low':''; }
-
-function renderHeroRows(heroes, isTournament, isSelf) {
-  if (!heroes||!heroes.length) return '<div style="font-size:12px;color:var(--ink-4);padding:4px 0">No data</div>';
-  if (isTournament) {
-    heroes = [...heroes].sort((a,b) => {
-      const sa = resolveHeroStats(a), sb = resolveHeroStats(b);
-      return sb.games - sa.games || sb.wr - sa.wr;
-    });
-  }
-  let anyVisible = false;
-  const rows = heroes.map(h => {
-    let wr, games;
-    if (isTournament) {
-      const s = resolveHeroStats(h);
-      wr = s.wr; games = s.games;
-      if (games === 0) return ''; // hero not played in this season
-    } else {
-      wr = h.wr; games = h.games;
-    }
-    anyVisible = true;
-    const isKey = !isSelf && isTournament && keyPickScore(h)>=2.4 && games>=3;
-    return `<div class="hero-row">
-      ${heroIconTag(h.name,'hero-icon-wrap',h.iconUrl)}
-      <div class="hero-name">${h.name}</div>
-      <div class="hero-games">${games}g</div>
-      <div class="hero-wr-bar"><div class="hero-wr-fill ${wrClass(wr)}" style="width:${wr}%"></div></div>
-      <div class="hero-wr-pct">${wr}%</div>
-      ${isKey?'<div class="key-pick-dot" title="Ban candidate"></div>':'<div style="width:6px"></div>'}
-    </div>`;
-  }).join('');
-  return anyVisible ? rows : '<div style="font-size:12px;color:var(--ink-4);padding:4px 0">No games this season</div>';
-}
-
-// ── Render: player card ───────────────────────────────────────────────────────
-function renderPlayerCard(p, isSelf) {
-  const form=(p.form||[]).map(r=>`<div class="form-pip ${r}">${r.toUpperCase()}</div>`).join('');
-  const noId=!p.accountId?`<span style="font-size:9px;color:var(--ink-4);margin-left:6px;font-weight:600">no ID</span>`:'';
-  const hasBanCandidate=!isSelf&&(p.tournamentHeroes||[]).some(h=>{
-    const {games}=resolveHeroStats(h); return keyPickScore(h)>=2.4&&games>=3;
-  });
-  const isConsole=document.documentElement.getAttribute('data-theme')==='console';
-  return `<div class="player-card">
-    <div class="player-card-top">
-      <div class="player-meta">
-        <div class="player-name">${p.name}${noId}</div>
-        ${rankBadgeHTML(p.rankMedal||'Unknown',p.rankLabel)}
-      </div>
-      <div class="player-wr">
-        ${p.winrate!=null?`<div class="wr-number">${p.winrate}%</div><div class="wr-label">${isConsole?'PUB WR':'pub wr'}</div>`:'<div class="wr-number" style="font-size:14px;color:var(--ink-4)">—</div>'}
-      </div>
-    </div>
-    <div class="hero-section">
-      <div class="hero-section-label">${isConsole?'// ':''}CM picks (E-Sparven)
-        ${hasBanCandidate?`<span style="font-size:9px;color:var(--ban-high);margin-left:4px">● ban candidate</span>`:''}
-      </div>
-      ${renderHeroRows(p.tournamentHeroes,true,isSelf)}
-    </div>
-    <div class="hero-section">
-      <div class="hero-section-label">${isConsole?'// ':''}Pub pool</div>
-      ${renderHeroRows(p.pubHeroes,false,isSelf)}
-    </div>
-    ${form?`<div class="form-row"><div class="form-label">Form</div>${form}</div>`:''}
-    ${profileLinks(p.accountId)}
-  </div>`;
-}
-
-// ── Render: history table ─────────────────────────────────────────────────────
-function renderHistory(history, currentSeasonId) {
-  if (!history||!history.length) return '';
-  const isConsole=document.documentElement.getAttribute('data-theme')==='console';
-
-  // Filter by season. Old bins without seasonId are always shown.
-  const filtered = history.filter(m => {
-    if (!currentSeasonOnly) return true;
-    if (m.seasonId == null) return true;
-    return m.seasonId === currentSeasonId;
-  });
-
-  const seasonLabel = currentSeasonOnly ? ' this season' : '';
-  const title = `${isConsole?'// ':''}Opponent's E-Sparven match history${seasonLabel}`;
-
-  if (!filtered.length) return `
-    <div class="page-section page-section-history history-section">
-      <div class="section-title">${title}</div>
-      <div style="font-size:13px;color:var(--ink-4)">No games recorded${seasonLabel}.</div>
-    </div>`;
-
-  const chipGroup=(picks,team)=>{
-    const chips=(picks||[]).filter(pk=>pk.team===team).map(pk=>{
-      const url=heroIconUrl(pk.heroName,pk.iconUrl);
-      return `<span class="hero-chip"><div class="hero-chip-icon">${url?`<img src="${url}" alt="${pk.heroName}" loading="lazy">`:''}</div>${pk.heroName}</span>`;
-    }).join('');
-    return chips||'<span style="font-size:11px;color:var(--ink-4)">—</span>';
-  };
-
-  const rows=filtered.map(m=>{
-    const oppTeam=m.opponentTeam??null, oppWon=m.opponentWon??null;
-    const resultBadge=oppWon===true?`<span class="result-badge win">W</span>`:oppWon===false?`<span class="result-badge loss">L</span>`:'';
-    const sideLabel=t=>oppTeam===null?'':t===oppTeam
-      ?`<span style="font-size:9px;font-weight:700;letter-spacing:.05em;color:var(--upcoming);background:var(--upcoming-bg);padding:1px 5px;border-radius:${isConsole?'0':'3px'};margin-right:4px${isConsole?';font-family:Orbitron,monospace;letter-spacing:2px':''}">OPP</span>`
-      :`<span style="font-size:9px;color:var(--ink-4);background:var(--line-2);padding:1px 5px;border-radius:${isConsole?'0':'3px'};margin-right:4px">vs</span>`;
-    return `<tr>
-      <td class="mono">${m.duration||'—'}</td>
-      <td>${resultBadge?`<span style="margin-right:6px">${resultBadge}</span>`:''}${sideLabel(0)}${chipGroup(m.picks,0)}</td>
-      <td>${sideLabel(1)}${chipGroup(m.picks,1)}</td>
-      <td class="mono" style="color:var(--ink-4)">${m.patch?`patch ${m.patch}`:''}</td>
-      <td style="white-space:nowrap"><a class="player-link" href="https://www.opendota.com/matches/${m.matchId}" target="_blank" style="font-size:10.5px;padding:2px 8px">Match</a></td>
-    </tr>`;
-  }).join('');
-
-  return `<div class="page-section page-section-history history-section">
-    <div class="section-title">${title}</div>
-    <table class="history-table">
-      <thead><tr><th>Duration</th><th>Radiant</th><th>Dire</th><th>Patch</th><th></th></tr></thead>
-      <tbody>${rows}</tbody>
-    </table>
-  </div>`;
-}
-
-// ── Misc helpers ──────────────────────────────────────────────────────────────
-function fmtDate(iso) {
-  if(!iso) return '—';
-  return new Date(iso).toLocaleDateString('sv-SE',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
-}
-
-// ── Ticker ────────────────────────────────────────────────────────────────────
-const TICKER_ITEMS=[
-  'PATCH 7.37 // DARK WILLOW REWORKED','TORNKNÄCKARNA // CAPTAIN\'S MODE',
-  'E-SPARVEN DIVISION // CURRENT SEASON','ENIGMA BLACK HOLE // HIGH BAN PRIORITY',
-  'INVOKER // WINRATE ELEVATED IN CM','REMEMBER: DRAFT TEMPO WINS GAMES',
-  'ROSHAN SPAWNS AT 00:00 // TRACK IT','OBSERVER WARDS // PLACE EARLY',
-  'SMOKE ROTATIONS // SECURE OBJECTIVES','NET WORTH DELTA // KEY METRIC',
-  'CM DRAFT PHASE // 5 BANS EACH SIDE','ANALYSIS: PUSH LINEUPS STRONG PATCH',
-];
-function buildTicker(matches, tickerSnippets) {
-  const parts = tickerSnippets && tickerSnippets.length
-    ? [...tickerSnippets]
-    : [...TICKER_ITEMS];
-
-  // Always prepend next match and recent results from live index data
-  const upcoming = matches.filter(m=>m.status==='upcoming');
-  const past     = matches.filter(m=>m.status!=='upcoming');
-  if(upcoming.length) parts.unshift(`NEXT MATCH ${upcoming[0].opponent.toUpperCase()} ${fmtDate(upcoming[0].date).toUpperCase()}`);
-  const lastWin  = past.find(m=>m.status==='win');
-  const lastLoss = past.find(m=>m.status==='loss');
-  if(lastWin)  parts.unshift(`LAST WIN ${lastWin.opponent.toUpperCase()}`);
-  if(lastLoss) parts.unshift(`LAST LOSS ${lastLoss.opponent.toUpperCase()}`);
-
-  const full = [...parts,...parts].join('   ///   ');
-  const el = document.getElementById('sidebar-ticker-text');
-  if(el) el.textContent = full;
-}
-
-// ── Boot sequence ─────────────────────────────────────────────────────────────
-const BOOT_LINES=[
-  {text:'> INITIALIZING SCOUTING WORKSTATION...',cls:'',delay:0},
-  {text:'> AUTHENTICATING SESSION... OK',cls:'ok',delay:280},
-  {text:'> FETCHING OPPONENT INTELLIGENCE...',cls:'',delay:520},
-  {text:'> DECRYPTING HERO POOL DATA...',cls:'',delay:760},
-  {text:'> CROSS-REFERENCING CM WINRATES...',cls:'',delay:980},
-  {text:'> GENERATING BAN RECOMMENDATIONS...',cls:'warn',delay:1200},
-  {text:'> ALL SYSTEMS NOMINAL. STAND BY.',cls:'ok',delay:1440},
-];
-function runBootSequence(cb) {
-  if(document.documentElement.getAttribute('data-theme')!=='console'){cb();return;}
-  const overlay=document.getElementById('boot-overlay');
-  const linesEl=document.getElementById('boot-lines');
-  linesEl.innerHTML='';
-  overlay.classList.add('active');
-  BOOT_LINES.forEach(l=>{
-    const div=document.createElement('div');
-    div.className='boot-line';
-    div.style.color=l.cls==='ok'?'#00ff41':l.cls==='warn'?'#ffb000':'#00aa2a';
-    div.style.width='420px';div.style.maxWidth='90vw';div.style.lineHeight='1.7';
-    div.style.fontFamily="'Share Tech Mono',monospace";div.style.fontSize='12px';
-    linesEl.appendChild(div);
-    setTimeout(()=>{div.classList.add('visible');div.textContent=l.text;},l.delay);
-  });
-  const total=BOOT_LINES[BOOT_LINES.length-1].delay+600;
-  setTimeout(()=>{overlay.classList.remove('active');cb();},total);
-}
-
-// ── Console terminal log ──────────────────────────────────────────────────────
-const TERM_LINES=[
-  {cls:'ok',text:'HERO POOL ANALYSIS COMPLETE'},{cls:'',text:'LOADING OPPONENT PROFILE...'},
-  {cls:'warn',text:'INVOKER FLAGGED // HIGH CM WR'},{cls:'',text:'CROSS-REF PATCH 7.37 DATA...'},
-  {cls:'ok',text:'BAN TIER COMPUTED // 6 HEROES'},{cls:'warn',text:'ENIGMA TRACKED // 4 CM GAMES'},
-  {cls:'',text:'SYNCING DOTABUFF RECORDS...'},{cls:'ok',text:'PLAYER 1 PROFILE LOADED'},
-  {cls:'',text:'CALCULATING DRAFT PATTERNS...'},{cls:'warn',text:'SHADOW FIEND // SITUATIONAL BAN'},
-  {cls:'ok',text:'WINRATE DELTA POSITIVE'},{cls:'err',text:'WARNING: SMALL SAMPLE SIZE'},
-  {cls:'',text:'OPENDOTA SYNC... OK'},{cls:'ok',text:'INTELLIGENCE PACKAGE READY'},
-  {cls:'',text:'STANDBY FOR DRAFT PHASE'},{cls:'ok',text:'SESSION SECURE // UPLINK GREEN'},
-];
+const TERM_LINES=[{cls:'ok',text:'HERO POOL ANALYSIS COMPLETE'},{cls:'',text:'LOADING OPPONENT PROFILE...'},{cls:'warn',text:'INVOKER FLAGGED // HIGH CM WR'},{cls:'',text:'CROSS-REF PATCH 7.37 DATA...'},{cls:'ok',text:'BAN TIER COMPUTED // 6 HEROES'},{cls:'warn',text:'ENIGMA TRACKED // 4 CM GAMES'},{cls:'',text:'SYNCING DOTABUFF RECORDS...'},{cls:'ok',text:'PLAYER 1 PROFILE LOADED'},{cls:'',text:'CALCULATING DRAFT PATTERNS...'},{cls:'warn',text:'SHADOW FIEND // SITUATIONAL BAN'},{cls:'ok',text:'WINRATE DELTA POSITIVE'},{cls:'err',text:'WARNING: SMALL SAMPLE SIZE'},{cls:'',text:'OPENDOTA SYNC... OK'},{cls:'ok',text:'INTELLIGENCE PACKAGE READY'},{cls:'',text:'STANDBY FOR DRAFT PHASE'},{cls:'ok',text:'SESSION SECURE // UPLINK GREEN'}];
 let termIdx=0,termInterval=null;
-function startTermLog(){
-  const el=document.getElementById('console-termlog');
-  if(!el)return;
-  if(termInterval)clearInterval(termInterval);
-  termInterval=setInterval(()=>{
-    if(document.documentElement.getAttribute('data-theme')!=='console')return;
-    const item=TERM_LINES[termIdx%TERM_LINES.length];termIdx++;
-    const now=new Date();
-    const ts=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
-    const line=document.createElement('div');
-    line.className='tl-line '+item.cls;
-    line.textContent='['+ts+'] '+item.text;
-    el.appendChild(line);
-    while(el.children.length>8)el.removeChild(el.firstChild);
-  },2800);
-}
+function startTermLog(){const el=document.getElementById('console-termlog');if(!el)return;if(termInterval)clearInterval(termInterval);termInterval=setInterval(()=>{if(document.documentElement.getAttribute('data-theme')!=='console')return;const item=TERM_LINES[termIdx%TERM_LINES.length];termIdx++;const now=new Date();const ts=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');const line=document.createElement('div');line.className='tl-line '+item.cls;line.textContent='['+ts+'] '+item.text;el.appendChild(line);while(el.children.length>8)el.removeChild(el.firstChild);},2800);}
 startTermLog();
 
-// ── Clean logo (dark/light themes) ───────────────────────────────────────────
-let cleanLogoRunning = false;
-let consoleLogoRunning   = false;
-function startCleanLogo() {
-  if(cleanLogoRunning) return;
-  const canvas = document.getElementById('clean-logo-canvas');
-  if(!canvas) return;
-  cleanLogoRunning = true;
-
-  const ART=`                                                                                                    
+let cleanLogoRunning=false;
+let consoleLogoRunning=false;
+function startCleanLogo(){if(cleanLogoRunning)return;const canvas=document.getElementById('clean-logo-canvas');if(!canvas)return;cleanLogoRunning=true;const ART=`                                                                                                    
                                                                                                     
                                                                                                     
             ##                          ##*************#*      #*#****#**#####  ## #                
@@ -1000,171 +473,9 @@ function startCleanLogo() {
                                           ##############     #####                                  
                                                                                                     
                                                                                                     
-                                                                                                    `;
+                                                                                                    `;const artLines=ART.split('\n');const ART_H=artLines.length;const ART_W=Math.max(...artLines.map(l=>l.length));const mask=new Uint8Array(ART_W*ART_H);for(let row=0;row<ART_H;row++){const line=artLines[row]||'';for(let col=0;col<ART_W;col++){mask[row*ART_W+col]=(line[col]||' ')!==' '?1:0;}}function sampleMask(u,v){const col=Math.floor(u*ART_W),row=Math.floor(v*ART_H);if(col<0||col>=ART_W||row<0||row>=ART_H)return 0;return mask[row*ART_W+col];}const SIZE=180;const ASPECT=ART_H/ART_W*1.85;const DISP_W=SIZE,DISP_H=Math.round(SIZE*ASPECT);canvas.width=DISP_W;canvas.height=DISP_H;canvas.style.width=DISP_W+'px';canvas.style.height=DISP_H+'px';const ctx=canvas.getContext('2d');const imgData=ctx.createImageData(DISP_W,DISP_H);const buf=imgData.data;const DEPTH=0.22;const LD=(()=>{const v=[0.6,-0.5,0.6];const l=Math.sqrt(v[0]**2+v[1]**2+v[2]**2);return v.map(x=>x/l);})();function getThemeColors(){const theme=document.documentElement.getAttribute('data-theme');if(theme==='light'){return{fg:[120,20,40],fgDim:[180,80,100],bg:[0,0,0,0]};}return{fg:[160,30,55],fgDim:[100,20,35],bg:[0,0,0,0]};}function render(ay,ax){const{fg,fgDim}=getThemeColors();const Cy=Math.cos(ay),Sy=Math.sin(ay),Cx=Math.cos(ax),Sx=Math.sin(ax);function w2m(wx,wy,wz){const rx1=wx*Cy-wz*Sy,ry1=wy,rz1=wx*Sy+wz*Cy;return[rx1,ry1*Cx+rz1*Sx,-ry1*Sx+rz1*Cx];}const[ddx,ddy,ddz]=w2m(0,0,1);const HZ=DEPTH*0.5;buf.fill(0);for(let py=0;py<DISP_H;py++){const sy_ndc=-((py/(DISP_H-1))*2-1);for(let px2=0;px2<DISP_W;px2++){const sx=(px2/(DISP_W-1))*2-1;const[ox,oy,oz]=w2m(sx,sy_ndc,-3.0);if(Math.abs(ddz)<1e-7)continue;const t_front=(HZ-oz)/ddz,t_back=(-HZ-oz)/ddz;const t_near=Math.min(t_front,t_back),t_far=Math.max(t_front,t_back);let hitColor=null;for(const tf of[t_near,t_far]){if(hitColor)break;const mx=ox+tf*ddx,my=oy+tf*ddy;const u=(mx+1)*0.5,v=1-(my/ASPECT+1)*0.5;if(u<0||u>=1||v<0||v>=1)continue;if(!sampleMask(u,v))continue;const nz_m=(tf===t_near)?Math.sign(ddz):-Math.sign(ddz);const nwx=nz_m*Cx*Sy,nwy=-nz_m*Sx,nwz=nz_m*Cx*Cy;const diff=Math.max(0,nwx*LD[0]+nwy*LD[1]+nwz*LD[2]);const b=Math.min(1,0.25+diff*0.75)*(tf===t_near?1.0:0.35);const c=tf===t_near?fg:fgDim;hitColor=[Math.round(c[0]*b),Math.round(c[1]*b),Math.round(c[2]*b),255];}if(!hitColor){const WSTEPS=8;for(let s=0;s<=WSTEPS&&!hitColor;s++){const tf=t_near+(t_far-t_near)*(s/WSTEPS);const mx=ox+tf*ddx,my=oy+tf*ddy;const u=(mx+1)*0.5,v=1-(my/ASPECT+1)*0.5;if(u<0||u>=1||v<0||v>=1)continue;if(!sampleMask(u,v))continue;const eps2=1.5/ART_W;const gx=sampleMask(u-eps2,v)-sampleMask(u+eps2,v);const gy=sampleMask(u,v-eps2*(ART_W/ART_H)*1.85)-sampleMask(u,v+eps2*(ART_W/ART_H)*1.85);const gl=Math.sqrt(gx*gx+gy*gy)||1;const nm_x=gx/gl,nm_y=gy/gl;const nwx=nm_x*Cy,nwz2=nm_y*Sx+(-nm_x*Sy)*Cx,nwy=nm_y*Cx-(-nm_x*Sy)*Sx;const diff=Math.max(0,nwx*LD[0]+nwy*LD[1]+nwz2*LD[2]);const b=Math.min(1,0.08+diff*0.55)*(1-(s/WSTEPS)*0.4)*0.7;hitColor=[Math.round(fgDim[0]*b),Math.round(fgDim[1]*b),Math.round(fgDim[2]*b),Math.round(b*255*3)];}}if(hitColor){const i=(py*DISP_W+px2)*4;buf[i]=hitColor[0];buf[i+1]=hitColor[1];buf[i+2]=hitColor[2];buf[i+3]=hitColor[3]??255;}}}ctx.clearRect(0,0,DISP_W,DISP_H);ctx.putImageData(imgData,0,0);}let autoAngleY=0;let dragAngleY=0,dragAngleX=0;let isDragging=false;let lastMX=0,lastMY=0;let dragVelY=0,dragVelX=0;canvas.style.cursor='grab';canvas.addEventListener('mousedown',e=>{isDragging=true;lastMX=e.clientX;lastMY=e.clientY;dragVelY=0;dragVelX=0;canvas.style.cursor='grabbing';e.preventDefault();});window.addEventListener('mousemove',e=>{if(!isDragging)return;dragVelY=-(e.clientX-lastMX)*0.012;dragVelX=-(e.clientY-lastMY)*0.012;dragAngleY+=dragVelY;dragAngleX+=dragVelX;dragAngleX=Math.max(-0.8,Math.min(0.8,dragAngleX));lastMX=e.clientX;lastMY=e.clientY;});window.addEventListener('mouseup',()=>{isDragging=false;canvas.style.cursor='grab';});canvas.addEventListener('touchstart',e=>{isDragging=true;lastMX=e.touches[0].clientX;lastMY=e.touches[0].clientY;dragVelY=0;dragVelX=0;e.preventDefault();},{passive:false});canvas.addEventListener('touchmove',e=>{if(!isDragging)return;dragVelY=-(e.touches[0].clientX-lastMX)*0.012;dragVelX=-(e.touches[0].clientY-lastMY)*0.012;dragAngleY+=dragVelY;dragAngleX+=dragVelX;dragAngleX=Math.max(-0.8,Math.min(0.8,dragAngleX));lastMX=e.touches[0].clientX;lastMY=e.touches[0].clientY;e.preventDefault();},{passive:false});canvas.addEventListener('touchend',()=>{isDragging=false;});let lastTs=null;function tick(ts){const dt=lastTs?Math.min((ts-lastTs)/1000,0.05):0.016;lastTs=ts;const speed=getLogoSpeed();if(!isDragging){dragAngleY+=dragVelY;dragAngleX+=dragVelX;dragVelY*=0.88;dragVelX*=0.88;dragAngleX*=0.96;autoAngleY+=speed*dt;}render(autoAngleY+dragAngleY,dragAngleX);requestAnimationFrame(tick);}requestAnimationFrame(tick);}
 
-  const artLines = ART.split('\n');
-  const ART_H = artLines.length;
-  const ART_W = Math.max(...artLines.map(l=>l.length));
-  const mask = new Uint8Array(ART_W * ART_H);
-  for(let row=0;row<ART_H;row++){
-    const line=artLines[row]||'';
-    for(let col=0;col<ART_W;col++){
-      mask[row*ART_W+col]=(line[col]||' ')!==' '?1:0;
-    }
-  }
-  function sampleMask(u,v){
-    const col=Math.floor(u*ART_W),row=Math.floor(v*ART_H);
-    if(col<0||col>=ART_W||row<0||row>=ART_H)return 0;
-    return mask[row*ART_W+col];
-  }
-
-  const SIZE = 180;
-  const ASPECT = ART_H/ART_W*1.85;
-  const DISP_W = SIZE, DISP_H = Math.round(SIZE*ASPECT);
-  canvas.width = DISP_W; canvas.height = DISP_H;
-  canvas.style.width  = DISP_W  + 'px';
-  canvas.style.height = DISP_H + 'px';
-
-  const ctx = canvas.getContext('2d');
-  const imgData = ctx.createImageData(DISP_W, DISP_H);
-  const buf = imgData.data;
-
-  const DEPTH = 0.22;
-  const LD = (()=>{const v=[0.6,-0.5,0.6];const l=Math.sqrt(v[0]**2+v[1]**2+v[2]**2);return v.map(x=>x/l);})();
-
-  function getThemeColors() {
-    const theme = document.documentElement.getAttribute('data-theme');
-    if(theme === 'light') {
-      return { fg: [120,20,40], fgDim: [180,80,100], bg: [0,0,0,0] };
-    }
-    // dark theme — wine red
-    return { fg: [160,30,55], fgDim: [100,20,35], bg: [0,0,0,0] };
-  }
-
-  function render(ay, ax) {
-    const {fg, fgDim} = getThemeColors();
-    const Cy=Math.cos(ay),Sy=Math.sin(ay),Cx=Math.cos(ax),Sx=Math.sin(ax);
-    function w2m(wx,wy,wz){const rx1=wx*Cy-wz*Sy,ry1=wy,rz1=wx*Sy+wz*Cy;return[rx1,ry1*Cx+rz1*Sx,-ry1*Sx+rz1*Cx];}
-    const[ddx,ddy,ddz]=w2m(0,0,1);
-    const HZ=DEPTH*0.5;
-    buf.fill(0);
-    for(let py=0;py<DISP_H;py++){
-      const sy_ndc=-((py/(DISP_H-1))*2-1);
-      for(let px2=0;px2<DISP_W;px2++){
-        const sx=(px2/(DISP_W-1))*2-1;
-        const[ox,oy,oz]=w2m(sx,sy_ndc,-3.0);
-        if(Math.abs(ddz)<1e-7)continue;
-        const t_front=(HZ-oz)/ddz,t_back=(-HZ-oz)/ddz;
-        const t_near=Math.min(t_front,t_back),t_far=Math.max(t_front,t_back);
-        let hitColor=null;
-        for(const tf of[t_near,t_far]){
-          if(hitColor)break;
-          const mx=ox+tf*ddx,my=oy+tf*ddy;
-          const u=(mx+1)*0.5,v=1-(my/ASPECT+1)*0.5;
-          if(u<0||u>=1||v<0||v>=1)continue;
-          if(!sampleMask(u,v))continue;
-          const nz_m=(tf===t_near)?Math.sign(ddz):-Math.sign(ddz);
-          const nwx=nz_m*Cx*Sy,nwy=-nz_m*Sx,nwz=nz_m*Cx*Cy;
-          const diff=Math.max(0,nwx*LD[0]+nwy*LD[1]+nwz*LD[2]);
-          const b=Math.min(1,0.25+diff*0.75)*(tf===t_near?1.0:0.35);
-          const c = tf===t_near?fg:fgDim;
-          hitColor=[Math.round(c[0]*b),Math.round(c[1]*b),Math.round(c[2]*b),255];
-        }
-        if(!hitColor){
-          const WSTEPS=8;
-          for(let s=0;s<=WSTEPS&&!hitColor;s++){
-            const tf=t_near+(t_far-t_near)*(s/WSTEPS);
-            const mx=ox+tf*ddx,my=oy+tf*ddy;
-            const u=(mx+1)*0.5,v=1-(my/ASPECT+1)*0.5;
-            if(u<0||u>=1||v<0||v>=1)continue;
-            if(!sampleMask(u,v))continue;
-            const eps2=1.5/ART_W;
-            const gx=sampleMask(u-eps2,v)-sampleMask(u+eps2,v);
-            const gy=sampleMask(u,v-eps2*(ART_W/ART_H)*1.85)-sampleMask(u,v+eps2*(ART_W/ART_H)*1.85);
-            const gl=Math.sqrt(gx*gx+gy*gy)||1;
-            const nm_x=gx/gl,nm_y=gy/gl;
-            const nwx=nm_x*Cy,nwz2=nm_y*Sx+(-nm_x*Sy)*Cx,nwy=nm_y*Cx-(-nm_x*Sy)*Sx;
-            const diff=Math.max(0,nwx*LD[0]+nwy*LD[1]+nwz2*LD[2]);
-            const b=Math.min(1,0.08+diff*0.55)*(1-(s/WSTEPS)*0.4)*0.7;
-            hitColor=[Math.round(fgDim[0]*b),Math.round(fgDim[1]*b),Math.round(fgDim[2]*b),Math.round(b*255*3)];
-          }
-        }
-        if(hitColor){
-          const i=(py*DISP_W+px2)*4;
-          buf[i]=hitColor[0];buf[i+1]=hitColor[1];buf[i+2]=hitColor[2];buf[i+3]=hitColor[3]??255;
-        }
-      }
-    }
-    ctx.clearRect(0,0,DISP_W,DISP_H);
-    ctx.putImageData(imgData,0,0);
-  }
-
-  // ── state ──────────────────────────────────────────────────────────────────
-  let autoAngleY = 0;
-  let dragAngleY = 0, dragAngleX = 0;
-  let isDragging = false;
-  let lastMX = 0, lastMY = 0;
-  let dragVelY = 0, dragVelX = 0;
-
-  // ── drag events ────────────────────────────────────────────────────────────
-  canvas.style.cursor = 'grab';
-  canvas.addEventListener('mousedown', e => {
-    isDragging = true; lastMX = e.clientX; lastMY = e.clientY;
-    dragVelY = 0; dragVelX = 0; canvas.style.cursor = 'grabbing';
-    e.preventDefault();
-  });
-  window.addEventListener('mousemove', e => {
-    if(!isDragging) return;
-    dragVelY = -(e.clientX - lastMX) * 0.012;
-    dragVelX = -(e.clientY - lastMY) * 0.012;
-    dragAngleY += dragVelY; dragAngleX += dragVelX;
-    dragAngleX = Math.max(-0.8, Math.min(0.8, dragAngleX));
-    lastMX = e.clientX; lastMY = e.clientY;
-  });
-  window.addEventListener('mouseup', () => { isDragging = false; canvas.style.cursor = 'grab'; });
-  canvas.addEventListener('touchstart', e => {
-    isDragging = true; lastMX = e.touches[0].clientX; lastMY = e.touches[0].clientY;
-    dragVelY = 0; dragVelX = 0; e.preventDefault();
-  }, {passive:false});
-  canvas.addEventListener('touchmove', e => {
-    if(!isDragging) return;
-    dragVelY = -(e.touches[0].clientX - lastMX) * 0.012;
-    dragVelX = -(e.touches[0].clientY - lastMY) * 0.012;
-    dragAngleY += dragVelY; dragAngleX += dragVelX;
-    dragAngleX = Math.max(-0.8, Math.min(0.8, dragAngleX));
-    lastMX = e.touches[0].clientX; lastMY = e.touches[0].clientY;
-    e.preventDefault();
-  }, {passive:false});
-  canvas.addEventListener('touchend', () => { isDragging = false; });
-
-  // ── tick ───────────────────────────────────────────────────────────────────
-  let lastTs = null;
-  function tick(ts) {
-    const dt = lastTs ? Math.min((ts - lastTs) / 1000, 0.05) : 0.016;
-    lastTs = ts;
-    const speed = getLogoSpeed();
-    if(!isDragging) {
-      dragAngleY += dragVelY; dragAngleX += dragVelX;
-      dragVelY *= 0.88; dragVelX *= 0.88;
-      dragAngleX *= 0.96;
-      autoAngleY += speed * dt;
-    }
-    render(autoAngleY + dragAngleY, dragAngleX);
-    requestAnimationFrame(tick);
-  }
-
-  // redefine render to accept explicit ay, ax
-  requestAnimationFrame(tick);
-}
-
-
-
-function startConsoleLogo(){
-  if(consoleLogoRunning)return;
-  const canvas=document.getElementById('console-logo');
-  if(!canvas)return;
-  consoleLogoRunning=true;
-  const ART=`                                                                                                    
+function startConsoleLogo(){if(consoleLogoRunning)return;const canvas=document.getElementById('console-logo');if(!canvas)return;consoleLogoRunning=true;const ART=`                                                                                                    
                                                                                                     
                                                                                                     
             ##                          ##*************#*      #*#****#**#####  ## #                
@@ -1218,309 +529,796 @@ function startConsoleLogo(){
                                           ##############     #####                                  
                                                                                                     
                                                                                                     
-                                                                                                    `;
-  const artLines=ART.split('\n');
-  const ART_H=artLines.length;
-  const ART_W=Math.max(...artLines.map(l=>l.length));
-  const mask=new Uint8Array(ART_W*ART_H);
-  for(let row=0;row<ART_H;row++){const line=artLines[row]||'';for(let col=0;col<ART_W;col++){mask[row*ART_W+col]=(line[col]||' ')!==' '?1:0;}}
-  function sampleMask(u,v){const col=Math.floor(u*ART_W),row=Math.floor(v*ART_H);if(col<0||col>=ART_W||row<0||row>=ART_H)return 0;return mask[row*ART_W+col];}
-  const DISP_W=248,ASPECT=ART_H/ART_W*1.85,DISP_H=Math.round(DISP_W*ASPECT);
-  canvas.width=DISP_W;canvas.height=DISP_H;
-  const ctx=canvas.getContext('2d'),imgData=ctx.createImageData(DISP_W,DISP_H),buf=imgData.data;
-  const DEPTH=0.22;
-  const LD=(()=>{const v=[0.6,-0.5,0.6];const l=Math.sqrt(v[0]**2+v[1]**2+v[2]**2);return v.map(x=>x/l);})();
-  function greenRGB(b){return[Math.floor(Math.max(0,(b-0.6)*2.5)*180),Math.floor(b*255),Math.floor(Math.max(0,(b-0.7)*3.3)*120)];}
-  function render(t){
-    const ay=t*0.50,ax=Math.sin(t*0.31)*0.18;
-    const Cy=Math.cos(ay),Sy=Math.sin(ay),Cx=Math.cos(ax),Sx=Math.sin(ax);
-    function w2m(wx,wy,wz){const rx1=wx*Cy-wz*Sy,ry1=wy,rz1=wx*Sy+wz*Cy;return[rx1,ry1*Cx+rz1*Sx,-ry1*Sx+rz1*Cx];}
-    const[ddx,ddy,ddz]=w2m(0,0,1);
-    const HZ=DEPTH*0.5;
-    buf.fill(0);
-    for(let py=0;py<DISP_H;py++){
-      const sy_ndc=-((py/(DISP_H-1))*2-1);
-      for(let px2=0;px2<DISP_W;px2++){
-        const sx=(px2/(DISP_W-1))*2-1;
-        const[ox,oy,oz]=w2m(sx,sy_ndc,-3.0);
-        if(Math.abs(ddz)<1e-7)continue;
-        const t_front=(HZ-oz)/ddz,t_back=(-HZ-oz)/ddz;
-        const t_near=Math.min(t_front,t_back),t_far=Math.max(t_front,t_back);
-        let hitColor=null;
-        for(const tf of[t_near,t_far]){
-          if(hitColor)break;
-          const mx=ox+tf*ddx,my=oy+tf*ddy;
-          const u=(mx+1)*0.5,v=1-(my/ASPECT+1)*0.5;
-          if(u<0||u>=1||v<0||v>=1)continue;
-          if(!sampleMask(u,v))continue;
-          const nz_m=(tf===t_near)?Math.sign(ddz):-Math.sign(ddz);
-          const nwx=nz_m*Cx*Sy,nwy=-nz_m*Sx,nwz=nz_m*Cx*Cy;
-          const diff=Math.max(0,nwx*LD[0]+nwy*LD[1]+nwz*LD[2]);
-          const b=Math.min(1,0.18+diff*0.82)*(tf===t_near?1.0:0.45);
-          hitColor=greenRGB(b);
-        }
-        if(!hitColor){
-          const WSTEPS=8;
-          for(let s=0;s<=WSTEPS&&!hitColor;s++){
-            const tf=t_near+(t_far-t_near)*(s/WSTEPS);
-            const mx=ox+tf*ddx,my=oy+tf*ddy;
-            const u=(mx+1)*0.5,v=1-(my/ASPECT+1)*0.5;
-            if(u<0||u>=1||v<0||v>=1)continue;
-            if(!sampleMask(u,v))continue;
-            const eps2=1.5/ART_W;
-            const gx=sampleMask(u-eps2,v)-sampleMask(u+eps2,v);
-            const gy=sampleMask(u,v-eps2*(ART_W/ART_H)*1.85)-sampleMask(u,v+eps2*(ART_W/ART_H)*1.85);
-            const gl=Math.sqrt(gx*gx+gy*gy)||1;
-            const nm_x=gx/gl,nm_y=gy/gl;
-            const nwx=nm_x*Cy,nwz2=nm_y*Sx+(-nm_x*Sy)*Cx,nwy=nm_y*Cx-(-nm_x*Sy)*Sx;
-            const diff=Math.max(0,nwx*LD[0]+nwy*LD[1]+nwz2*LD[2]);
-            const b=Math.min(1,0.12+diff*0.60)*(1-(s/WSTEPS)*0.35)*0.80;
-            hitColor=greenRGB(b);
-          }
-        }
-        if(hitColor){const i=(py*DISP_W+px2)*4;buf[i]=hitColor[0];buf[i+1]=hitColor[1];buf[i+2]=hitColor[2];buf[i+3]=255;}
+                                                                                                    `;const artLines=ART.split('\n');const ART_H=artLines.length;const ART_W=Math.max(...artLines.map(l=>l.length));const mask=new Uint8Array(ART_W*ART_H);for(let row=0;row<ART_H;row++){const line=artLines[row]||'';for(let col=0;col<ART_W;col++){mask[row*ART_W+col]=(line[col]||' ')!==' '?1:0;}}function sampleMask(u,v){const col=Math.floor(u*ART_W),row=Math.floor(v*ART_H);if(col<0||col>=ART_W||row<0||row>=ART_H)return 0;return mask[row*ART_W+col];}const DISP_W=248,ASPECT=ART_H/ART_W*1.85,DISP_H=Math.round(DISP_W*ASPECT);canvas.width=DISP_W;canvas.height=DISP_H;const ctx=canvas.getContext('2d'),imgData=ctx.createImageData(DISP_W,DISP_H),buf=imgData.data;const DEPTH=0.22;const LD=(()=>{const v=[0.6,-0.5,0.6];const l=Math.sqrt(v[0]**2+v[1]**2+v[2]**2);return v.map(x=>x/l);})();function greenRGB(b){return[Math.floor(Math.max(0,(b-0.6)*2.5)*180),Math.floor(b*255),Math.floor(Math.max(0,(b-0.7)*3.3)*120)];}function render(t){const ay=t*0.50,ax=Math.sin(t*0.31)*0.18;const Cy=Math.cos(ay),Sy=Math.sin(ay),Cx=Math.cos(ax),Sx=Math.sin(ax);function w2m(wx,wy,wz){const rx1=wx*Cy-wz*Sy,ry1=wy,rz1=wx*Sy+wz*Cy;return[rx1,ry1*Cx+rz1*Sx,-ry1*Sx+rz1*Cx];}const[ddx,ddy,ddz]=w2m(0,0,1);const HZ=DEPTH*0.5;buf.fill(0);for(let py=0;py<DISP_H;py++){const sy_ndc=-((py/(DISP_H-1))*2-1);for(let px2=0;px2<DISP_W;px2++){const sx=(px2/(DISP_W-1))*2-1;const[ox,oy,oz]=w2m(sx,sy_ndc,-3.0);if(Math.abs(ddz)<1e-7)continue;const t_front=(HZ-oz)/ddz,t_back=(-HZ-oz)/ddz;const t_near=Math.min(t_front,t_back),t_far=Math.max(t_front,t_back);let hitColor=null;for(const tf of[t_near,t_far]){if(hitColor)break;const mx=ox+tf*ddx,my=oy+tf*ddy;const u=(mx+1)*0.5,v=1-(my/ASPECT+1)*0.5;if(u<0||u>=1||v<0||v>=1)continue;if(!sampleMask(u,v))continue;const nz_m=(tf===t_near)?Math.sign(ddz):-Math.sign(ddz);const nwx=nz_m*Cx*Sy,nwy=-nz_m*Sx,nwz=nz_m*Cx*Cy;const diff=Math.max(0,nwx*LD[0]+nwy*LD[1]+nwz*LD[2]);const b=Math.min(1,0.18+diff*0.82)*(tf===t_near?1.0:0.45);hitColor=greenRGB(b);}if(!hitColor){const WSTEPS=8;for(let s=0;s<=WSTEPS&&!hitColor;s++){const tf=t_near+(t_far-t_near)*(s/WSTEPS);const mx=ox+tf*ddx,my=oy+tf*ddy;const u=(mx+1)*0.5,v=1-(my/ASPECT+1)*0.5;if(u<0||u>=1||v<0||v>=1)continue;if(!sampleMask(u,v))continue;const eps2=1.5/ART_W;const gx=sampleMask(u-eps2,v)-sampleMask(u+eps2,v);const gy=sampleMask(u,v-eps2*(ART_W/ART_H)*1.85)-sampleMask(u,v+eps2*(ART_W/ART_H)*1.85);const gl=Math.sqrt(gx*gx+gy*gy)||1;const nm_x=gx/gl,nm_y=gy/gl;const nwx=nm_x*Cy,nwz2=nm_y*Sx+(-nm_x*Sy)*Cx,nwy=nm_y*Cx-(-nm_x*Sy)*Sx;const diff=Math.max(0,nwx*LD[0]+nwy*LD[1]+nwz2*LD[2]);const b=Math.min(1,0.12+diff*0.60)*(1-(s/WSTEPS)*0.35)*0.80;hitColor=greenRGB(b);}}if(hitColor){const i=(py*DISP_W+px2)*4;buf[i]=hitColor[0];buf[i+1]=hitColor[1];buf[i+2]=hitColor[2];buf[i+3]=255;}}}ctx.putImageData(imgData,0,0);}let startTs=null;function tick(ts){if(!startTs)startTs=ts;render((ts-startTs)/1000);requestAnimationFrame(tick);}requestAnimationFrame(tick);}
+
+function startCountdown(nextMatch){const wrap=document.getElementById('countdown-wrap');const timeEl=document.getElementById('countdown-time');const oppEl=document.getElementById('countdown-opponent');if(!wrap||!timeEl)return;if(!nextMatch||!nextMatch.date){wrap.style.display='none';return;}const matchDate=new Date(nextMatch.date);if(isNaN(matchDate)){wrap.style.display='none';return;}wrap.style.display='block';if(oppEl)oppEl.textContent=`vs ${nextMatch.opponent}`;function pad(n){return String(n).padStart(2,'0');}function tick(){const diff=matchDate-Date.now();if(diff<=0){timeEl.textContent='Match day';return;}const d=Math.floor(diff/86400000);const h=Math.floor((diff%86400000)/3600000);const m=Math.floor((diff%3600000)/60000);const s=Math.floor((diff%60000)/1000);timeEl.textContent=d>0?`${d}d ${pad(h)}h ${pad(m)}m`:`${pad(h)}:${pad(m)}:${pad(s)}`;setTimeout(tick,1000);}tick();}
+
+function buildSidebar(matches,tickerSnippets){buildTicker(matches,tickerSnippets);const nextMatch=matches.find(m=>m.status==='upcoming');_nextMatchDate=nextMatch&&nextMatch.date?new Date(nextMatch.date):null;startCountdown(nextMatch);const upcoming=matches.filter(m=>m.status==='upcoming');const past=matches.filter(m=>m.status!=='upcoming').reverse();const item=m=>{const bc={upcoming:'badge-upcoming',win:'badge-win',loss:'badge-loss',tie:'badge-loss'}[m.status]||'badge-upcoming';const bt={upcoming:'Upcoming',win:'Win',loss:'Loss',tie:'Tie'}[m.status]||m.status;return`<button class="match-item status-${m.status}" data-bin="${m.gistId}" onclick="loadMatch('${m.gistId}','${m.meetingId||''}',this)"><div class="mi-date">${fmtDate(m.date)}</div><div class="mi-opponent">${m.opponent}</div><span class="mi-badge ${bc}">${bt}</span></button>`;};let html=`<div class="sidebar-section"><div class="sidebar-label">Our team</div><button class="match-item" id="our-team-btn" onclick="loadOurTeam(this)"><div class="mi-opponent">Tornkn\u00e4ckarna</div><span class="mi-badge badge-upcoming" style="background:var(--line-2);color:var(--ink-3)">Roster</span></button></div>`;if(upcoming.length)html+=`<div class="sidebar-section"><div class="sidebar-label">Upcoming</div>${upcoming.map(item).join('')}</div>`;if(past.length)html+=`<div class="sidebar-section"><div class="sidebar-label">Past matches</div>${past.map(item).join('')}</div>`;if(!upcoming.length&&!past.length)html+='<div style="padding:0 22px 20px;font-size:13px;color:var(--ink-4)">No matches found.</div>';document.getElementById('sidebar-content').innerHTML=html;}
+
+function consoleCursor(){return document.documentElement.getAttribute('data-theme')==='console'?'<span class="match-title-cursor">\u2588</span>':'';}
+
+async function loadOurTeam(btn){document.querySelectorAll('.match-item').forEach(el=>el.classList.remove('active'));if(btn)btn.classList.add('active');if(!OUR_TEAM_GIST_ID){document.getElementById('main-panel').innerHTML=`<div style="padding:44px 52px;max-width:600px"><div class="match-title" style="margin-bottom:16px">Tornkn\u00e4ckarna${consoleCursor()}</div><div style="color:var(--ink-3);font-size:14px;line-height:1.7">No team gist configured yet.</div></div>`;return;}if(sessionStorage.getItem('scout_auth')!=='tor'){_renderPasswordScreen();return;}_loadOurTeamData();}
+
+function _renderPasswordScreen(error){const isConsole=document.documentElement.getAttribute('data-theme')==='console';document.getElementById('main-panel').innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;min-height:70vh;gap:24px"><img src="media/password-image.png" alt="" style="width:160px;height:160px;object-fit:contain;opacity:0.85;border-radius:8px" onerror="this.style.display='none'"><div style="text-align:center"><div style="font-size:15px;font-weight:600;color:var(--ink-1);margin-bottom:4px;${isConsole?'font-family:Orbitron,monospace;letter-spacing:2px;':''}">${isConsole?'// ':''}Tornkn\u00e4ckarna</div><div style="font-size:12px;color:var(--ink-4)">Internal scouting \u2014 enter password to continue</div></div><div style="display:flex;flex-direction:column;align-items:center;gap:8px"><input id="pw-input" type="password" placeholder="Password" autocomplete="current-password" style="background:var(--surface-2);border:1px solid ${error?'var(--loss)':'var(--border)'};border-radius:6px;color:var(--ink-1);font-size:14px;padding:10px 14px;width:200px;outline:none;text-align:center;font-family:inherit;" onkeydown="if(event.key==='Enter') _submitPassword()">${error?`<div style="font-size:12px;color:var(--loss)">${error}</div>`:''}<button onclick="_submitPassword()" style="background:var(--accent);border:none;border-radius:6px;color:#fff;cursor:pointer;font-size:13px;font-weight:600;padding:9px 24px;width:200px;font-family:inherit;">Enter</button></div></div>`;setTimeout(()=>{const el=document.getElementById('pw-input');if(el)el.focus();},50);}
+
+function _submitPassword(){const el=document.getElementById('pw-input');if(!el)return;if(el.value==='tor'){sessionStorage.setItem('scout_auth','tor');_loadOurTeamData();}else{_renderPasswordScreen('Incorrect password');}}
+
+async function _loadOurTeamData(){document.getElementById('main-panel').innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:70vh;color:var(--ink-4);gap:10px"><div style="font-size:14px">Loading Tornkn\u00e4ckarna roster\u2026</div></div>`;let data;try{data=await fetchGist(OUR_TEAM_GIST_ID);}catch(e){document.getElementById('main-panel').innerHTML=`<div style="padding:44px 52px;color:var(--loss)"><strong>Error:</strong> ${e.message}</div>`;return;}_currentMatchData={...data};_currentMatchContext={isSelf:true};runBootSequence(()=>_renderOurTeamPanel(data));}
+
+function _renderOurTeamPanel(data){const isConsole=document.documentElement.getAttribute('data-theme')==='console';const currentSeasonId=data.currentSeasonId??null;document.getElementById('main-panel').innerHTML=`<div class="match-header"><div class="match-title"><strong>Tornkn\u00e4ckarna</strong>${consoleCursor()}</div><div class="match-meta"><span>Dota 2 \u00b7 Captain\'s Mode \u00b7 E-Sparven</span></div><div class="notice notice-snapshot" style="margin-top:8px">Refreshed daily by the bot</div>${seasonToggleHTML()}</div>${data.draftTendencies?`<div class="page-section page-section-bans">${renderDraftTendencies(data.draftTendencies)}${renderMatchupStats(data.history,currentSeasonId)}</div>`:''}<div class="page-section page-section-roster"><div class="section-title" style="margin-bottom:16px">${isConsole?'// ':''}Our roster</div><div class="player-grid">${(data.players||[]).map(p=>renderPlayerCard(p,true)).join('')}</div></div>${renderHistory(data.history,currentSeasonId)}`;}
+
+function _renderMatchPanel(data,meetingId){const status=data.status||'upcoming';const badgeClass={upcoming:'badge-upcoming',win:'badge-win',loss:'badge-loss',tie:'badge-loss'}[status]||'badge-upcoming';const badgeText={upcoming:'Upcoming',win:'Win',loss:'Loss',tie:'Tie'}[status]||status;const notice=status==='upcoming'?`<div class="notice notice-live">Live data \u00b7 refreshed daily until match day</div>`:`<div class="notice notice-snapshot">Snapshot \u00b7 ${fmtDate(data.snapshotAt)}</div>`;const esparvenUrl=meetingId?`https://esparven.se/none/Meeting/Details/${meetingId}`:null;const isConsole=document.documentElement.getAttribute('data-theme')==='console';const currentSeasonId=data.currentSeasonId??null;document.getElementById('main-panel').innerHTML=`<div class="match-header"><div style="margin-bottom:10px"><span class="mi-badge ${badgeClass}" style="font-size:11px">${badgeText}</span></div><div class="match-title">vs <strong>${data.opponent}</strong>${consoleCursor()}</div><div class="match-meta"><span>${fmtDate(data.date)}</span><span>Dota 2 \u00b7 Captain\'s Mode</span>${esparvenUrl?`<a href="${esparvenUrl}" target="_blank" style="color:var(--accent);text-decoration:none;font-size:13px">E-Sparven</a>`:''}</div>${notice}${seasonToggleHTML()}</div>${status==='upcoming'?`<div class="page-section page-section-bans">${renderBanSection(data.players||[])}${renderDraftTendencies(data.draftTendencies)}${renderMatchupStats(data.history,currentSeasonId)}</div>`:`<div class="page-section page-section-bans">${renderDraftTendencies(data.draftTendencies)}${renderMatchupStats(data.history,currentSeasonId)}</div>`}<div class="page-section page-section-roster"><div class="section-title" style="margin-bottom:16px">${isConsole?'// ':''}Opponent roster</div><div class="player-grid">${(data.players||[]).map(p=>renderPlayerCard(p,false)).join('')}</div></div>${renderHistory(data.history,currentSeasonId)}<div id="draft-assistant-anchor"></div>${renderDraftAssistantToggle(data)}`;initDraftAssistant(data);}
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// DRAFT ASSISTANT MODULE
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Collapsible panel attached to match panels.
+// Features:
+//   - Side selector (we are first pick / second pick)
+//   - 24-slot CM draft board in correct 7.34 order, colour-coded per team
+//   - Hero dropdowns with search, icons, per slot
+//   - Live counterpick suggestions per lane (safe/mid/off/soft/hard)
+//   - Scores by summing positive matchup WR contributions across all enemy picks
+//   - Pub pool weighting toggle (default ON) — reads our team gist pub heroes
+//   - Scouting ban suggestions pre-filled alongside our ban slots
+//   - Session-cached OpenDota matchup data and hero list
+
+// ── State ────────────────────────────────────────────────────────────────────
+const DA = {
+  open:          false,
+  weAreFirst:    true,    // true = we have first pick
+  pubWeighting:  true,    // default ON
+  slots:         Array(24).fill(null), // { heroName, heroId, isUs, isBan }
+  heroList:      null,    // fetched from OpenDota once
+  matchupCache:  {},      // hero_id -> matchup array
+  ourPubHeroes:  null,    // fetched from OUR_TEAM_GIST once per session
+  scoutData:     null,    // current match gist data
+};
+
+// ── CM draft sequence (7.34) ─────────────────────────────────────────────────
+// isFirst = true means this slot belongs to the first-pick team
+// isBan = true means this is a ban slot
+// phase label for display
+const CM_SLOTS = [
+  // Phase 1 bans (15s each) — 7 bans total: first=3, second=4
+  {idx:0,  isBan:true,  isFirst:true,  phase:'Ban phase 1', label:'Ban 1'},
+  {idx:1,  isBan:true,  isFirst:false, phase:'Ban phase 1', label:'Ban 1'},
+  {idx:2,  isBan:true,  isFirst:true,  phase:'Ban phase 1', label:'Ban 2'},
+  {idx:3,  isBan:true,  isFirst:false, phase:'Ban phase 1', label:'Ban 2'},
+  {idx:4,  isBan:true,  isFirst:true,  phase:'Ban phase 1', label:'Ban 3'},
+  {idx:5,  isBan:true,  isFirst:false, phase:'Ban phase 1', label:'Ban 3'},
+  {idx:6,  isBan:true,  isFirst:false, phase:'Ban phase 1', label:'Ban 4'},
+  // Phase 2 picks — 1 each
+  {idx:7,  isBan:false, isFirst:true,  phase:'Pick phase 1', label:'Pick 1'},
+  {idx:8,  isBan:false, isFirst:false, phase:'Pick phase 1', label:'Pick 1'},
+  // Phase 3 bans — first gets 2 consecutive, second gets 1
+  {idx:9,  isBan:true,  isFirst:true,  phase:'Ban phase 2', label:'Ban 4'},
+  {idx:10, isBan:true,  isFirst:true,  phase:'Ban phase 2', label:'Ban 5'},
+  {idx:11, isBan:true,  isFirst:false, phase:'Ban phase 2', label:'Ban 5'},
+  // Phase 4 picks — 1-2-2-1 alternating
+  {idx:12, isBan:false, isFirst:true,  phase:'Pick phase 2', label:'Pick 2'},
+  {idx:13, isBan:false, isFirst:false, phase:'Pick phase 2', label:'Pick 2'},
+  {idx:14, isBan:false, isFirst:false, phase:'Pick phase 2', label:'Pick 3'},
+  {idx:15, isBan:false, isFirst:true,  phase:'Pick phase 2', label:'Pick 3'},
+  {idx:16, isBan:false, isFirst:true,  phase:'Pick phase 2', label:'Pick 4'},
+  {idx:17, isBan:false, isFirst:false, phase:'Pick phase 2', label:'Pick 4'},
+  // Phase 5 bans — 2 each alternating
+  {idx:18, isBan:true,  isFirst:true,  phase:'Ban phase 3', label:'Ban 6'},
+  {idx:19, isBan:true,  isFirst:false, phase:'Ban phase 3', label:'Ban 6'},
+  {idx:20, isBan:true,  isFirst:true,  phase:'Ban phase 3', label:'Ban 7'},
+  {idx:21, isBan:true,  isFirst:false, phase:'Ban phase 3', label:'Ban 7'},
+  // Phase 6 picks — second pick gets last pick (counterpick advantage)
+  {idx:22, isBan:false, isFirst:false, phase:'Pick phase 3', label:'Pick 5'},
+  {idx:23, isBan:false, isFirst:true,  phase:'Pick phase 3', label:'Pick 5'},
+];
+
+// ── Hero role → lane mapping ─────────────────────────────────────────────────
+function heroToLane(h) {
+  const roles = h.roles || [];
+  const has = r => roles.includes(r);
+  if (has('Carry') && !has('Support')) return 'safe';
+  if (has('Nuker') && (has('Escape') || has('Disabler')) && !has('Durable')) return 'mid';
+  if (has('Durable') || has('Initiator')) return 'off';
+  if (has('Support') && (has('Disabler') || has('Nuker') || has('Escape'))) return 'soft';
+  if (has('Support') || has('Healer')) return 'hard';
+  if (has('Carry')) return 'safe';
+  if (has('Pusher') || has('Jungler')) return 'off';
+  return 'mid'; // fallback
+}
+
+const LANE_LABELS = {safe:'Safe lane',mid:'Mid lane',off:'Off lane',soft:'Soft support',hard:'Hard support'};
+const LANE_ORDER  = ['safe','mid','off','soft','hard'];
+
+// ── OpenDota fetchers ─────────────────────────────────────────────────────────
+async function daFetchHeroList() {
+  if (DA.heroList) return DA.heroList;
+  try {
+    const r = await fetch('https://api.opendota.com/api/heroes');
+    DA.heroList = await r.json();
+  } catch(e) {
+    DA.heroList = [];
+  }
+  return DA.heroList;
+}
+
+async function daFetchMatchups(heroId) {
+  if (DA.matchupCache[heroId]) return DA.matchupCache[heroId];
+  try {
+    const r = await fetch(`https://api.opendota.com/api/heroes/${heroId}/matchups`);
+    const data = await r.json();
+    DA.matchupCache[heroId] = data;
+    return data;
+  } catch(e) {
+    return [];
+  }
+}
+
+async function daFetchOurPubHeroes() {
+  if (DA.ourPubHeroes !== null) return DA.ourPubHeroes;
+  if (!OUR_TEAM_GIST_ID) { DA.ourPubHeroes = []; return []; }
+  try {
+    const data = await fetchGist(OUR_TEAM_GIST_ID);
+    // Flatten all players' pubHeroes into [{playerName, heroName, games, wr}]
+    const list = [];
+    for (const p of (data.players || [])) {
+      for (const h of (p.pubHeroes || [])) {
+        list.push({playerName: p.name, heroName: h.name, games: h.games || 0, wr: h.wr || 0});
       }
     }
-    ctx.putImageData(imgData,0,0);
+    DA.ourPubHeroes = list;
+  } catch(e) {
+    DA.ourPubHeroes = [];
   }
-  let startTs=null;
-  function tick(ts){if(!startTs)startTs=ts;render((ts-startTs)/1000);requestAnimationFrame(tick);}
-  requestAnimationFrame(tick);
+  return DA.ourPubHeroes;
 }
 
-// ── Sidebar ───────────────────────────────────────────────────────────────────
-function startCountdown(nextMatch) {
-  const wrap     = document.getElementById('countdown-wrap');
-  const timeEl   = document.getElementById('countdown-time');
-  const oppEl    = document.getElementById('countdown-opponent');
-  if(!wrap || !timeEl) return;
-
-  if(!nextMatch || !nextMatch.date) {
-    wrap.style.display = 'none';
-    return;
+// ── Scoring ───────────────────────────────────────────────────────────────────
+// For each candidate hero, sum positive WR contributions against each enemy pick.
+// Multiplied by pub pool factor if weighting is on.
+function daScoreHero(candidateId, enemyMatchupSets, pubList, candidateName) {
+  let score = 0;
+  for (const matchups of enemyMatchupSets) {
+    const entry = matchups.find(m => m.hero_id === candidateId);
+    if (!entry || !entry.games_played) continue;
+    const wr = entry.wins / entry.games_played;
+    score += Math.max(0, wr - 0.50);
   }
+  if (!score) return 0;
 
-  const matchDate = new Date(nextMatch.date);
-  if(isNaN(matchDate)) { wrap.style.display = 'none'; return; }
-
-  wrap.style.display = 'block';
-  if(oppEl) oppEl.textContent = `vs ${nextMatch.opponent}`;
-
-  function pad(n){ return String(n).padStart(2,'0'); }
-  function tick() {
-    const diff = matchDate - Date.now();
-    if(diff <= 0) {
-      timeEl.textContent = 'Match day';
-      return;
+  if (DA.pubWeighting && pubList.length) {
+    const found = pubList.filter(p => p.heroName === candidateName && p.games >= 10);
+    if (found.length) {
+      // Boost by up to 25% based on average WR of players who have the hero
+      const avgWR = found.reduce((s,p) => s + p.wr, 0) / found.length;
+      score *= (1 + Math.min(0.25, (avgWR - 50) / 100));
     }
-    const d = Math.floor(diff / 86400000);
-    const h = Math.floor((diff % 86400000) / 3600000);
-    const m = Math.floor((diff % 3600000) / 60000);
-    const s = Math.floor((diff % 60000) / 1000);
-    timeEl.textContent = d > 0
-      ? `${d}d ${pad(h)}h ${pad(m)}m`
-      : `${pad(h)}:${pad(m)}:${pad(s)}`;
-    setTimeout(tick, 1000);
   }
-  tick();
+  return score;
 }
 
-function buildSidebar(matches, tickerSnippets) {
-  buildTicker(matches, tickerSnippets);
-
-  // Set next match date for logo speed + countdown
-  const nextMatch = matches.find(m => m.status === 'upcoming');
-  _nextMatchDate = nextMatch && nextMatch.date ? new Date(nextMatch.date) : null;
-  startCountdown(nextMatch);
-  const upcoming=matches.filter(m=>m.status==='upcoming');
-  const past=matches.filter(m=>m.status!=='upcoming').reverse();
-  const item=m=>{
-    const bc={upcoming:'badge-upcoming',win:'badge-win',loss:'badge-loss',tie:'badge-loss'}[m.status]||'badge-upcoming';
-    const bt={upcoming:'Upcoming',win:'Win',loss:'Loss',tie:'Tie'}[m.status]||m.status;
-    return `<button class="match-item status-${m.status}" data-bin="${m.gistId}" onclick="loadMatch('${m.gistId}','${m.meetingId||''}',this)">
-      <div class="mi-date">${fmtDate(m.date)}</div>
-      <div class="mi-opponent">${m.opponent}</div>
-      <span class="mi-badge ${bc}">${bt}</span>
-    </button>`;
-  };
-  let html=`<div class="sidebar-section">
-    <div class="sidebar-label">Our team</div>
-    <button class="match-item" id="our-team-btn" onclick="loadOurTeam(this)">
-      <div class="mi-opponent">Tornknäckarna</div>
-      <span class="mi-badge badge-upcoming" style="background:var(--line-2);color:var(--ink-3)">Roster</span>
+// ── Render toggle button ──────────────────────────────────────────────────────
+function renderDraftAssistantToggle(data) {
+  return `<div id="da-toggle-wrap" style="margin-top:12px;margin-bottom:4px">
+    <button onclick="toggleDraftAssistant()" style="background:var(--line-2);border:1px solid var(--line);border-radius:var(--radius-sm);cursor:pointer;font-family:inherit;font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--ink-3);padding:7px 18px;transition:background var(--tr),color var(--tr)">
+      ⚔ Draft assistant
     </button>
-  </div>`;
-  if(upcoming.length) html+=`<div class="sidebar-section"><div class="sidebar-label">Upcoming</div>${upcoming.map(item).join('')}</div>`;
-  if(past.length) html+=`<div class="sidebar-section"><div class="sidebar-label">Past matches</div>${past.map(item).join('')}</div>`;
-  if(!upcoming.length&&!past.length) html+='<div style="padding:0 22px 20px;font-size:13px;color:var(--ink-4)">No matches found.</div>';
-  document.getElementById('sidebar-content').innerHTML=html;
+  </div>
+  <div id="da-panel" style="display:none"></div>`;
 }
 
-function consoleCursor() {
-  return document.documentElement.getAttribute('data-theme')==='console'?'<span class="match-title-cursor">█</span>':'';
-}
-
-// ── Our team ──────────────────────────────────────────────────────────────────
-async function loadOurTeam(btn) {
-  document.querySelectorAll('.match-item').forEach(el=>el.classList.remove('active'));
-  if(btn) btn.classList.add('active');
-  if(!OUR_TEAM_GIST_ID){
-    document.getElementById('main-panel').innerHTML=`<div style="padding:44px 52px;max-width:600px"><div class="match-title" style="margin-bottom:16px">Tornknäckarna${consoleCursor()}</div><div style="color:var(--ink-3);font-size:14px;line-height:1.7">No team gist configured yet.</div></div>`;
-    return;
+function toggleDraftAssistant() {
+  DA.open = !DA.open;
+  const panel = document.getElementById('da-panel');
+  const btn   = document.querySelector('#da-toggle-wrap button');
+  if (!panel) return;
+  if (DA.open) {
+    panel.style.display = 'block';
+    if (btn) btn.textContent = '✕ Close draft assistant';
+    renderDraftBoard();
+    daUpdateBanHints();
+    daUpdateSuggestions();
+  } else {
+    panel.style.display = 'none';
+    if (btn) btn.textContent = '⚔ Draft assistant';
+    // Reset state on close
+    DA.slots = Array(24).fill(null);
+    DA.weAreFirst = true;
+    DA.pubWeighting = true;
   }
-  if(sessionStorage.getItem('scout_auth') !== 'tor') {
-    _renderPasswordScreen();
-    return;
-  }
-  _loadOurTeamData();
 }
 
-function _renderPasswordScreen(error) {
+function initDraftAssistant(data) {
+  DA.scoutData = data;
+  DA.slots = Array(24).fill(null);
+  DA.open = false;
+}
+
+// ── Draft board renderer ──────────────────────────────────────────────────────
+function renderDraftBoard() {
+  const panel = document.getElementById('da-panel');
+  if (!panel) return;
   const isConsole = document.documentElement.getAttribute('data-theme') === 'console';
-  document.getElementById('main-panel').innerHTML = `
-    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;min-height:70vh;gap:24px">
-      <img src="media/password-image.png" alt="" style="width:160px;height:160px;object-fit:contain;opacity:0.85;border-radius:8px" onerror="this.style.display='none'">
-      <div style="text-align:center">
-        <div style="font-size:15px;font-weight:600;color:var(--ink-1);margin-bottom:4px;${isConsole?'font-family:Orbitron,monospace;letter-spacing:2px;':''}">
-          ${isConsole?'// ':''}Tornknäckarna
-        </div>
-        <div style="font-size:12px;color:var(--ink-4)">Internal scouting — enter password to continue</div>
+
+  // Group slots by phase for display
+  const phases = {};
+  for (const slot of CM_SLOTS) {
+    if (!phases[slot.phase]) phases[slot.phase] = [];
+    phases[slot.phase].push(slot);
+  }
+
+  const isUs = slot => DA.weAreFirst ? slot.isFirst : !slot.isFirst;
+  const usColor   = 'var(--win)';
+  const themColor = 'var(--loss)';
+
+  let phasesHtml = '';
+  for (const [phaseName, slots] of Object.entries(phases)) {
+    const isBanPhase = slots[0].isBan;
+    phasesHtml += `<div style="margin-bottom:16px">
+      <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-4);margin-bottom:8px;${isConsole?'font-family:Orbitron,monospace;':''}">
+        ${phaseName}
       </div>
-      <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
-        <input
-          id="pw-input"
-          type="password"
-          placeholder="Password"
-          autocomplete="current-password"
-          style="
-            background:var(--surface-2);
-            border:1px solid ${error?'var(--loss)':'var(--border)'};
-            border-radius:6px;
-            color:var(--ink-1);
-            font-size:14px;
-            padding:10px 14px;
-            width:200px;
-            outline:none;
-            text-align:center;
-            font-family:inherit;
-          "
-          onkeydown="if(event.key==='Enter') _submitPassword()"
-        >
-        ${error?`<div style="font-size:12px;color:var(--loss)">${error}</div>`:''}
-        <button
-          onclick="_submitPassword()"
-          style="
-            background:var(--accent);
-            border:none;
-            border-radius:6px;
-            color:#fff;
-            cursor:pointer;
-            font-size:13px;
-            font-weight:600;
-            padding:9px 24px;
-            width:200px;
-            font-family:inherit;
-          "
-        >Enter</button>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        ${slots.map(slot => {
+          const us = isUs(slot);
+          const color = us ? usColor : themColor;
+          const teamLabel = us ? 'US' : 'OPP';
+          const filled = DA.slots[slot.idx];
+          const iconHtml = filled
+            ? (() => {
+                const url = heroIconUrl(filled.heroName, '');
+                return url ? `<img src="${url}" alt="${filled.heroName}" style="width:24px;height:24px;border-radius:3px;object-fit:cover;flex-shrink:0">` : '';
+              })()
+            : '';
+
+          const suggHtml = `<span id="da-hint-${slot.idx}"></span>`;
+
+          return `<div style="position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;width:58px">
+            <div style="font-size:8px;font-weight:700;color:${color};letter-spacing:.05em;${isConsole?'font-family:Orbitron,monospace;':''}">
+              ${teamLabel}
+            </div>
+            <div onclick="daCycleSlot(${slot.idx},event)" style="
+              width:54px;height:54px;border-radius:${isConsole?'0':'8px'};
+              border:2px solid ${filled ? color : 'var(--line)'};
+              background:${filled ? (slot.isBan ? 'rgba(0,0,0,0.4)' : 'var(--surface)') : 'var(--line-2)'};
+              display:flex;align-items:center;justify-content:center;
+              cursor:pointer;position:relative;
+              ${slot.isBan && filled ? 'opacity:0.6;' : ''}
+              transition:border-color .15s;
+            " title="${slot.label} — click to set hero">
+              ${iconHtml || `<span style="font-size:9px;color:var(--ink-4)">${slot.isBan?'BAN':'PICK'}</span>`}
+              ${suggHtml}
+            </div>
+            <div style="font-size:8px;color:var(--ink-4);text-align:center;line-height:1.2;max-width:54px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+              ${filled ? filled.heroName : slot.label}
+            </div>
+          </div>`;
+        }).join('')}
       </div>
     </div>`;
-  setTimeout(()=>{const el=document.getElementById('pw-input');if(el)el.focus();},50);
+  }
+
+  panel.innerHTML = `<div class="page-section page-section-bans" style="margin-top:0;border-top:none;border-radius:0 0 14px 14px">
+    <!-- Controls -->
+    <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--line)">
+      <div>
+        <div style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-4);margin-bottom:6px;${isConsole?'font-family:Orbitron,monospace;':''}">Our side</div>
+        <div style="display:inline-flex;border:1px solid var(--line);border-radius:var(--radius-sm);overflow:hidden;background:var(--line-2)">
+          <button class="season-toggle-btn${DA.weAreFirst?' active':''}" onclick="daSetSide(true)">First pick</button>
+          <div class="season-divider"></div>
+          <button class="season-toggle-btn${!DA.weAreFirst?' active':''}" onclick="daSetSide(false)">Second pick</button>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-4);margin-bottom:6px;${isConsole?'font-family:Orbitron,monospace;':''}">Suggestions</div>
+        <div style="display:inline-flex;border:1px solid var(--line);border-radius:var(--radius-sm);overflow:hidden;background:var(--line-2)">
+          <button class="season-toggle-btn${DA.pubWeighting?' active':''}" onclick="daSetWeighting(true)">Our pool</button>
+          <div class="season-divider"></div>
+          <button class="season-toggle-btn${!DA.pubWeighting?' active':''}" onclick="daSetWeighting(false)">General</button>
+        </div>
+      </div>
+      <div style="margin-left:auto">
+        <button onclick="daClearAll()" style="background:none;border:1px solid var(--line);border-radius:var(--radius-sm);cursor:pointer;font-family:inherit;font-size:10px;color:var(--ink-4);padding:5px 12px">Clear draft</button>
+      </div>
+    </div>
+
+    <!-- Draft board -->
+    <div style="margin-bottom:24px">
+      <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-4);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--line);${isConsole?'font-family:Orbitron,monospace;':''}">
+        Draft board — <span style="color:var(--win)">■ Us</span> &nbsp; <span style="color:var(--loss)">■ Them</span> &nbsp; <span style="color:var(--ink-4);font-weight:400;font-size:9px">Click a slot to assign a hero</span>
+      </div>
+      ${phasesHtml}
+    </div>
+
+    <!-- Hero picker modal (inline) -->
+    <div id="da-picker" style="display:none;margin-bottom:20px;padding:16px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius)">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <input id="da-search" type="text" placeholder="Search hero…" oninput="daFilterHeroes()" style="flex:1;background:var(--line-2);border:1px solid var(--line);border-radius:6px;color:var(--ink);font-size:13px;padding:7px 12px;font-family:inherit;outline:none">
+        <button onclick="daClosePicker()" style="background:none;border:none;color:var(--ink-4);cursor:pointer;font-size:18px;padding:0 4px">\u00d7</button>
+      </div>
+      <div id="da-hero-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(56px,1fr));gap:6px;max-height:260px;overflow-y:auto"></div>
+    </div>
+
+    <!-- Suggestions -->
+    <div id="da-suggestions">
+      <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-4);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--line);${isConsole?'font-family:Orbitron,monospace;':''}">
+        Counterpick suggestions
+      </div>
+      <div style="font-size:12px;color:var(--ink-4)">Add enemy picks to the draft board to see counterpick suggestions.</div>
+    </div>
+  </div>
+
+  <!-- Hero picker slot state -->`;
 }
 
-function _submitPassword() {
-  const el = document.getElementById('pw-input');
-  if(!el) return;
-  if(el.value === 'tor') {
-    sessionStorage.setItem('scout_auth','tor');
-    _loadOurTeamData();
-  } else {
-    _renderPasswordScreen('Incorrect password');
+// ── Picker ────────────────────────────────────────────────────────────────────
+let _daActiveSlot = null;
+
+function daCycleSlot(idx, event) {
+  event.stopPropagation();
+  _daActiveSlot = idx;
+  const picker = document.getElementById('da-picker');
+  if (!picker) return;
+  picker.style.display = 'block';
+  const search = document.getElementById('da-search');
+  if (search) { search.value = ''; search.focus(); }
+  daFilterHeroes();
+}
+
+function daClosePicker() {
+  _daActiveSlot = null;
+  const picker = document.getElementById('da-picker');
+  if (picker) picker.style.display = 'none';
+}
+
+function daFilterHeroes() {
+  const grid = document.getElementById('da-hero-grid');
+  const search = document.getElementById('da-search');
+  if (!grid || !DA.heroList) {
+    if (grid) grid.innerHTML = '<div style="font-size:12px;color:var(--ink-4)">Loading heroes…</div>';
+    daFetchHeroList().then(() => daFilterHeroes());
+    return;
+  }
+  const q = (search ? search.value : '').toLowerCase();
+  const taken = new Set(DA.slots.filter(Boolean).map(s => s.heroName));
+
+  const filtered = DA.heroList
+    .filter(h => h.localized_name.toLowerCase().includes(q))
+    .slice(0, 60);
+
+  grid.innerHTML = filtered.map(h => {
+    const url = heroIconUrl(h.localized_name, '');
+    const isTaken = taken.has(h.localized_name);
+    return `<div onclick="${isTaken?'':'daSelectHero('+h.id+')'}" title="${h.localized_name}${isTaken?' (in draft)':''}" style="
+      display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px;
+      border-radius:6px;cursor:${isTaken?'not-allowed':'pointer'};
+      opacity:${isTaken?'0.3':'1'};
+      background:var(--line-2);
+      border:1px solid var(--line);
+      transition:background .12s;
+    " onmouseover="if(!${isTaken})this.style.background='var(--line)'" onmouseout="this.style.background='var(--line-2)'">
+      ${url?`<img src="${url}" style="width:32px;height:32px;border-radius:4px;object-fit:cover">` : '<div style="width:32px;height:32px;background:var(--line);border-radius:4px"></div>'}
+      <div style="font-size:8px;color:var(--ink-3);text-align:center;max-width:52px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${h.localized_name}</div>
+    </div>`;
+  }).join('');
+}
+
+function daSelectHero(heroId) {
+  if (_daActiveSlot === null || !DA.heroList) return;
+  const hero = DA.heroList.find(h => h.id === heroId);
+  if (!hero) return;
+  const slot = CM_SLOTS[_daActiveSlot];
+  const isUs = DA.weAreFirst ? slot.isFirst : !slot.isFirst;
+  DA.slots[_daActiveSlot] = { heroName: hero.localized_name, heroId, isUs, isBan: slot.isBan };
+  daClosePicker();
+  renderDraftBoard();
+  daUpdateBanHints();
+  daUpdateSuggestions();
+}
+
+function daClearAll() {
+  DA.slots = Array(24).fill(null);
+  renderDraftBoard();
+  daUpdateBanHints();
+  daUpdateSuggestions();
+}
+
+function daSetSide(isFirst) {
+  DA.weAreFirst = isFirst;
+  renderDraftBoard();
+  daUpdateBanHints();
+  daUpdateSuggestions();
+}
+
+function daSetWeighting(on) {
+  DA.pubWeighting = on;
+  daUpdateSuggestions();
+}
+
+// ── Suggestions ───────────────────────────────────────────────────────────────
+async function daUpdateSuggestions() {
+  const el = document.getElementById('da-suggestions');
+  if (!el) return;
+
+  const isConsole = document.documentElement.getAttribute('data-theme') === 'console';
+
+  // Enemy picks = slots assigned to opponent that are picks (not bans)
+  const enemyPicks = DA.slots.filter(s => s && !s.isUs && !s.isBan);
+  // Our picks already chosen = remove from suggestions
+  const ourPicks   = new Set(DA.slots.filter(s => s && s.isUs && !s.isBan).map(s => s.heroName));
+  // All taken heroes (both sides, picks + bans)
+  const taken      = new Set(DA.slots.filter(Boolean).map(s => s.heroName));
+
+  if (!enemyPicks.length) {
+    el.innerHTML = `<div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-4);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--line);${isConsole?'font-family:Orbitron,monospace;':''}">Counterpick suggestions</div><div style="font-size:12px;color:var(--ink-4)">Add enemy picks to the draft board to see counterpick suggestions.</div>`;
+    return;
+  }
+
+  el.innerHTML = `<div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-4);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--line);${isConsole?'font-family:Orbitron,monospace;':''}">Counterpick suggestions</div><div style="font-size:12px;color:var(--ink-4);padding:8px 0">Calculating\u2026</div>`;
+
+  // Fetch hero list and matchup data for all enemy picks
+  const heroes = await daFetchHeroList();
+  if (!heroes.length) {
+    el.innerHTML += '<div style="color:var(--loss);font-size:12px">Could not load hero data.</div>';
+    return;
+  }
+
+  const pubList = DA.pubWeighting ? await daFetchOurPubHeroes() : [];
+
+  // Fetch matchups for each enemy pick
+  const enemyMatchupSets = [];
+  for (const ep of enemyPicks) {
+    const matchups = await daFetchMatchups(ep.heroId);
+    if (matchups.length) enemyMatchupSets.push(matchups);
+  }
+
+  if (!enemyMatchupSets.length) {
+    el.innerHTML = '<div style="font-size:12px;color:var(--ink-4)">Could not fetch matchup data.</div>';
+    return;
+  }
+
+  // Score all non-taken heroes
+  const scored = heroes
+    .filter(h => !taken.has(h.localized_name))
+    .map(h => ({
+      hero: h,
+      score: daScoreHero(h.id, enemyMatchupSets, pubList, h.localized_name),
+      lane: heroToLane(h),
+      pubPlayers: pubList.filter(p => p.heroName === h.localized_name && p.games >= 10),
+      counters: enemyPicks.filter(ep => {
+        const set = enemyMatchupSets[enemyPicks.indexOf(ep)];
+        if (!set) return false;
+        const entry = set.find(m => m.hero_id === h.id);
+        if (!entry || !entry.games_played) return false;
+        return (entry.wins / entry.games_played) > 0.50;
+      }).map(ep => ep.heroName),
+    }))
+    .filter(s => s.score > 0)
+    .sort((a, b) => b.score - a.score);
+
+  const maxScore = scored[0]?.score || 1;
+
+  // Top 3 per lane
+  const byLane = {};
+  for (const lane of LANE_ORDER) byLane[lane] = [];
+  for (const s of scored) {
+    if (byLane[s.lane] && byLane[s.lane].length < 3) byLane[s.lane].push(s);
+  }
+
+  // Enemy picks summary
+  const enemySummary = enemyPicks.map(ep => {
+    const url = heroIconUrl(ep.heroName, '');
+    return `<span style="display:inline-flex;align-items:center;gap:4px;background:var(--loss-bg);border:1px solid var(--loss);border-radius:4px;padding:2px 7px 2px 3px;font-size:11px;color:var(--loss)">
+      ${url?`<img src="${url}" style="width:16px;height:16px;border-radius:2px;object-fit:cover">`:''}
+      ${ep.heroName}
+    </span>`;
+  }).join('');
+
+  let html = `<div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-4);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--line);${isConsole?'font-family:Orbitron,monospace;':''}">
+    Counterpick suggestions
+  </div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;align-items:center">
+    <span style="font-size:10px;color:var(--ink-4)">Against:</span>
+    ${enemySummary}
+  </div>`;
+
+  for (const lane of LANE_ORDER) {
+    const entries = byLane[lane];
+    if (!entries.length) continue;
+
+    html += `<div style="margin-bottom:20px">
+      <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin-bottom:8px;${isConsole?'font-family:Orbitron,monospace;':''}">
+        ${LANE_LABELS[lane]}
+      </div>
+      ${entries.map(s => {
+        const url = heroIconUrl(s.hero.localized_name, '');
+        const barW = Math.round((s.score / maxScore) * 100);
+        const counterText = s.counters.length
+          ? `Counters: ${s.counters.join(', ')}`
+          : '';
+        const playerText = s.pubPlayers.length
+          ? s.pubPlayers.map(p => `${p.playerName} (${p.games}g ${p.wr}%)`).join(', ')
+          : '';
+
+        return `<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;padding:10px 12px;background:var(--surface);border:1px solid var(--line);border-radius:${isConsole?'0':'8px'}">
+          ${url?`<img src="${url}" style="width:36px;height:36px;border-radius:5px;object-fit:cover;flex-shrink:0">` : '<div style="width:36px;height:36px;background:var(--line-2);border-radius:5px;flex-shrink:0"></div>'}
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:3px">${s.hero.localized_name}</div>
+            <div style="height:4px;background:var(--line);border-radius:2px;margin-bottom:5px;overflow:hidden">
+              <div style="height:4px;width:${barW}%;background:var(--win);border-radius:2px;opacity:.8"></div>
+            </div>
+            ${counterText?`<div style="font-size:10px;color:var(--win);margin-bottom:2px">\u2713 ${counterText}</div>`:''}
+            ${playerText?`<div style="font-size:10px;color:var(--ink-3)">\uD83C\uDFAE ${playerText}</div>`:''}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }
+
+  if (!LANE_ORDER.some(l => byLane[l].length)) {
+    html += '<div style="font-size:12px;color:var(--ink-4)">No strong counterpick data found for the current enemy picks.</div>';
+  }
+
+  el.innerHTML = html;
+}
+
+// ── Ban suggestions from scouting data ────────────────────────────────────────────
+// Base score: keyPickScore from opponent CM history (games, WR, delta vs pub).
+// Counter-threat bonus: for each of our revealed picks, fetch matchup data.
+//   Any hero in the opponent pool that beats our pick gets a bonus proportional
+//   to how far above 50% its win rate is against that pick. The more of our picks
+//   it threatens, the higher it scores as a ban priority.
+// Already-taken heroes are always filtered out regardless.
+
+async function _daBanSuggestions() {
+  if (!DA.scoutData) return [];
+
+  const taken = new Set(DA.slots.filter(Boolean).map(s => s.heroName));
+  const ourPicks = DA.slots.filter(s => s && s.isUs && !s.isBan);
+
+  // Build base candidates from opponent CM history
+  const baseMap = {};
+  for (const p of (DA.scoutData.players || [])) {
+    for (const h of (p.tournamentHeroes || [])) {
+      const score = keyPickScore(h);
+      if (!score) continue;
+      if (!baseMap[h.name] || score > baseMap[h.name].score) {
+        baseMap[h.name] = { name: h.name, iconUrl: h.iconUrl || '', score };
+      }
+    }
+  }
+
+  // Counter-threat bonus: fetch matchup data for each of our revealed picks
+  if (ourPicks.length) {
+    const heroes = await daFetchHeroList();
+    for (const ourPick of ourPicks) {
+      const ourHero = heroes.find(h => h.localized_name === ourPick.heroName);
+      if (!ourHero) continue;
+      // matchups for ourHero: entry.wins/games_played is the WR of the candidate
+      // hero when playing AGAINST ourHero. Above 50% = that hero beats our pick.
+      const matchups = await daFetchMatchups(ourHero.id);
+      for (const m of matchups) {
+        if (!m.games_played) continue;
+        const theirWR = m.wins / m.games_played;
+        if (theirWR <= 0.50) continue;
+        const threatHero = heroes.find(h => h.id === m.hero_id);
+        if (!threatHero) continue;
+        const threatName = threatHero.localized_name;
+        // Only boost heroes already in the opponent scouted pool
+        if (!baseMap[threatName]) continue;
+        // Bonus scales with how much above 50% this hero beats our pick
+        baseMap[threatName].score += (theirWR - 0.50) * 1.5;
+      }
+    }
+  }
+
+  // Filter taken, sort, deduplicate
+  const seen = new Set();
+  return Object.values(baseMap)
+    .filter(c => !taken.has(c.name))
+    .sort((a, b) => b.score - a.score)
+    .filter(c => { if (seen.has(c.name)) return false; seen.add(c.name); return true; });
+}
+
+// Fills ban hint ghost icons into pre-rendered slot containers after async scoring
+async function daUpdateBanHints() {
+  const suggestions = await _daBanSuggestions();
+  const isUs = slot => DA.weAreFirst ? slot.isFirst : !slot.isFirst;
+  let hintIdx = 0;
+  for (const slot of CM_SLOTS) {
+    if (!slot.isBan || !isUs(slot)) continue;
+    const el = document.getElementById('da-hint-' + slot.idx);
+    if (!el) continue;
+    const suggestion = suggestions[hintIdx++];
+    const filled = DA.slots[slot.idx];
+    if (suggestion && !filled) {
+      const url = heroIconUrl(suggestion.name, suggestion.iconUrl || '');
+      el.innerHTML = url
+        ? '<img src="' + url + '" alt="' + suggestion.name + '" title="Suggested ban: ' + suggestion.name + '" style="width:16px;height:16px;border-radius:2px;opacity:0.5;position:absolute;bottom:2px;right:2px">'
+        : '';
+    } else {
+      el.innerHTML = '';
+    }
   }
 }
 
-async function _loadOurTeamData() {
-  document.getElementById('main-panel').innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:70vh;color:var(--ink-4);gap:10px"><div style="font-size:14px">Loading Tornknäckarna roster…</div></div>`;
-  let data;
-  try{data=await fetchGist(OUR_TEAM_GIST_ID);}
-  catch(e){document.getElementById('main-panel').innerHTML=`<div style="padding:44px 52px;color:var(--loss)"><strong>Error:</strong> ${e.message}</div>`;return;}
-  _currentMatchData={...data};
-  _currentMatchContext={isSelf:true};
-  runBootSequence(()=>_renderOurTeamPanel(data));
-}
+// ── Debug mode (Shift+B) ─────────────────────────────────────────────────────────────
+// No API calls are made to generate the debug panel.
+// OpenDota matchup calls will still fire if you use the draft assistant.
 
-function _renderOurTeamPanel(data) {
-  const isConsole=document.documentElement.getAttribute('data-theme')==='console';
-  const currentSeasonId=data.currentSeasonId??null;
-  document.getElementById('main-panel').innerHTML=`
-    <div class="match-header">
-      <div class="match-title"><strong>Tornknäckarna</strong>${consoleCursor()}</div>
-      <div class="match-meta"><span>Dota 2 · Captain's Mode · E-Sparven</span></div>
-      <div class="notice notice-snapshot" style="margin-top:8px">Refreshed daily by the bot</div>
-      ${seasonToggleHTML()}
-    </div>
-    ${data.draftTendencies?`<div class="page-section page-section-bans">${renderDraftTendencies(data.draftTendencies)}</div>`:''}
-    <div class="page-section page-section-roster">
-      <div class="section-title" style="margin-bottom:16px">${isConsole?'// ':''}Our roster</div>
-      <div class="player-grid">${(data.players||[]).map(p=>renderPlayerCard(p,true)).join('')}</div>
-    </div>
-    ${renderHistory(data.history,currentSeasonId)}`;
-}
+(function() {
+  const DEBUG_HEROES = [
+    'Invoker','Enigma','Storm Spirit','Templar Assassin','Pudge',
+    'Earthshaker','Puck','Shadow Fiend','Lina','Lion',
+    'Crystal Maiden','Windranger','Rubick','Magnus','Tidehunter',
+    'Axe','Dragon Knight','Juggernaut','Anti-Mage','Phantom Assassin',
+    'Witch Doctor','Vengeful Spirit','Dazzle','Jakiro','Warlock',
+    'Void Spirit','Ember Spirit','Earth Spirit','Timbersaw','Bristleback',
+  ];
 
-// ── Match ─────────────────────────────────────────────────────────────────────
-async function loadMatch(binId, meetingId, btn) {
-  document.querySelectorAll('.match-item').forEach(el=>el.classList.remove('active'));
-  if(btn) btn.classList.add('active');
-  const opponent=btn?btn.querySelector('.mi-opponent').textContent:'…';
-  document.getElementById('main-panel').innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:70vh;color:var(--ink-4);gap:10px"><div style="font-size:14px">Loading scouting report for <strong>${opponent}</strong>…</div></div>`;
-  let data;
-  try{data=await fetchGist(binId);}
-  catch(e){document.getElementById('main-panel').innerHTML=`<div style="padding:44px 52px;color:var(--loss)"><strong>Error:</strong> Could not load gist ${binId}: ${e.message}</div>`;return;}
-  _currentMatchData={...data};
-  _currentMatchContext={meetingId,isSelf:false};
-  runBootSequence(()=>_renderMatchPanel(data,meetingId));
-}
+  const DEBUG_NAMES = [
+    'meta engineer','whoppe','tobieee','Hansson','srs blck',
+  ];
 
-function _renderMatchPanel(data, meetingId) {
-  const status=data.status||'upcoming';
-  const badgeClass={upcoming:'badge-upcoming',win:'badge-win',loss:'badge-loss',tie:'badge-loss'}[status]||'badge-upcoming';
-  const badgeText={upcoming:'Upcoming',win:'Win',loss:'Loss',tie:'Tie'}[status]||status;
-  const notice=status==='upcoming'
-    ?`<div class="notice notice-live">Live data · refreshed daily until match day</div>`
-    :`<div class="notice notice-snapshot">Snapshot · ${fmtDate(data.snapshotAt)}</div>`;
-  const esparvenUrl=meetingId?`https://esparven.se/none/Meeting/Details/${meetingId}`:null;
-  const isConsole=document.documentElement.getAttribute('data-theme')==='console';
-  const currentSeasonId=data.currentSeasonId??null;
-  document.getElementById('main-panel').innerHTML=`
-    <div class="match-header">
-      <div style="margin-bottom:10px"><span class="mi-badge ${badgeClass}" style="font-size:11px">${badgeText}</span></div>
-      <div class="match-title">vs <strong>${data.opponent}</strong>${consoleCursor()}</div>
-      <div class="match-meta">
-        <span>${fmtDate(data.date)}</span>
-        <span>Dota 2 · Captain's Mode</span>
-        ${esparvenUrl?`<a href="${esparvenUrl}" target="_blank" style="color:var(--accent);text-decoration:none;font-size:13px">E-Sparven</a>`:''}
-      </div>
-      ${notice}
-      ${seasonToggleHTML()}
-    </div>
-    ${status==='upcoming'?`<div class="page-section page-section-bans">${renderBanSection(data.players||[])}${renderDraftTendencies(data.draftTendencies)}</div>`:`<div class="page-section page-section-bans">${renderDraftTendencies(data.draftTendencies)}</div>`}
-    <div class="page-section page-section-roster">
-      <div class="section-title" style="margin-bottom:16px">${isConsole?'// ':''}Opponent roster</div>
-      <div class="player-grid">${(data.players||[]).map(p=>renderPlayerCard(p,false)).join('')}</div>
-    </div>
-    ${renderHistory(data.history,currentSeasonId)}`;
-}
+  const DEBUG_RANKS = [
+    {rankMedal:'Ancient',  rankLabel:'Ancient IV'},
+    {rankMedal:'Divine',   rankLabel:'Divine II'},
+    {rankMedal:'Immortal', rankLabel:'Immortal'},
+    {rankMedal:'Legend',   rankLabel:'Legend III'},
+    {rankMedal:'Ancient',  rankLabel:'Ancient I'},
+  ];
+
+  function rnd(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+  function pick(arr, n) {
+    const copy = [...arr].sort(() => Math.random() - 0.5);
+    return copy.slice(0, n);
+  }
+
+  function fakePlayer(idx) {
+    const tHeroes = pick(DEBUG_HEROES, rnd(2, 4)).map(name => ({
+      name,
+      iconUrl: '',
+      tournamentGames:    rnd(2, 8),
+      tournamentWR:       rnd(40, 80),
+      currentSeasonGames: rnd(1, 5),
+      currentSeasonWR:    rnd(40, 80),
+      recentSeason:       Math.random() > 0.3,
+      pubWR:              rnd(45, 65),
+      pubGames:           rnd(10, 60),
+    }));
+    const pubHeroes = pick(DEBUG_HEROES, 5).map(name => ({
+      name,
+      games: rnd(10, 80),
+      wr:    rnd(44, 66),
+    }));
+    const form = Array.from({length: 10}, () => Math.random() > 0.45 ? 'w' : 'l');
+    return {
+      name:      DEBUG_NAMES[idx] || `Player ${idx + 1}`,
+      accountId: rnd(10000000, 199999999),
+      confirmed: true,
+      ...DEBUG_RANKS[idx % DEBUG_RANKS.length],
+      winrate:   rnd(47, 62),
+      form,
+      tournamentHeroes: tHeroes,
+      pubHeroes,
+    };
+  }
+
+  function fakeHistory() {
+    const games = rnd(2, 5);
+    const history = [];
+    for (let i = 0; i < games; i++) {
+      const oppTeam = rnd(0, 1);
+      const oppWon  = Math.random() > 0.5;
+      const picks = pick(DEBUG_HEROES, 10).map((heroName, j) => ({
+        heroName,
+        iconUrl: '',
+        team: j < 5 ? 0 : 1,
+      }));
+      const bans = pick(DEBUG_HEROES.filter(h => !picks.find(p => p.heroName === h)), 14)
+        .map((heroName, j) => ({ heroName, iconUrl: '', team: j % 2 }));
+      history.push({
+        matchId:      String(rnd(7000000000, 7999999999)),
+        duration:     `${rnd(28, 55)}:${String(rnd(0,59)).padStart(2,'0')}`,
+        patch:        '7.37',
+        seasonId:     67,
+        opponentTeam: oppTeam,
+        opponentWon:  oppWon,
+        picks,
+        bans,
+      });
+    }
+    return history;
+  }
+
+  function fakeTendencies(players) {
+    const allHeroes = players.flatMap(p => p.tournamentHeroes);
+    const picked = pick(DEBUG_HEROES, 5).map((name, i) => ({
+      name, count: rnd(2, 6), iconUrl: '',
+    }));
+    const banned = pick(DEBUG_HEROES.filter(h => !picked.find(p => p.name === h)), 5)
+      .map((name, i) => ({ name, count: rnd(2, 6), iconUrl: '' }));
+    const orderPatterns = [
+      { slot:0, label:'1st ban',  isPick:false, hero:banned[0]?.name||'Invoker',   count:rnd(2,4), pct:rnd(50,80), iconUrl:'' },
+      { slot:1, label:'2nd ban',  isPick:false, hero:banned[1]?.name||'Enigma',    count:rnd(2,4), pct:rnd(40,70), iconUrl:'' },
+      { slot:0, label:'1st pick', isPick:true,  hero:picked[0]?.name||'Earthshaker',count:rnd(2,4),pct:rnd(50,80), iconUrl:'' },
+      { slot:1, label:'2nd pick', isPick:true,  hero:picked[1]?.name||'Lina',      count:rnd(2,3), pct:rnd(40,65), iconUrl:'' },
+    ];
+    return {
+      totalGames:    rnd(4, 10),
+      mostPicked:    picked,
+      mostBanned:    banned,
+      orderPatterns,
+    };
+  }
+
+  function buildDebugData() {
+    const players = Array.from({length: 5}, (_, i) => fakePlayer(i));
+    const history  = fakeHistory();
+    const draftTendencies = fakeTendencies(players);
+    return {
+      meetingId:       'DEBUG',
+      opponent:        'Debug Opponent',
+      date:            new Date().toISOString(),
+      status:          'upcoming',
+      snapshotAt:      new Date().toISOString(),
+      currentSeasonId: 67,
+      players,
+      history,
+      draftTendencies,
+    };
+  }
+
+  function activateDebug() {
+    const data = buildDebugData();
+
+    // Mark the sidebar so it's obvious debug mode is active
+    const existing = document.getElementById('debug-badge');
+    if (!existing) {
+      const badge = document.createElement('div');
+      badge.id = 'debug-badge';
+      badge.textContent = 'DEBUG';
+      badge.style.cssText = [
+        'position:fixed','bottom:12px','right:12px','z-index:99998',
+        'background:#f59e0b','color:#000','font-size:9px','font-weight:700',
+        'letter-spacing:.12em','padding:4px 10px','border-radius:4px',
+        'font-family:Orbitron,monospace','pointer-events:none',
+      ].join(';');
+      document.body.appendChild(badge);
+    }
+
+    // Deselect sidebar items
+    document.querySelectorAll('.match-item').forEach(el => el.classList.remove('active'));
+
+    // Cache the fake data so the season toggle and draft assistant work
+    _currentMatchData    = { ...data };
+    _currentMatchContext = { meetingId: 'DEBUG', isSelf: false };
+
+    runBootSequence(() => _renderMatchPanel(data, 'DEBUG'));
+  }
+
+  // Remove debug badge when navigating away
+  const _origLoadMatch = window.loadMatch;
+  window.loadMatch = function(...args) {
+    const b = document.getElementById('debug-badge');
+    if (b) b.remove();
+    return _origLoadMatch?.apply(this, args);
+  };
+
+  // Shift+B listener
+  document.addEventListener('keydown', e => {
+    if (e.shiftKey && e.key === 'B' && !e.ctrlKey && !e.altKey && !e.metaKey) {
+      // Don't fire if focus is in a text input (e.g. the hero search box)
+      const tag = document.activeElement?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      activateDebug();
+    }
+  });
+})();
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
-(async()=>{
-  let index;
-  try{index=await fetchGist(INDEX_GIST_ID);}
-  catch(e){document.getElementById('sidebar-content').innerHTML=`<div style="padding:20px 22px;color:var(--loss);font-size:13px">Failed to load index: ${e.message}</div>`;return;}
-  const matches=index.matches||[];
-  const tickerSnippets=index.tickerSnippets||[];
-  buildSidebar(matches, tickerSnippets);
-  const first = matches.find(m=>m.status==='upcoming') || [...matches].reverse().find(m=>m.status!=='upcoming');
-  if(first) loadMatch(first.gistId, first.meetingId||'', document.querySelector(`[data-bin="${first.gistId}"]`));
-})();
+(async()=>{let index;try{index=await fetchGist(INDEX_GIST_ID);}catch(e){document.getElementById('sidebar-content').innerHTML=`<div style="padding:20px 22px;color:var(--loss);font-size:13px">Failed to load index: ${e.message}</div>`;return;}const matches=index.matches||[];const tickerSnippets=index.tickerSnippets||[];buildSidebar(matches,tickerSnippets);const first=matches.find(m=>m.status==='upcoming')||[...matches].reverse().find(m=>m.status!=='upcoming');if(first)loadMatch(first.gistId,first.meetingId||'',document.querySelector(`[data-bin="${first.gistId}"]`));})();
 </script>
 </body>
 </html>
