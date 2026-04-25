@@ -10,8 +10,8 @@
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --bg:#0f1117;--surface:#1a1d27;--ink:#e8eaf0;--ink-2:#c0c4d0;--ink-3:#7a7f94;--ink-4:#4a4f62;
-    --line:#272b3a;--line-2:#1e2130;--accent:#4d9eff;
+    --bg:#0f1117;--surface:#1a1d27;--surface-2:#21253a;--ink:#e8eaf0;--ink-1:#d4d7e3;--ink-2:#c0c4d0;--ink-3:#7a7f94;--ink-4:#4a4f62;
+    --line:#272b3a;--line-2:#1e2130;--border:#272b3a;--accent:#4d9eff;
     --win:#34c47a;--win-bg:#0d2b1e;--loss:#f06050;--loss-bg:#2a1210;
     --upcoming:#a78bfa;--upcoming-bg:#1e1740;
     --ban-high:#f87171;--ban-med:#fb923c;
@@ -23,8 +23,8 @@
     --mono:'DM Mono',monospace;--sans:'DM Sans',sans-serif;--radius:12px;--radius-sm:6px;--tr:0.18s cubic-bezier(0.4,0,0.2,1);
   }
   [data-theme="dark"] {
-    --bg:#0f1117;--surface:#1a1d27;--ink:#e8eaf0;--ink-2:#c0c4d0;--ink-3:#7a7f94;--ink-4:#4a4f62;
-    --line:#272b3a;--line-2:#1e2130;--accent:#4d9eff;
+    --bg:#0f1117;--surface:#1a1d27;--surface-2:#21253a;--ink:#e8eaf0;--ink-1:#d4d7e3;--ink-2:#c0c4d0;--ink-3:#7a7f94;--ink-4:#4a4f62;
+    --line:#272b3a;--line-2:#1e2130;--border:#272b3a;--accent:#4d9eff;
     --win:#34c47a;--win-bg:#0d2b1e;--loss:#f06050;--loss-bg:#2a1210;
     --upcoming:#a78bfa;--upcoming-bg:#1e1740;--ban-high:#f87171;--ban-med:#fb923c;
     --section-bans-bg:#1c1914;--section-bans-bdr:#2e2516;
@@ -33,8 +33,8 @@
     --active-item-bg:#1a2040;--shadow-h:0 2px 8px rgba(0,0,0,.3),0 8px 32px rgba(0,0,0,.4);
   }
   [data-theme="console"] {
-    --bg:#020a02;--surface:rgba(0,20,0,0.85);--ink:#00ff41;--ink-2:#00dd38;--ink-3:#00aa2a;--ink-4:#006614;
-    --line:#004a10;--line-2:#003308;--accent:#00ff41;
+    --bg:#020a02;--surface:rgba(0,20,0,0.85);--surface-2:rgba(0,30,0,0.7);--ink:#00ff41;--ink-1:#00ee38;--ink-2:#00dd38;--ink-3:#00aa2a;--ink-4:#006614;
+    --line:#004a10;--line-2:#003308;--border:#004a10;--accent:#00ff41;
     --win:#00ff41;--win-bg:#003308;--loss:#ff2020;--loss-bg:#1e0000;
     --upcoming:#ffb000;--upcoming-bg:#1a0f00;--ban-high:#ff2020;--ban-med:#ffb000;
     --section-bans-bg:#040f04;--section-bans-bdr:#004a10;
@@ -43,8 +43,8 @@
     --active-item-bg:#001a00;--shadow-h:0 0 15px rgba(0,255,65,0.15),0 0 40px rgba(0,255,65,0.05);
   }
   [data-theme="light"] {
-    --bg:#fafafa;--surface:#ffffff;--ink:#0a0a0a;--ink-2:#3a3a3a;--ink-3:#777777;--ink-4:#aaaaaa;
-    --line:#e8e8e8;--line-2:#f0f0f0;--accent:#0066cc;
+    --bg:#fafafa;--surface:#ffffff;--surface-2:#f2f2f2;--ink:#0a0a0a;--ink-1:#1a1a1a;--ink-2:#3a3a3a;--ink-3:#777777;--ink-4:#aaaaaa;
+    --line:#e8e8e8;--line-2:#f0f0f0;--border:#e8e8e8;--accent:#0066cc;
     --win:#1a7a4a;--win-bg:#edf7f2;--loss:#b33a2a;--loss-bg:#fdf0ee;
     --upcoming:#5a3fa0;--upcoming-bg:#f2effe;--ban-high:#9b1c1c;--ban-med:#92400e;
     --section-bans-bg:#fdf8f3;--section-bans-bdr:#f0e0cc;
@@ -356,7 +356,7 @@ applyTheme(localStorage.getItem('theme')||'dark');
 
 async function fetchGist(gistId){const r=await fetch(gistUrl(gistId));if(!r.ok)throw new Error(`Gist fetch ${r.status} for ${gistId}`);return r.json();}
 
-function profileLinks(accountId){if(!accountId)return '';return`<div class="player-links"><a class="player-link" href="https://www.dotabuff.com/players/${accountId}" target="_blank">Dotabuff</a><a class="player-link" href="https://www.opendota.com/players/${accountId}" target="_blank">OpenDota</a></div>`;}
+function profileLinks(accountId){if(!accountId)return '';return`<div class="player-links"><a class="player-link" href="https://www.dotabuff.com/players/${accountId}" target="_blank" rel="noopener noreferrer">Dotabuff</a><a class="player-link" href="https://www.opendota.com/players/${accountId}" target="_blank" rel="noopener noreferrer">OpenDota</a></div>`;}
 
 const RANK_THEME={Herald:{lbg:'#f3f4f6',lc:'#374151',dbg:'#1c1f27',dc:'#9ca3af'},Guardian:{lbg:'#f0fdf4',lc:'#166534',dbg:'#0d2b1a',dc:'#4ade80'},Crusader:{lbg:'#fffbeb',lc:'#92400e',dbg:'#271a05',dc:'#fbbf24'},Archon:{lbg:'#fff7ed',lc:'#9a3412',dbg:'#2a1208',dc:'#fb923c'},Legend:{lbg:'#fff1f2',lc:'#9f1239',dbg:'#2a0a10',dc:'#fb7185'},Ancient:{lbg:'#f5f3ff',lc:'#6d28d9',dbg:'#1a1040',dc:'#a78bfa'},Divine:{lbg:'#fefce8',lc:'#854d0e',dbg:'#201a04',dc:'#fde047'},Immortal:{lbg:'#ecfeff',lc:'#0e7490',dbg:'#042028',dc:'#22d3ee'},Unknown:{lbg:'#f3f4f6',lc:'#6b7280',dbg:'#1c1f27',dc:'#6b7280'}};
 function rankBadgeHTML(rankMedal,rankLabel){const medal=rankMedal||'Unknown';const cfg=RANK_THEME[medal]||RANK_THEME.Unknown;const isLight=document.documentElement.getAttribute('data-theme')==='light';const bg=isLight?cfg.lbg:cfg.dbg,color=isLight?cfg.lc:cfg.dc;const imgUrl=`${MEDALS_BASE}${medal.toLowerCase().replace(/\s+/g,'_')}.png`;return`<div class="rank-badge" style="background:${bg};color:${color}"><img class="rank-medal-img" src="${imgUrl}" alt="${medal}" onerror="this.style.display='none'">${rankLabel||'Unknown'}</div>`;}
@@ -371,19 +371,17 @@ function seasonToggleHTML(){const isConsole=document.documentElement.getAttribut
 
 function setSeasonFilter(csOnly){if(currentSeasonOnly===csOnly)return;currentSeasonOnly=csOnly;if(_currentMatchData&&_currentMatchContext){if(_currentMatchContext.isSelf)_renderOurTeamPanel(_currentMatchData);else _renderMatchPanel(_currentMatchData,_currentMatchContext.meetingId);}}
 
-function keyPickScore(h){const{games,wr}=resolveHeroStats(h);if(!games)return 0;const delta=Math.max(0,wr-(h.pubWR||wr));const deltaMult=1+(delta/40);const recency=h.recentSeason?1.2:1.0;return(wr/100)*Math.log(games+1)*deltaMult*recency;}
+function keyPickScore(h){const{games,wr}=resolveHeroStats(h);if(!games)return 0;const delta=Math.max(0,wr-(h.pubWR||wr));const deltaMult=1+Math.min(delta/40,0.5);const recency=(!currentSeasonOnly&&h.recentSeason)?1.15:1.0;return(wr/100)*Math.log(games+1)*deltaMult*recency;}
 function priorityLabel(s){return s>=2.4?'high':s>=1.6?'med':'low';}
 function banReason(h){const{games,wr}=resolveHeroStats(h);const delta=Math.max(0,wr-(h.pubWR||wr));const parts=[];if(games>=4)parts.push(`${games} CM games`);if(wr>=65)parts.push(`${wr}% CM wr`);if(delta>=15)parts.push(`+${delta}pp vs pub`);return parts.join(' \u00b7 ')||'Moderate threat';}
 function computeBans(players){const cands=[];for(const p of players)for(const h of(p.tournamentHeroes||[])){const score=keyPickScore(h);if(score)cands.push({hero:h,player:p.name,score,priority:priorityLabel(score)});}cands.sort((a,b)=>b.score-a.score);const seen=new Set();return cands.filter(c=>{if(seen.has(c.hero.name))return false;seen.add(c.hero.name);return true;}).slice(0,6);}
 
-function renderBanSection(players){const bans=computeBans(players);const isConsole=document.documentElement.getAttribute('data-theme')==='console';if(!bans.length)return'<div style="color:var(--ink-4);font-size:13px;margin-bottom:32px">No CM data yet \u2014 ban suggestions will appear after the opponent plays their first match.</div>';const maxScore=bans[0].score||1;const banCard=b=>{const norm=Math.min(100,(b.score/maxScore)*100).toFixed(0);const{games,wr}=resolveHeroStats(b.hero);return`<div class="ban-card priority-${b.priority}"><div class="ban-priority-dot"></div>${heroIconTag(b.hero.name,'ban-hero-icon',b.hero.iconUrl)}<div class="ban-body"><div class="ban-hero-name">${b.hero.name}</div><div class="ban-owner">${b.player}</div><div class="ban-stats"><span class="ban-stat">${games} CM games</span><span class="ban-stat">${wr}% CM wr</span>${b.hero.pubWR?`<span class="ban-stat">${b.hero.pubWR}% pub wr`:''}${''}</div><div class="ban-reason">${banReason(b.hero)}</div><div class="ban-score-bar"><div class="ban-score-fill" style="width:${norm}%"></div></div></div></div>`;};const tier=(label,color,items)=>!items.length?'':`<div style="margin-bottom:20px"><div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:${color};margin-bottom:8px;display:flex;align-items:center;gap:6px;${isConsole?'font-family:Orbitron,monospace;letter-spacing:3px;':''}"><span style="display:inline-block;width:6px;height:6px;border-radius:${isConsole?'0':'50%'};background:${color}"></span>${label}</div><div class="ban-grid">${items.map(banCard).join('')}</div></div>`;const high=bans.filter(b=>b.priority==='high');const med=bans.filter(b=>b.priority==='med');const low=bans.filter(b=>b.priority==='low');return`<div class="ban-section"><div class="section-title">${isConsole?'// ':''}Suggested bans</div>${tier('Priority bans','var(--ban-high)',high)}${tier('Moderate threats','var(--ban-med)',med)}${tier('Situational','#9ca3af',low)}<div style="font-size:11px;color:var(--ink-4);margin-top:4px;line-height:1.5${isConsole?';font-family:Share Tech Mono,monospace':''}">Scored by CM winrate, games played, delta vs pub winrate, and recency.</div></div>`;}
+function renderBanSection(players){const bans=computeBans(players);const isConsole=document.documentElement.getAttribute('data-theme')==='console';if(!bans.length)return'<div style="color:var(--ink-4);font-size:13px;margin-bottom:32px">No CM data yet \u2014 ban suggestions will appear after the opponent plays their first match.</div>';const maxScore=bans[0].score||1;const banCard=b=>{const norm=Math.min(100,(b.score/maxScore)*100).toFixed(0);const{games,wr}=resolveHeroStats(b.hero);return`<div class="ban-card priority-${b.priority}"><div class="ban-priority-dot"></div>${heroIconTag(b.hero.name,'ban-hero-icon',b.hero.iconUrl)}<div class="ban-body"><div class="ban-hero-name">${b.hero.name}</div><div class="ban-owner">${b.player}</div><div class="ban-stats"><span class="ban-stat">${games} CM games</span><span class="ban-stat">${wr}% CM wr</span>${b.hero.pubWR?`<span class="ban-stat">${b.hero.pubWR}% pub wr</span>`:''}${''}</div><div class="ban-reason">${banReason(b.hero)}</div><div class="ban-score-bar"><div class="ban-score-fill" style="width:${norm}%"></div></div></div></div>`;};const tier=(label,color,items)=>!items.length?'':`<div style="margin-bottom:20px"><div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:${color};margin-bottom:8px;display:flex;align-items:center;gap:6px;${isConsole?'font-family:Orbitron,monospace;letter-spacing:3px;':''}"><span style="display:inline-block;width:6px;height:6px;border-radius:${isConsole?'0':'50%'};background:${color}"></span>${label}</div><div class="ban-grid">${items.map(banCard).join('')}</div></div>`;const high=bans.filter(b=>b.priority==='high');const med=bans.filter(b=>b.priority==='med');const low=bans.filter(b=>b.priority==='low');return`<div class="ban-section"><div class="section-title">${isConsole?'// ':''}Suggested bans</div>${tier('Priority bans','var(--ban-high)',high)}${tier('Moderate threats','var(--ban-med)',med)}${tier('Situational','#9ca3af',low)}<div style="font-size:11px;color:var(--ink-4);margin-top:4px;line-height:1.5${isConsole?';font-family:Share Tech Mono,monospace':''}">Scored by CM winrate, games played, delta vs pub winrate, and recency.</div></div>`;}
 
 function renderDraftOrderPatterns(patterns){if(!patterns||!patterns.length)return'';const isConsole=document.documentElement.getAttribute('data-theme')==='console';const bans=patterns.filter(p=>!p.isPick);const picks=patterns.filter(p=>p.isPick);const firstBan=bans.find(p=>p.slot===0);const firstPick=picks.find(p=>p.slot===0);const spotlight=(p,color,label)=>{if(!p)return'';const src=heroIconUrl(p.hero,p.iconUrl||'')||'';const icon=src?`<img src="${src}" alt="${p.hero}" style="width:32px;height:32px;border-radius:5px;object-fit:cover;flex-shrink:0" onerror="this.style.display='none'">`:`<div style="width:32px;height:32px;border-radius:5px;background:var(--line-2);flex-shrink:0"></div>`;return`<div style="display:flex;align-items:center;gap:10px;flex:1;min-width:140px;padding:10px 14px;background:var(--surface);border:1px solid var(--line);border-left:3px solid ${color};border-radius:${isConsole?'0':'8px'}">${icon}<div style="min-width:0"><div style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:${color};margin-bottom:2px;${isConsole?'font-family:Orbitron,monospace;':''}">${label}</div><div style="font-size:13px;font-weight:600;color:var(--ink-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.hero}</div><div style="font-size:10px;color:var(--ink-4);font-family:var(--mono)">${p.pct}% of games</div></div></div>`;};const chip=p=>{const src=heroIconUrl(p.hero,p.iconUrl||'')||'';const icon=src?`<img src="${src}" alt="${p.hero}" style="width:18px;height:18px;border-radius:3px;object-fit:cover;flex-shrink:0" onerror="this.style.display='none'">`:'';;const color=p.isPick?'var(--win)':'var(--loss)';return`<div style="display:flex;align-items:center;gap:6px;padding:5px 8px;background:var(--surface);border:1px solid var(--line);border-radius:${isConsole?'0':'6px'};min-width:0"><span style="font-size:9px;font-weight:700;letter-spacing:.05em;color:var(--ink-4);white-space:nowrap;min-width:52px;${isConsole?'font-family:Orbitron,monospace;font-size:8px;':''}">${p.label.toUpperCase()}</span>${icon}<span style="font-size:12px;color:var(--ink-1);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.hero}</span><span style="font-size:10px;color:${color};font-weight:600;flex-shrink:0;font-family:var(--mono)">${p.pct}%</span></div>`;};
-// Bans left, picks right
 const col=(title,items,color)=>!items.length?'':`<div style="flex:1;min-width:180px"><div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:${color};margin-bottom:8px;${isConsole?'font-family:Orbitron,monospace;letter-spacing:3px;':''}">${isConsole?'// ':''}${title}</div><div style="display:flex;flex-direction:column;gap:4px">${items.map(chip).join('')}</div></div>`;const spotlightHtml=(firstBan||firstPick)?`<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">${spotlight(firstBan,'var(--loss)','First ban')}${spotlight(firstPick,'var(--win)','First pick')}</div>`:'';const fullBreakdown=(bans.length>1||picks.length>1)?`<div style="display:flex;gap:20px;flex-wrap:wrap">${col('Ban order',bans,'var(--loss)')}${col('Pick order',picks,'var(--win)')}</div>`:'';return`<div style="margin-top:20px"><div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-4);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--line);${isConsole?'font-family:Orbitron,monospace;letter-spacing:3px;':''}">${isConsole?'// ':''}Draft order tendencies</div>${spotlightHtml}${fullBreakdown}</div>`;}
 
 function renderDraftTendencies(tendencies){if(!tendencies||!tendencies.totalGames)return'';const isConsole=document.documentElement.getAttribute('data-theme')==='console';const total=tendencies.totalGames;const heroIconSmall=(name,iconUrl)=>{const src=heroIconUrl(name,iconUrl||'')||'';return src?`<img src="${src}" alt="${name}" style="width:20px;height:20px;border-radius:3px;object-fit:cover;flex-shrink:0" onerror="this.style.display='none'">`:'';}; const row=item=>{const pct=Math.round(item.count/total*100);const barW=Math.min(100,pct);return`<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><div style="width:20px;height:20px;flex-shrink:0">${heroIconSmall(item.name,item.iconUrl||'')}</div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px"><span style="font-size:12px;color:var(--ink-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${item.name}</span><span style="font-size:11px;color:var(--ink-3);flex-shrink:0;margin-left:8px">${item.count}\u00d7&nbsp;<span style="color:var(--ink-4)">${pct}%</span></span></div><div style="height:3px;background:var(--surface-2);border-radius:2px"><div style="height:3px;width:${barW}%;background:var(--accent);border-radius:2px;opacity:0.7"></div></div></div></div>`;};
-// CHANGE 1: bans column left, picks column right
 const col=(title,items,color)=>!items||!items.length?'':`<div style="flex:1;min-width:180px"><div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:${color};margin-bottom:10px;${isConsole?'font-family:Orbitron,monospace;letter-spacing:3px;':''}">${isConsole?'// ':''}${title}</div>${items.map(row).join('')}</div>`;return`<div class="ban-section" style="margin-top:28px"><div class="section-title" style="margin-bottom:4px">${isConsole?'// ':''}Draft presence</div><div style="font-size:11px;color:var(--ink-4);margin-bottom:16px">Based on ${total} tracked game${total===1?'':'s'}</div><div style="display:flex;gap:32px;flex-wrap:wrap">${col('Most banned',tendencies.mostBanned,'var(--loss)')}${col('Most picked',tendencies.mostPicked,'var(--win)')}</div>${renderDraftOrderPatterns(tendencies.orderPatterns)}</div>`;}
 
 // ── Hero winrate breakdown: computed from history, per team ───────────────────
@@ -402,7 +400,7 @@ function renderHeroRows(heroes,isTournament,isSelf){if(!heroes||!heroes.length)r
 
 function renderPlayerCard(p,isSelf){const form=(p.form||[]).map(r=>`<div class="form-pip ${r}">${r.toUpperCase()}</div>`).join('');const noId=!p.accountId?`<span style="font-size:9px;color:var(--ink-4);margin-left:6px;font-weight:600">no ID</span>`:'';const hasBanCandidate=!isSelf&&(p.tournamentHeroes||[]).some(h=>{const{games}=resolveHeroStats(h);return keyPickScore(h)>=2.4&&games>=3;});const isConsole=document.documentElement.getAttribute('data-theme')==='console';return`<div class="player-card"><div class="player-card-top"><div class="player-meta"><div class="player-name">${p.name}${noId}</div>${rankBadgeHTML(p.rankMedal||'Unknown',p.rankLabel)}</div><div class="player-wr">${p.winrate!=null?`<div class="wr-number">${p.winrate}%</div><div class="wr-label">${isConsole?'PUB WR':'pub wr'}</div>`:'<div class="wr-number" style="font-size:14px;color:var(--ink-4)">\u2014</div>'}</div></div><div class="hero-section"><div class="hero-section-label">${isConsole?'// ':''}CM picks (E-Sparven)${hasBanCandidate?`<span style="font-size:9px;color:var(--ban-high);margin-left:4px">\u25cf ban candidate</span>`:''}</div>${renderHeroRows(p.tournamentHeroes,true,isSelf)}</div><div class="hero-section"><div class="hero-section-label">${isConsole?'// ':''}Pub pool</div>${renderHeroRows(p.pubHeroes,false,isSelf)}</div>${form?`<div class="form-row"><div class="form-label">Form</div>${form}</div>`:''}${profileLinks(p.accountId)}</div>`;}
 
-function renderHistory(history,currentSeasonId){if(!history||!history.length)return'';const isConsole=document.documentElement.getAttribute('data-theme')==='console';const filtered=history.filter(m=>{if(!currentSeasonOnly)return true;if(m.seasonId==null)return true;return m.seasonId===currentSeasonId;});const seasonLabel=currentSeasonOnly?' this season':'';const title=`${isConsole?'// ':''}Opponent's E-Sparven match history${seasonLabel}`;if(!filtered.length)return`<div class="page-section page-section-history history-section"><div class="section-title">${title}</div><div style="font-size:13px;color:var(--ink-4)">No games recorded${seasonLabel}.</div></div>`;const chipGroup=(picks,team)=>{const chips=(picks||[]).filter(pk=>pk.team===team).map(pk=>{const url=heroIconUrl(pk.heroName,pk.iconUrl);return`<span class="hero-chip"><div class="hero-chip-icon">${url?`<img src="${url}" alt="${pk.heroName}" loading="lazy">`:''}</div>${pk.heroName}</span>`;}).join('');return chips||'<span style="font-size:11px;color:var(--ink-4)">\u2014</span>';};const rows=filtered.map(m=>{const oppTeam=m.opponentTeam??null,oppWon=m.opponentWon??null;const resultBadge=oppWon===true?'<span class="result-badge win">W</span>':oppWon===false?'<span class="result-badge loss">L</span>':'';const sideLabel=t=>oppTeam===null?'':t===oppTeam?`<span style="font-size:9px;font-weight:700;letter-spacing:.05em;color:var(--upcoming);background:var(--upcoming-bg);padding:1px 5px;border-radius:${isConsole?'0':'3px'};margin-right:4px${isConsole?';font-family:Orbitron,monospace;letter-spacing:2px':''}">OPP</span>`:`<span style="font-size:9px;color:var(--ink-4);background:var(--line-2);padding:1px 5px;border-radius:${isConsole?'0':'3px'};margin-right:4px">vs</span>`;return`<tr><td class="mono">${m.duration||'\u2014'}</td><td>${resultBadge?`<span style="margin-right:6px">${resultBadge}</span>`:''}${sideLabel(0)}${chipGroup(m.picks,0)}</td><td>${sideLabel(1)}${chipGroup(m.picks,1)}</td><td class="mono" style="color:var(--ink-4)">${m.patch?`patch ${m.patch}`:''}</td><td style="white-space:nowrap"><a class="player-link" href="https://www.opendota.com/matches/${m.matchId}" target="_blank" style="font-size:10.5px;padding:2px 8px">Match</a></td></tr>`;}).join('');return`<div class="page-section page-section-history history-section"><div class="section-title">${title}</div><table class="history-table"><thead><tr><th>Duration</th><th>Radiant</th><th>Dire</th><th>Patch</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`;}
+function renderHistory(history,currentSeasonId){if(!history||!history.length)return'';const isConsole=document.documentElement.getAttribute('data-theme')==='console';const filtered=history.filter(m=>{if(!currentSeasonOnly)return true;if(m.seasonId==null)return true;return m.seasonId===currentSeasonId;});const seasonLabel=currentSeasonOnly?' this season':'';const title=`${isConsole?'// ':''}Opponent's E-Sparven match history${seasonLabel}`;if(!filtered.length)return`<div class="page-section page-section-history history-section"><div class="section-title">${title}</div><div style="font-size:13px;color:var(--ink-4)">No games recorded${seasonLabel}.</div></div>`;const chipGroup=(picks,team)=>{const chips=(picks||[]).filter(pk=>pk.team===team).map(pk=>{const url=heroIconUrl(pk.heroName,pk.iconUrl);return`<span class="hero-chip"><div class="hero-chip-icon">${url?`<img src="${url}" alt="${pk.heroName}" loading="lazy">`:''}</div>${pk.heroName}</span>`;}).join('');return chips||'<span style="font-size:11px;color:var(--ink-4)">\u2014</span>';};const rows=filtered.map(m=>{const oppTeam=m.opponentTeam??null,oppWon=m.opponentWon??null;const resultBadge=oppWon===true?'<span class="result-badge win">W</span>':oppWon===false?'<span class="result-badge loss">L</span>':'';const sideLabel=t=>oppTeam===null?'':t===oppTeam?`<span style="font-size:9px;font-weight:700;letter-spacing:.05em;color:var(--upcoming);background:var(--upcoming-bg);padding:1px 5px;border-radius:${isConsole?'0':'3px'};margin-right:4px${isConsole?';font-family:Orbitron,monospace;letter-spacing:2px':''}">OPP</span>`:`<span style="font-size:9px;color:var(--ink-4);background:var(--line-2);padding:1px 5px;border-radius:${isConsole?'0':'3px'};margin-right:4px">vs</span>`;return`<tr><td class="mono">${m.duration||'\u2014'}</td><td>${resultBadge?`<span style="margin-right:6px">${resultBadge}</span>`:''}${sideLabel(0)}${chipGroup(m.picks,0)}</td><td>${sideLabel(1)}${chipGroup(m.picks,1)}</td><td class="mono" style="color:var(--ink-4)">${m.patch?`patch ${m.patch}`:''}</td><td style="white-space:nowrap"><a class="player-link" href="https://www.opendota.com/matches/${m.matchId}" target="_blank" rel="noopener noreferrer" style="font-size:10.5px;padding:2px 8px">Match</a></td></tr>`;}).join('');return`<div class="page-section page-section-history history-section"><div class="section-title">${title}</div><table class="history-table"><thead><tr><th>Duration</th><th>Radiant</th><th>Dire</th><th>Patch</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`;}
 
 function fmtDate(iso){if(!iso)return'\u2014';return new Date(iso).toLocaleDateString('sv-SE',{weekday:'short',day:'numeric',month:'short',year:'numeric'});}
 
@@ -417,119 +415,66 @@ let termIdx=0,termInterval=null;
 function startTermLog(){const el=document.getElementById('console-termlog');if(!el)return;if(termInterval)clearInterval(termInterval);termInterval=setInterval(()=>{if(document.documentElement.getAttribute('data-theme')!=='console')return;const item=TERM_LINES[termIdx%TERM_LINES.length];termIdx++;const now=new Date();const ts=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');const line=document.createElement('div');line.className='tl-line '+item.cls;line.textContent='['+ts+'] '+item.text;el.appendChild(line);while(el.children.length>8)el.removeChild(el.firstChild);},2800);}
 startTermLog();
 
+const LOGO_ART=`                                                                                                    
+                                                                                                    
+                                                                                                    
+            ##                          ##*************#*      #*#****#**#####  ## #                
+     ##**********************##########*******************#    #**********************#*****#       
+     ##*****************************************************#*********************************      
+     ###**************************************************************************************#     
+      ########################################################################################      
+      ########################################################################################      
+      ########################################################################################      
+      #########################################################################################     
+      ##############*+*########################################################################     
+      #########*=..     .:*######################################*+-... ..+####################     
+      ##########*:         .=#############################*+-:..           .:*#################     
+      ############+.         .:*###########################+:.             .-+#################     
+      ##############=.         .==###########################*-.            .*#################     
+      ###############*:          ..:*###########################=.          .##################     
+      #################*.             .+##########################*:        =##################     
+      ###################+.             .:*##########################-.    .*##################     
+      #####################-.              .=*#########################+=- .*##################     
+       #####################*:                .+##########################+-################        
+       #######################+.                .:*##########################################       
+       #########################-                 ..-######################################         
+       ##########################*:                  ..=####################################        
+       ############################*.                   .:*##################################       
+       ##############################+=.                   .-################################       
+        ###############################+.                     .=##############################      
+       ##################################-.                     .:+##########################       
+      ####################################*..                      .-*########################      
+      ######################################+.                        .+#####################       
+      ########################################-:                        .-###################       
+      ##########################################:..                     ....-*#################     
+      ###########################################+::                          .=###############     
+      ###############*..=###########################-                           ..+############     
+       #############*.   .+##########################*.                            .###########     
+        ############:.     .+##########################+.                          -###########     
+        ###########-        .:*#########################+.                        .*###########     
+        ##########+.          .:*#########################=.                      :############     
+        #########*.             .:*#########################:.                    +############     
+        #########:                 -#########################*.                  :#############     
+      ###########.                   -#########################=.               .##############     
+      ############+.                  .=#########################:.           ..*##############     
+      ###############:.          ...-*#############################-..        .*###############     
+      #################+.:.  .:+########################################*+===+#################     
+      #########################################################################################     
+      #########################################################################################     
+      #########################################################################################     
+      #########################################################################################     
+      #########################################################################################     
+      #########################################################################################     
+        ####### ## ##%##   ####### #####################################################    ###     
+                                          ##############     #####                                  
+                                                                                                    
+                                                                                                    
+                                                                                                    `;
 let cleanLogoRunning=false;
 let consoleLogoRunning=false;
-function startCleanLogo(){if(cleanLogoRunning)return;const canvas=document.getElementById('clean-logo-canvas');if(!canvas)return;cleanLogoRunning=true;const ART=`                                                                                                    
-                                                                                                    
-                                                                                                    
-            ##                          ##*************#*      #*#****#**#####  ## #                
-     ##**********************##########*******************#    #**********************#*****#       
-     ##*****************************************************#*********************************      
-     ###**************************************************************************************#     
-      ########################################################################################      
-      ########################################################################################      
-      ########################################################################################      
-      #########################################################################################     
-      ##############*+*########################################################################     
-      #########*=..     .:*######################################*+-... ..+####################     
-      ##########*:         .=#############################*+-:..           .:*#################     
-      ############+.         .:*###########################+:.             .-+#################     
-      ##############=.         .==###########################*-.            .*#################     
-      ###############*:          ..:*###########################=.          .##################     
-      #################*.             .+##########################*:        =##################     
-      ###################+.             .:*##########################-.    .*##################     
-      #####################-.              .=*#########################+=- .*##################     
-       #####################*:                .+##########################+-################        
-       #######################+.                .:*##########################################       
-       #########################-                 ..-######################################         
-       ##########################*:                  ..=####################################        
-       ############################*.                   .:*##################################       
-       ##############################+=.                   .-################################       
-        ###############################+.                     .=##############################      
-       ##################################-.                     .:+##########################       
-      ####################################*..                      .-*########################      
-      ######################################+.                        .+#####################       
-      ########################################-:                        .-###################       
-      ##########################################:..                     ....-*#################     
-      ###########################################+::                          .=###############     
-      ###############*..=###########################-                           ..+############     
-       #############*.   .+##########################*.                            .###########     
-        ############:.     .+##########################+.                          -###########     
-        ###########-        .:*#########################+.                        .*###########     
-        ##########+.          .:*#########################=.                      :############     
-        #########*.             .:*#########################:.                    +############     
-        #########:                 -#########################*.                  :#############     
-      ###########.                   -#########################=.               .##############     
-      ############+.                  .=#########################:.           ..*##############     
-      ###############:.          ...-*#############################-..        .*###############     
-      #################+.:.  .:+########################################*+===+#################     
-      #########################################################################################     
-      #########################################################################################     
-      #########################################################################################     
-      #########################################################################################     
-      #########################################################################################     
-      #########################################################################################     
-        ####### ## ##%##   ####### #####################################################    ###     
-                                          ##############     #####                                  
-                                                                                                    
-                                                                                                    
-                                                                                                    `;const artLines=ART.split('\n');const ART_H=artLines.length;const ART_W=Math.max(...artLines.map(l=>l.length));const mask=new Uint8Array(ART_W*ART_H);for(let row=0;row<ART_H;row++){const line=artLines[row]||'';for(let col=0;col<ART_W;col++){mask[row*ART_W+col]=(line[col]||' ')!==' '?1:0;}}function sampleMask(u,v){const col=Math.floor(u*ART_W),row=Math.floor(v*ART_H);if(col<0||col>=ART_W||row<0||row>=ART_H)return 0;return mask[row*ART_W+col];}const SIZE=180;const ASPECT=ART_H/ART_W*1.85;const DISP_W=SIZE,DISP_H=Math.round(SIZE*ASPECT);canvas.width=DISP_W;canvas.height=DISP_H;canvas.style.width=DISP_W+'px';canvas.style.height=DISP_H+'px';const ctx=canvas.getContext('2d');const imgData=ctx.createImageData(DISP_W,DISP_H);const buf=imgData.data;const DEPTH=0.22;const LD=(()=>{const v=[0.6,-0.5,0.6];const l=Math.sqrt(v[0]**2+v[1]**2+v[2]**2);return v.map(x=>x/l);})();function getThemeColors(){const theme=document.documentElement.getAttribute('data-theme');if(theme==='light'){return{fg:[120,20,40],fgDim:[180,80,100],bg:[0,0,0,0]};}return{fg:[160,30,55],fgDim:[100,20,35],bg:[0,0,0,0]};}function render(ay,ax){const{fg,fgDim}=getThemeColors();const Cy=Math.cos(ay),Sy=Math.sin(ay),Cx=Math.cos(ax),Sx=Math.sin(ax);function w2m(wx,wy,wz){const rx1=wx*Cy-wz*Sy,ry1=wy,rz1=wx*Sy+wz*Cy;return[rx1,ry1*Cx+rz1*Sx,-ry1*Sx+rz1*Cx];}const[ddx,ddy,ddz]=w2m(0,0,1);const HZ=DEPTH*0.5;buf.fill(0);for(let py=0;py<DISP_H;py++){const sy_ndc=-((py/(DISP_H-1))*2-1);for(let px2=0;px2<DISP_W;px2++){const sx=(px2/(DISP_W-1))*2-1;const[ox,oy,oz]=w2m(sx,sy_ndc,-3.0);if(Math.abs(ddz)<1e-7)continue;const t_front=(HZ-oz)/ddz,t_back=(-HZ-oz)/ddz;const t_near=Math.min(t_front,t_back),t_far=Math.max(t_front,t_back);let hitColor=null;for(const tf of[t_near,t_far]){if(hitColor)break;const mx=ox+tf*ddx,my=oy+tf*ddy;const u=(mx+1)*0.5,v=1-(my/ASPECT+1)*0.5;if(u<0||u>=1||v<0||v>=1)continue;if(!sampleMask(u,v))continue;const nz_m=(tf===t_near)?Math.sign(ddz):-Math.sign(ddz);const nwx=nz_m*Cx*Sy,nwy=-nz_m*Sx,nwz=nz_m*Cx*Cy;const diff=Math.max(0,nwx*LD[0]+nwy*LD[1]+nwz*LD[2]);const b=Math.min(1,0.25+diff*0.75)*(tf===t_near?1.0:0.35);const c=tf===t_near?fg:fgDim;hitColor=[Math.round(c[0]*b),Math.round(c[1]*b),Math.round(c[2]*b),255];}if(!hitColor){const WSTEPS=8;for(let s=0;s<=WSTEPS&&!hitColor;s++){const tf=t_near+(t_far-t_near)*(s/WSTEPS);const mx=ox+tf*ddx,my=oy+tf*ddy;const u=(mx+1)*0.5,v=1-(my/ASPECT+1)*0.5;if(u<0||u>=1||v<0||v>=1)continue;if(!sampleMask(u,v))continue;const eps2=1.5/ART_W;const gx=sampleMask(u-eps2,v)-sampleMask(u+eps2,v);const gy=sampleMask(u,v-eps2*(ART_W/ART_H)*1.85)-sampleMask(u,v+eps2*(ART_W/ART_H)*1.85);const gl=Math.sqrt(gx*gx+gy*gy)||1;const nm_x=gx/gl,nm_y=gy/gl;const nwx=nm_x*Cy,nwz2=nm_y*Sx+(-nm_x*Sy)*Cx,nwy=nm_y*Cx-(-nm_x*Sy)*Sx;const diff=Math.max(0,nwx*LD[0]+nwy*LD[1]+nwz2*LD[2]);const b=Math.min(1,0.08+diff*0.55)*(1-(s/WSTEPS)*0.4)*0.7;hitColor=[Math.round(fgDim[0]*b),Math.round(fgDim[1]*b),Math.round(fgDim[2]*b),Math.round(b*255*3)];}}if(hitColor){const i=(py*DISP_W+px2)*4;buf[i]=hitColor[0];buf[i+1]=hitColor[1];buf[i+2]=hitColor[2];buf[i+3]=hitColor[3]??255;}}}ctx.clearRect(0,0,DISP_W,DISP_H);ctx.putImageData(imgData,0,0);}let autoAngleY=0;let dragAngleY=0,dragAngleX=0;let isDragging=false;let lastMX=0,lastMY=0;let dragVelY=0,dragVelX=0;canvas.style.cursor='grab';canvas.addEventListener('mousedown',e=>{isDragging=true;lastMX=e.clientX;lastMY=e.clientY;dragVelY=0;dragVelX=0;canvas.style.cursor='grabbing';e.preventDefault();});window.addEventListener('mousemove',e=>{if(!isDragging)return;dragVelY=-(e.clientX-lastMX)*0.012;dragVelX=-(e.clientY-lastMY)*0.012;dragAngleY+=dragVelY;dragAngleX+=dragVelX;dragAngleX=Math.max(-0.8,Math.min(0.8,dragAngleX));lastMX=e.clientX;lastMY=e.clientY;});window.addEventListener('mouseup',()=>{isDragging=false;canvas.style.cursor='grab';});canvas.addEventListener('touchstart',e=>{isDragging=true;lastMX=e.touches[0].clientX;lastMY=e.touches[0].clientY;dragVelY=0;dragVelX=0;e.preventDefault();},{passive:false});canvas.addEventListener('touchmove',e=>{if(!isDragging)return;dragVelY=-(e.touches[0].clientX-lastMX)*0.012;dragVelX=-(e.touches[0].clientY-lastMY)*0.012;dragAngleY+=dragVelY;dragAngleX+=dragVelX;dragAngleX=Math.max(-0.8,Math.min(0.8,dragAngleX));lastMX=e.touches[0].clientX;lastMY=e.touches[0].clientY;e.preventDefault();},{passive:false});canvas.addEventListener('touchend',()=>{isDragging=false;});let lastTs=null;function tick(ts){const dt=lastTs?Math.min((ts-lastTs)/1000,0.05):0.016;lastTs=ts;const speed=getLogoSpeed();if(!isDragging){dragAngleY+=dragVelY;dragAngleX+=dragVelX;dragVelY*=0.88;dragVelX*=0.88;dragAngleX*=0.96;autoAngleY+=speed*dt;}render(autoAngleY+dragAngleY,dragAngleX);requestAnimationFrame(tick);}requestAnimationFrame(tick);}
+function startCleanLogo(){if(cleanLogoRunning)return;const canvas=document.getElementById('clean-logo-canvas');if(!canvas)return;cleanLogoRunning=true;const ART=LOGO_ART;const artLines=ART.split('\n');const ART_H=artLines.length;const ART_W=Math.max(...artLines.map(l=>l.length));const mask=new Uint8Array(ART_W*ART_H);for(let row=0;row<ART_H;row++){const line=artLines[row]||'';for(let col=0;col<ART_W;col++){mask[row*ART_W+col]=(line[col]||' ')!==' '?1:0;}}function sampleMask(u,v){const col=Math.floor(u*ART_W),row=Math.floor(v*ART_H);if(col<0||col>=ART_W||row<0||row>=ART_H)return 0;return mask[row*ART_W+col];}const SIZE=180;const ASPECT=ART_H/ART_W*1.85;const DISP_W=SIZE,DISP_H=Math.round(SIZE*ASPECT);canvas.width=DISP_W;canvas.height=DISP_H;canvas.style.width=DISP_W+'px';canvas.style.height=DISP_H+'px';const ctx=canvas.getContext('2d');const imgData=ctx.createImageData(DISP_W,DISP_H);const buf=imgData.data;const DEPTH=0.22;const LD=(()=>{const v=[0.6,-0.5,0.6];const l=Math.sqrt(v[0]**2+v[1]**2+v[2]**2);return v.map(x=>x/l);})();function getThemeColors(){const theme=document.documentElement.getAttribute('data-theme');if(theme==='light'){return{fg:[120,20,40],fgDim:[180,80,100],bg:[0,0,0,0]};}return{fg:[160,30,55],fgDim:[100,20,35],bg:[0,0,0,0]};}function render(ay,ax){const{fg,fgDim}=getThemeColors();const Cy=Math.cos(ay),Sy=Math.sin(ay),Cx=Math.cos(ax),Sx=Math.sin(ax);function w2m(wx,wy,wz){const rx1=wx*Cy-wz*Sy,ry1=wy,rz1=wx*Sy+wz*Cy;return[rx1,ry1*Cx+rz1*Sx,-ry1*Sx+rz1*Cx];}const[ddx,ddy,ddz]=w2m(0,0,1);const HZ=DEPTH*0.5;buf.fill(0);for(let py=0;py<DISP_H;py++){const sy_ndc=-((py/(DISP_H-1))*2-1);for(let px2=0;px2<DISP_W;px2++){const sx=(px2/(DISP_W-1))*2-1;const[ox,oy,oz]=w2m(sx,sy_ndc,-3.0);if(Math.abs(ddz)<1e-7)continue;const t_front=(HZ-oz)/ddz,t_back=(-HZ-oz)/ddz;const t_near=Math.min(t_front,t_back),t_far=Math.max(t_front,t_back);let hitColor=null;for(const tf of[t_near,t_far]){if(hitColor)break;const mx=ox+tf*ddx,my=oy+tf*ddy;const u=(mx+1)*0.5,v=1-(my/ASPECT+1)*0.5;if(u<0||u>=1||v<0||v>=1)continue;if(!sampleMask(u,v))continue;const nz_m=(tf===t_near)?Math.sign(ddz):-Math.sign(ddz);const nwx=nz_m*Cx*Sy,nwy=-nz_m*Sx,nwz=nz_m*Cx*Cy;const diff=Math.max(0,nwx*LD[0]+nwy*LD[1]+nwz*LD[2]);const b=Math.min(1,0.25+diff*0.75)*(tf===t_near?1.0:0.35);const c=tf===t_near?fg:fgDim;hitColor=[Math.round(c[0]*b),Math.round(c[1]*b),Math.round(c[2]*b),255];}if(!hitColor){const WSTEPS=8;for(let s=0;s<=WSTEPS&&!hitColor;s++){const tf=t_near+(t_far-t_near)*(s/WSTEPS);const mx=ox+tf*ddx,my=oy+tf*ddy;const u=(mx+1)*0.5,v=1-(my/ASPECT+1)*0.5;if(u<0||u>=1||v<0||v>=1)continue;if(!sampleMask(u,v))continue;const eps2=1.5/ART_W;const gx=sampleMask(u-eps2,v)-sampleMask(u+eps2,v);const gy=sampleMask(u,v-eps2*(ART_W/ART_H)*1.85)-sampleMask(u,v+eps2*(ART_W/ART_H)*1.85);const gl=Math.sqrt(gx*gx+gy*gy)||1;const nm_x=gx/gl,nm_y=gy/gl;const nwx=nm_x*Cy,nwz2=nm_y*Sx+(-nm_x*Sy)*Cx,nwy=nm_y*Cx-(-nm_x*Sy)*Sx;const diff=Math.max(0,nwx*LD[0]+nwy*LD[1]+nwz2*LD[2]);const b=Math.min(1,0.08+diff*0.55)*(1-(s/WSTEPS)*0.4)*0.7;hitColor=[Math.round(fgDim[0]*b),Math.round(fgDim[1]*b),Math.round(fgDim[2]*b),Math.round(b*255*3)];}}if(hitColor){const i=(py*DISP_W+px2)*4;buf[i]=hitColor[0];buf[i+1]=hitColor[1];buf[i+2]=hitColor[2];buf[i+3]=hitColor[3]??255;}}}ctx.clearRect(0,0,DISP_W,DISP_H);ctx.putImageData(imgData,0,0);}let autoAngleY=0;let dragAngleY=0,dragAngleX=0;let isDragging=false;let lastMX=0,lastMY=0;let dragVelY=0,dragVelX=0;canvas.style.cursor='grab';canvas.addEventListener('mousedown',e=>{isDragging=true;lastMX=e.clientX;lastMY=e.clientY;dragVelY=0;dragVelX=0;canvas.style.cursor='grabbing';e.preventDefault();});window.addEventListener('mousemove',e=>{if(!isDragging)return;dragVelY=-(e.clientX-lastMX)*0.012;dragVelX=-(e.clientY-lastMY)*0.012;dragAngleY+=dragVelY;dragAngleX+=dragVelX;dragAngleX=Math.max(-0.8,Math.min(0.8,dragAngleX));lastMX=e.clientX;lastMY=e.clientY;});window.addEventListener('mouseup',()=>{isDragging=false;canvas.style.cursor='grab';});canvas.addEventListener('touchstart',e=>{isDragging=true;lastMX=e.touches[0].clientX;lastMY=e.touches[0].clientY;dragVelY=0;dragVelX=0;e.preventDefault();},{passive:false});canvas.addEventListener('touchmove',e=>{if(!isDragging)return;dragVelY=-(e.touches[0].clientX-lastMX)*0.012;dragVelX=-(e.touches[0].clientY-lastMY)*0.012;dragAngleY+=dragVelY;dragAngleX+=dragVelX;dragAngleX=Math.max(-0.8,Math.min(0.8,dragAngleX));lastMX=e.touches[0].clientX;lastMY=e.touches[0].clientY;e.preventDefault();},{passive:false});canvas.addEventListener('touchend',()=>{isDragging=false;});let lastTs=null;function tick(ts){const dt=lastTs?Math.min((ts-lastTs)/1000,0.05):0.016;lastTs=ts;const speed=getLogoSpeed();if(!isDragging){dragAngleY+=dragVelY;dragAngleX+=dragVelX;dragVelY*=0.88;dragVelX*=0.88;dragAngleX*=0.96;autoAngleY+=speed*dt;}render(autoAngleY+dragAngleY,dragAngleX);requestAnimationFrame(tick);}requestAnimationFrame(tick);}
 
-function startConsoleLogo(){if(consoleLogoRunning)return;const canvas=document.getElementById('console-logo');if(!canvas)return;consoleLogoRunning=true;const ART=`                                                                                                    
-                                                                                                    
-                                                                                                    
-            ##                          ##*************#*      #*#****#**#####  ## #                
-     ##**********************##########*******************#    #**********************#*****#       
-     ##*****************************************************#*********************************      
-     ###**************************************************************************************#     
-      ########################################################################################      
-      ########################################################################################      
-      ########################################################################################      
-      #########################################################################################     
-      ##############*+*########################################################################     
-      #########*=..     .:*######################################*+-... ..+####################     
-      ##########*:         .=#############################*+-:..           .:*#################     
-      ############+.         .:*###########################+:.             .-+#################     
-      ##############=.         .==###########################*-.            .*#################     
-      ###############*:          ..:*###########################=.          .##################     
-      #################*.             .+##########################*:        =##################     
-      ###################+.             .:*##########################-.    .*##################     
-      #####################-.              .=*#########################+=- .*##################     
-       #####################*:                .+##########################+-################        
-       #######################+.                .:*##########################################       
-       #########################-                 ..-######################################         
-       ##########################*:                  ..=####################################        
-       ############################*.                   .:*##################################       
-       ##############################+=.                   .-################################       
-        ###############################+.                     .=##############################      
-       ##################################-.                     .:+##########################       
-      ####################################*..                      .-*########################      
-      ######################################+.                        .+#####################       
-      ########################################-:                        .-###################       
-      ##########################################:..                     ....-*#################     
-      ###########################################+::                          .=###############     
-      ###############*..=###########################-                           ..+############     
-       #############*.   .+##########################*.                            .###########     
-        ############:.     .+##########################+.                          -###########     
-        ###########-        .:*#########################+.                        .*###########     
-        ##########+.          .:*#########################=.                      :############     
-        #########*.             .:*#########################:.                    +############     
-        #########:                 -#########################*.                  :#############     
-      ###########.                   -#########################=.               .##############     
-      ############+.                  .=#########################:.           ..*##############     
-      ###############:.          ...-*#############################-..        .*###############     
-      #################+.:.  .:+########################################*+===+#################     
-      #########################################################################################     
-      #########################################################################################     
-      #########################################################################################     
-      #########################################################################################     
-      #########################################################################################     
-      #########################################################################################     
-        ####### ## ##%##   ####### #####################################################    ###     
-                                          ##############     #####                                  
-                                                                                                    
-                                                                                                    
-                                                                                                    `;const artLines=ART.split('\n');const ART_H=artLines.length;const ART_W=Math.max(...artLines.map(l=>l.length));const mask=new Uint8Array(ART_W*ART_H);for(let row=0;row<ART_H;row++){const line=artLines[row]||'';for(let col=0;col<ART_W;col++){mask[row*ART_W+col]=(line[col]||' ')!==' '?1:0;}}function sampleMask(u,v){const col=Math.floor(u*ART_W),row=Math.floor(v*ART_H);if(col<0||col>=ART_W||row<0||row>=ART_H)return 0;return mask[row*ART_W+col];}const DISP_W=248,ASPECT=ART_H/ART_W*1.85,DISP_H=Math.round(DISP_W*ASPECT);canvas.width=DISP_W;canvas.height=DISP_H;const ctx=canvas.getContext('2d'),imgData=ctx.createImageData(DISP_W,DISP_H),buf=imgData.data;const DEPTH=0.22;const LD=(()=>{const v=[0.6,-0.5,0.6];const l=Math.sqrt(v[0]**2+v[1]**2+v[2]**2);return v.map(x=>x/l);})();function greenRGB(b){return[Math.floor(Math.max(0,(b-0.6)*2.5)*180),Math.floor(b*255),Math.floor(Math.max(0,(b-0.7)*3.3)*120)];}function render(t){const ay=t*0.50,ax=Math.sin(t*0.31)*0.18;const Cy=Math.cos(ay),Sy=Math.sin(ay),Cx=Math.cos(ax),Sx=Math.sin(ax);function w2m(wx,wy,wz){const rx1=wx*Cy-wz*Sy,ry1=wy,rz1=wx*Sy+wz*Cy;return[rx1,ry1*Cx+rz1*Sx,-ry1*Sx+rz1*Cx];}const[ddx,ddy,ddz]=w2m(0,0,1);const HZ=DEPTH*0.5;buf.fill(0);for(let py=0;py<DISP_H;py++){const sy_ndc=-((py/(DISP_H-1))*2-1);for(let px2=0;px2<DISP_W;px2++){const sx=(px2/(DISP_W-1))*2-1;const[ox,oy,oz]=w2m(sx,sy_ndc,-3.0);if(Math.abs(ddz)<1e-7)continue;const t_front=(HZ-oz)/ddz,t_back=(-HZ-oz)/ddz;const t_near=Math.min(t_front,t_back),t_far=Math.max(t_front,t_back);let hitColor=null;for(const tf of[t_near,t_far]){if(hitColor)break;const mx=ox+tf*ddx,my=oy+tf*ddy;const u=(mx+1)*0.5,v=1-(my/ASPECT+1)*0.5;if(u<0||u>=1||v<0||v>=1)continue;if(!sampleMask(u,v))continue;const nz_m=(tf===t_near)?Math.sign(ddz):-Math.sign(ddz);const nwx=nz_m*Cx*Sy,nwy=-nz_m*Sx,nwz=nz_m*Cx*Cy;const diff=Math.max(0,nwx*LD[0]+nwy*LD[1]+nwz*LD[2]);const b=Math.min(1,0.18+diff*0.82)*(tf===t_near?1.0:0.45);hitColor=greenRGB(b);}if(!hitColor){const WSTEPS=8;for(let s=0;s<=WSTEPS&&!hitColor;s++){const tf=t_near+(t_far-t_near)*(s/WSTEPS);const mx=ox+tf*ddx,my=oy+tf*ddy;const u=(mx+1)*0.5,v=1-(my/ASPECT+1)*0.5;if(u<0||u>=1||v<0||v>=1)continue;if(!sampleMask(u,v))continue;const eps2=1.5/ART_W;const gx=sampleMask(u-eps2,v)-sampleMask(u+eps2,v);const gy=sampleMask(u,v-eps2*(ART_W/ART_H)*1.85)-sampleMask(u,v+eps2*(ART_W/ART_H)*1.85);const gl=Math.sqrt(gx*gx+gy*gy)||1;const nm_x=gx/gl,nm_y=gy/gl;const nwx=nm_x*Cy,nwz2=nm_y*Sx+(-nm_x*Sy)*Cx,nwy=nm_y*Cx-(-nm_x*Sy)*Sx;const diff=Math.max(0,nwx*LD[0]+nwy*LD[1]+nwz2*LD[2]);const b=Math.min(1,0.12+diff*0.60)*(1-(s/WSTEPS)*0.35)*0.80;hitColor=greenRGB(b);}}if(hitColor){const i=(py*DISP_W+px2)*4;buf[i]=hitColor[0];buf[i+1]=hitColor[1];buf[i+2]=hitColor[2];buf[i+3]=255;}}}ctx.putImageData(imgData,0,0);}let startTs=null;function tick(ts){if(!startTs)startTs=ts;render((ts-startTs)/1000);requestAnimationFrame(tick);}requestAnimationFrame(tick);}
+function startConsoleLogo(){if(consoleLogoRunning)return;const canvas=document.getElementById('console-logo');if(!canvas)return;consoleLogoRunning=true;const ART=LOGO_ART;const artLines=ART.split('\n');const ART_H=artLines.length;const ART_W=Math.max(...artLines.map(l=>l.length));const mask=new Uint8Array(ART_W*ART_H);for(let row=0;row<ART_H;row++){const line=artLines[row]||'';for(let col=0;col<ART_W;col++){mask[row*ART_W+col]=(line[col]||' ')!==' '?1:0;}}function sampleMask(u,v){const col=Math.floor(u*ART_W),row=Math.floor(v*ART_H);if(col<0||col>=ART_W||row<0||row>=ART_H)return 0;return mask[row*ART_W+col];}const DISP_W=248,ASPECT=ART_H/ART_W*1.85,DISP_H=Math.round(DISP_W*ASPECT);canvas.width=DISP_W;canvas.height=DISP_H;const ctx=canvas.getContext('2d'),imgData=ctx.createImageData(DISP_W,DISP_H),buf=imgData.data;const DEPTH=0.22;const LD=(()=>{const v=[0.6,-0.5,0.6];const l=Math.sqrt(v[0]**2+v[1]**2+v[2]**2);return v.map(x=>x/l);})();function greenRGB(b){return[Math.floor(Math.max(0,(b-0.6)*2.5)*180),Math.floor(b*255),Math.floor(Math.max(0,(b-0.7)*3.3)*120)];}function render(t){const ay=t*0.50,ax=Math.sin(t*0.31)*0.18;const Cy=Math.cos(ay),Sy=Math.sin(ay),Cx=Math.cos(ax),Sx=Math.sin(ax);function w2m(wx,wy,wz){const rx1=wx*Cy-wz*Sy,ry1=wy,rz1=wx*Sy+wz*Cy;return[rx1,ry1*Cx+rz1*Sx,-ry1*Sx+rz1*Cx];}const[ddx,ddy,ddz]=w2m(0,0,1);const HZ=DEPTH*0.5;buf.fill(0);for(let py=0;py<DISP_H;py++){const sy_ndc=-((py/(DISP_H-1))*2-1);for(let px2=0;px2<DISP_W;px2++){const sx=(px2/(DISP_W-1))*2-1;const[ox,oy,oz]=w2m(sx,sy_ndc,-3.0);if(Math.abs(ddz)<1e-7)continue;const t_front=(HZ-oz)/ddz,t_back=(-HZ-oz)/ddz;const t_near=Math.min(t_front,t_back),t_far=Math.max(t_front,t_back);let hitColor=null;for(const tf of[t_near,t_far]){if(hitColor)break;const mx=ox+tf*ddx,my=oy+tf*ddy;const u=(mx+1)*0.5,v=1-(my/ASPECT+1)*0.5;if(u<0||u>=1||v<0||v>=1)continue;if(!sampleMask(u,v))continue;const nz_m=(tf===t_near)?Math.sign(ddz):-Math.sign(ddz);const nwx=nz_m*Cx*Sy,nwy=-nz_m*Sx,nwz=nz_m*Cx*Cy;const diff=Math.max(0,nwx*LD[0]+nwy*LD[1]+nwz*LD[2]);const b=Math.min(1,0.18+diff*0.82)*(tf===t_near?1.0:0.45);hitColor=greenRGB(b);}if(!hitColor){const WSTEPS=8;for(let s=0;s<=WSTEPS&&!hitColor;s++){const tf=t_near+(t_far-t_near)*(s/WSTEPS);const mx=ox+tf*ddx,my=oy+tf*ddy;const u=(mx+1)*0.5,v=1-(my/ASPECT+1)*0.5;if(u<0||u>=1||v<0||v>=1)continue;if(!sampleMask(u,v))continue;const eps2=1.5/ART_W;const gx=sampleMask(u-eps2,v)-sampleMask(u+eps2,v);const gy=sampleMask(u,v-eps2*(ART_W/ART_H)*1.85)-sampleMask(u,v+eps2*(ART_W/ART_H)*1.85);const gl=Math.sqrt(gx*gx+gy*gy)||1;const nm_x=gx/gl,nm_y=gy/gl;const nwx=nm_x*Cy,nwz2=nm_y*Sx+(-nm_x*Sy)*Cx,nwy=nm_y*Cx-(-nm_x*Sy)*Sx;const diff=Math.max(0,nwx*LD[0]+nwy*LD[1]+nwz2*LD[2]);const b=Math.min(1,0.12+diff*0.60)*(1-(s/WSTEPS)*0.35)*0.80;hitColor=greenRGB(b);}}if(hitColor){const i=(py*DISP_W+px2)*4;buf[i]=hitColor[0];buf[i+1]=hitColor[1];buf[i+2]=hitColor[2];buf[i+3]=255;}}}ctx.putImageData(imgData,0,0);}let startTs=null;function tick(ts){if(!startTs)startTs=ts;render((ts-startTs)/1000);requestAnimationFrame(tick);}requestAnimationFrame(tick);}
 
 function startCountdown(nextMatch){const wrap=document.getElementById('countdown-wrap');const timeEl=document.getElementById('countdown-time');const oppEl=document.getElementById('countdown-opponent');if(!wrap||!timeEl)return;if(!nextMatch||!nextMatch.date){wrap.style.display='none';return;}const matchDate=new Date(nextMatch.date);if(isNaN(matchDate)){wrap.style.display='none';return;}wrap.style.display='block';if(oppEl)oppEl.textContent=`vs ${nextMatch.opponent}`;function pad(n){return String(n).padStart(2,'0');}function tick(){const diff=matchDate-Date.now();if(diff<=0){timeEl.textContent='Match day';return;}const d=Math.floor(diff/86400000);const h=Math.floor((diff%86400000)/3600000);const m=Math.floor((diff%3600000)/60000);const s=Math.floor((diff%60000)/1000);timeEl.textContent=d>0?`${d}d ${pad(h)}h ${pad(m)}m`:`${pad(h)}:${pad(m)}:${pad(s)}`;setTimeout(tick,1000);}tick();}
 
@@ -537,11 +482,11 @@ function buildSidebar(matches,tickerSnippets){buildTicker(matches,tickerSnippets
 
 function consoleCursor(){return document.documentElement.getAttribute('data-theme')==='console'?'<span class="match-title-cursor">\u2588</span>':'';}
 
-async function loadOurTeam(btn){document.querySelectorAll('.match-item').forEach(el=>el.classList.remove('active'));if(btn)btn.classList.add('active');if(!OUR_TEAM_GIST_ID){document.getElementById('main-panel').innerHTML=`<div style="padding:44px 52px;max-width:600px"><div class="match-title" style="margin-bottom:16px">Tornkn\u00e4ckarna${consoleCursor()}</div><div style="color:var(--ink-3);font-size:14px;line-height:1.7">No team gist configured yet.</div></div>`;return;}if(sessionStorage.getItem('scout_auth')!=='tor'){_renderPasswordScreen();return;}_loadOurTeamData();}
+async function loadOurTeam(btn){document.querySelectorAll('.match-item').forEach(el=>el.classList.remove('active'));if(btn)btn.classList.add('active');if(!OUR_TEAM_GIST_ID){document.getElementById('main-panel').innerHTML=`<div style="padding:44px 52px;max-width:600px"><div class="match-title" style="margin-bottom:16px">Tornkn\u00e4ckarna${consoleCursor()}</div><div style="color:var(--ink-3);font-size:14px;line-height:1.7">No team gist configured yet.</div></div>`;return;}if(sessionStorage.getItem('scout_auth')!=='ok'){_renderPasswordScreen();return;}_loadOurTeamData();}
 
 function _renderPasswordScreen(error){const isConsole=document.documentElement.getAttribute('data-theme')==='console';document.getElementById('main-panel').innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;min-height:70vh;gap:24px"><img src="media/password-image.png" alt="" style="width:160px;height:160px;object-fit:contain;opacity:0.85;border-radius:8px" onerror="this.style.display='none'"><div style="text-align:center"><div style="font-size:15px;font-weight:600;color:var(--ink-1);margin-bottom:4px;${isConsole?'font-family:Orbitron,monospace;letter-spacing:2px;':''}">${isConsole?'// ':''}Tornkn\u00e4ckarna</div><div style="font-size:12px;color:var(--ink-4)">Internal scouting \u2014 enter password to continue</div></div><div style="display:flex;flex-direction:column;align-items:center;gap:8px"><input id="pw-input" type="password" placeholder="Password" autocomplete="current-password" style="background:var(--surface-2);border:1px solid ${error?'var(--loss)':'var(--border)'};border-radius:6px;color:var(--ink-1);font-size:14px;padding:10px 14px;width:200px;outline:none;text-align:center;font-family:inherit;" onkeydown="if(event.key==='Enter') _submitPassword()">${error?`<div style="font-size:12px;color:var(--loss)">${error}</div>`:''}<button onclick="_submitPassword()" style="background:var(--accent);border:none;border-radius:6px;color:#fff;cursor:pointer;font-size:13px;font-weight:600;padding:9px 24px;width:200px;font-family:inherit;">Enter</button></div></div>`;setTimeout(()=>{const el=document.getElementById('pw-input');if(el)el.focus();},50);}
 
-function _submitPassword(){const el=document.getElementById('pw-input');if(!el)return;if(el.value==='tor'){sessionStorage.setItem('scout_auth','tor');_loadOurTeamData();}else{_renderPasswordScreen('Incorrect password');}}
+async function _submitPassword(){const el=document.getElementById('pw-input');if(!el)return;const HASH='bd144d4b9250b5395989271bf922dc5efcc4f66c8ee2e180e1a29c96db47f8b5';const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(el.value));const hex=Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');if(hex===HASH){sessionStorage.setItem('scout_auth','ok');_loadOurTeamData();}else{_renderPasswordScreen('Incorrect password');}}
 
 async function _loadOurTeamData(){document.getElementById('main-panel').innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:70vh;color:var(--ink-4);gap:10px"><div style="font-size:14px">Loading Tornkn\u00e4ckarna roster\u2026</div></div>`;let data;try{data=await fetchGist(OUR_TEAM_GIST_ID);}catch(e){document.getElementById('main-panel').innerHTML=`<div style="padding:44px 52px;color:var(--loss)"><strong>Error:</strong> ${e.message}</div>`;return;}_currentMatchData={...data};_currentMatchContext={isSelf:true};runBootSequence(()=>_renderOurTeamPanel(data));}
 
@@ -549,7 +494,7 @@ async function loadMatch(binId,meetingId,btn){document.querySelectorAll('.match-
 
 function _renderOurTeamPanel(data){const isConsole=document.documentElement.getAttribute('data-theme')==='console';const currentSeasonId=data.currentSeasonId??null;document.getElementById('main-panel').innerHTML=`<div class="match-header"><div class="match-title"><strong>Tornkn\u00e4ckarna</strong>${consoleCursor()}</div><div class="match-meta"><span>Dota 2 \u00b7 Captain\'s Mode \u00b7 E-Sparven</span></div><div class="notice notice-snapshot" style="margin-top:8px">Refreshed daily by the bot</div>${seasonToggleHTML()}</div>${data.draftTendencies?`<div class="page-section page-section-bans">${renderDraftTendencies(data.draftTendencies)}${renderMatchupStats(data.history,currentSeasonId)}</div>`:''}<div class="page-section page-section-roster"><div class="section-title" style="margin-bottom:16px">${isConsole?'// ':''}Our roster</div><div class="player-grid">${(data.players||[]).map(p=>renderPlayerCard(p,true)).join('')}</div></div>${renderHistory(data.history,currentSeasonId)}`;}
 
-function _renderMatchPanel(data,meetingId){const status=data.status||'upcoming';const badgeClass={upcoming:'badge-upcoming',win:'badge-win',loss:'badge-loss',tie:'badge-loss'}[status]||'badge-upcoming';const badgeText={upcoming:'Upcoming',win:'Win',loss:'Loss',tie:'Tie'}[status]||status;const notice=status==='upcoming'?`<div class="notice notice-live">Live data \u00b7 refreshed daily until match day</div>`:`<div class="notice notice-snapshot">Snapshot \u00b7 ${fmtDate(data.snapshotAt)}</div>`;const esparvenUrl=meetingId?`https://esparven.se/none/Meeting/Details/${meetingId}`:null;const isConsole=document.documentElement.getAttribute('data-theme')==='console';const currentSeasonId=data.currentSeasonId??null;document.getElementById('main-panel').innerHTML=`<div class="match-header"><div style="margin-bottom:10px"><span class="mi-badge ${badgeClass}" style="font-size:11px">${badgeText}</span></div><div class="match-title">vs <strong>${data.opponent}</strong>${consoleCursor()}</div><div class="match-meta"><span>${fmtDate(data.date)}</span><span>Dota 2 \u00b7 Captain\'s Mode</span>${esparvenUrl?`<a href="${esparvenUrl}" target="_blank" style="color:var(--accent);text-decoration:none;font-size:13px">E-Sparven</a>`:''}</div>${notice}${seasonToggleHTML()}</div>${renderDraftAssistantToggle(data)}${status==='upcoming'?`<div class="page-section page-section-bans">${renderBanSection(data.players||[])}${renderDraftTendencies(data.draftTendencies)}${renderMatchupStats(data.history,currentSeasonId)}</div>`:`<div class="page-section page-section-bans">${renderDraftTendencies(data.draftTendencies)}${renderMatchupStats(data.history,currentSeasonId)}</div>`}<div class="page-section page-section-roster"><div class="section-title" style="margin-bottom:16px">${isConsole?'// ':''}Opponent roster</div><div class="player-grid">${(data.players||[]).map(p=>renderPlayerCard(p,false)).join('')}</div></div>${renderHistory(data.history,currentSeasonId)}`;initDraftAssistant(data);}
+function _renderMatchPanel(data,meetingId){const status=data.status||'upcoming';const badgeClass={upcoming:'badge-upcoming',win:'badge-win',loss:'badge-loss',tie:'badge-loss'}[status]||'badge-upcoming';const badgeText={upcoming:'Upcoming',win:'Win',loss:'Loss',tie:'Tie'}[status]||status;const notice=status==='upcoming'?`<div class="notice notice-live">Live data \u00b7 refreshed daily until match day</div>`:`<div class="notice notice-snapshot">Snapshot \u00b7 ${fmtDate(data.snapshotAt)}</div>`;const esparvenUrl=meetingId?`https://esparven.se/none/Meeting/Details/${meetingId}`:null;const isConsole=document.documentElement.getAttribute('data-theme')==='console';const currentSeasonId=data.currentSeasonId??null;document.getElementById('main-panel').innerHTML=`<div class="match-header"><div style="margin-bottom:10px"><span class="mi-badge ${badgeClass}" style="font-size:11px">${badgeText}</span></div><div class="match-title">vs <strong>${data.opponent}</strong>${consoleCursor()}</div><div class="match-meta"><span>${fmtDate(data.date)}</span><span>Dota 2 \u00b7 Captain\'s Mode</span>${esparvenUrl?`<a href="${esparvenUrl}" target="_blank" rel="noopener noreferrer" style="color:var(--accent);text-decoration:none;font-size:13px">E-Sparven</a>`:''}</div>${notice}${seasonToggleHTML()}</div>${renderDraftAssistantToggle(data)}${status==='upcoming'?`<div class="page-section page-section-bans">${renderBanSection(data.players||[])}${renderDraftTendencies(data.draftTendencies)}${renderMatchupStats(data.history,currentSeasonId)}</div>`:`<div class="page-section page-section-bans">${renderDraftTendencies(data.draftTendencies)}${renderMatchupStats(data.history,currentSeasonId)}</div>`}<div class="page-section page-section-roster"><div class="section-title" style="margin-bottom:16px">${isConsole?'// ':''}Opponent roster</div><div class="player-grid">${(data.players||[]).map(p=>renderPlayerCard(p,false)).join('')}</div></div>${renderHistory(data.history,currentSeasonId)}`;initDraftAssistant(data);}
 
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -576,9 +521,12 @@ const DA = {
   heroList:      null,    // fetched from OpenDota once
   heroIconMap:   {},      // localized_name -> full CDN icon URL, built from heroList
   matchupCache:  {},      // hero_id -> matchup array
+  heroBaseWRs:   null,    // hero_id -> global pub WR, from /api/heroStats
   ourPubHeroes:  null,    // fetched from OUR_TEAM_GIST once per session
   scoutData:     null,    // current match gist data
   laneFilter:    null,    // null = all lanes, or 'safe','mid','off','soft','hard'
+  _suggGen:      0,       // generation counters — prevents stale async renders
+  _banGen:       0,
 };
 
 // ── CM draft sequence (7.34) ─────────────────────────────────────────────────
@@ -619,28 +567,63 @@ const CM_SLOTS = [
 ];
 
 // ── Hero role → lane mapping ─────────────────────────────────────────────────
+// Explicit position overrides; role-tag cascade is the fallback for unlisted heroes.
+const HERO_LANE_OVERRIDE = {
+  // Pos 1 — Carry
+  'Anti-Mage':'safe','Juggernaut':'safe','Phantom Assassin':'safe','Spectre':'safe',
+  'Faceless Void':'safe','Medusa':'safe','Terrorblade':'safe','Morphling':'safe',
+  'Drow Ranger':'safe','Gyrocopter':'safe','Luna':'safe','Naga Siren':'safe',
+  'Phantom Lancer':'safe','Lifestealer':'safe','Ursa':'safe','Wraith King':'safe',
+  'Troll Warlord':'safe','Alchemist':'safe','Arc Warden':'safe','Slark':'safe',
+  'Sniper':'safe','Weaver':'safe','Bloodseeker':'safe','Clinkz':'safe',
+  'Lone Druid':'safe','Chaos Knight':'safe',
+  // Pos 2 — Mid
+  'Invoker':'mid','Storm Spirit':'mid','Queen of Pain':'mid','Puck':'mid',
+  'Lina':'mid','Shadow Fiend':'mid','Templar Assassin':'mid','Viper':'mid',
+  'Dragon Knight':'mid','Ember Spirit':'mid','Void Spirit':'mid',
+  'Death Prophet':'mid','Razor':'mid','Tinker':'mid','Zeus':'mid',
+  'Outworld Destroyer':'mid','Leshrac':'mid','Huskar':'mid','Pugna':'mid',
+  'Muerta':'mid','Kez':'mid',
+  // Pos 3 — Off lane
+  'Axe':'off','Bristleback':'off','Centaur Warrunner':'off','Tidehunter':'off',
+  'Magnus':'off','Night Stalker':'off','Underlord':'off','Enigma':'off',
+  'Dark Seer':'off','Clockwerk':'off','Mars':'off','Doom':'off',
+  'Primal Beast':'off','Sand King':'off','Slardar':'off','Spirit Breaker':'off',
+  'Batrider':'off','Brewmaster':'off','Beastmaster':'off','Timbersaw':'off',
+  'Lycan':'off','Pangolier':'off','Elder Titan':'off','Broodmother':'off',
+  'Dawnbreaker':'off','Marci':'off',
+  // Pos 4 — Soft support
+  'Bounty Hunter':'soft','Tusk':'soft','Disruptor':'soft','Rubick':'soft',
+  'Earth Spirit':'soft','Shadow Demon':'soft','Vengeful Spirit':'soft',
+  'Skywrath Mage':'soft','Hoodwink':'soft','Snapfire':'soft','Warlock':'soft',
+  'Mirana':'soft','Windranger':'soft','Riki':'soft','Earthshaker':'soft',
+  'Pudge':'soft','Omniknight':'soft','Silencer':'soft',
+  // Pos 5 — Hard support
+  'Crystal Maiden':'hard','Witch Doctor':'hard','Lion':'hard',
+  'Keeper of the Light':'hard','Dazzle':'hard','Ancient Apparition':'hard',
+  'Io':'hard','Winter Wyvern':'hard','Abaddon':'hard','Lich':'hard',
+  'Bane':'hard','Oracle':'hard','Phoenix':'hard','Treant Protector':'hard',
+  'Grimstroke':'hard','Enchantress':'hard','Undying':'hard',
+  'Shadow Shaman':'hard','Jakiro':'hard','Ogre Magi':'hard','Ringmaster':'hard',
+};
+
 function heroToLane(h) {
+  const override = HERO_LANE_OVERRIDE[h.localized_name];
+  if (override) return override;
   const roles = h.roles || [];
   const has = r => roles.includes(r);
-  // Support role is checked first — it's the strongest classifier signal.
-  // Hard support: healer, or pure support with no mobility/initiation.
   if (has('Support') && has('Healer')) return 'hard';
-  // Soft support: support with utility — disabler, initiator, nuker, or escape.
   if (has('Support') && (has('Disabler') || has('Initiator') || has('Nuker') || has('Escape'))) return 'soft';
   if (has('Support')) return 'hard';
-  // Safe lane: carry without a strong initiation focus.
   if (has('Carry') && !has('Initiator')) return 'safe';
-  // Mid: mobile damage dealers — nuker or escape, not durable or initiator.
   if ((has('Nuker') || has('Escape')) && !has('Durable') && !has('Initiator')) return 'mid';
-  // Off lane: initiators and durable frontliners.
   if (has('Initiator') || has('Durable')) return 'off';
-  // Carry with initiation falls back to safe.
   if (has('Carry')) return 'safe';
   if (has('Pusher') || has('Jungler')) return 'off';
   return 'mid';
 }
 
-const LANE_LABELS = {safe:'Safe lane',mid:'Mid lane',off:'Off lane',soft:'Soft support',hard:'Hard support'};
+const LANE_LABELS = {safe:'Carry · Pos 1',mid:'Mid · Pos 2',off:'Offlane · Pos 3',soft:'Soft support · Pos 4',hard:'Hard support · Pos 5'};
 const LANE_ORDER  = ['safe','mid','off','soft','hard'];
 
 // ── OpenDota fetchers ─────────────────────────────────────────────────────────
@@ -695,28 +678,65 @@ async function daFetchOurPubHeroes() {
   return DA.ourPubHeroes;
 }
 
+async function daFetchHeroBaseWRs() {
+  if (DA.heroBaseWRs !== null) return DA.heroBaseWRs;
+  try {
+    const r = await fetch('https://api.opendota.com/api/heroStats');
+    const data = await r.json();
+    const map = {};
+    for (const h of data) {
+      if (h.id && h.pub_pick) map[h.id] = h.pub_win / h.pub_pick;
+    }
+    DA.heroBaseWRs = map;
+  } catch(e) {
+    DA.heroBaseWRs = {};
+  }
+  return DA.heroBaseWRs;
+}
+
 // ── Scoring ───────────────────────────────────────────────────────────────────
-// For each candidate hero, sum positive WR contributions against each enemy pick.
-// Multiplied by pub pool factor if weighting is on.
-function daScoreHero(candidateId, enemyMatchupSets, pubList, candidateName) {
-  let score = 0;
+// Combined score = matchup quality × breadth multiplier × pool multiplier.
+//
+// matchup quality: sum of (WR advantage above global baseline × log(sample size))
+//   for each enemy pick this hero beats. Larger sample and bigger advantage = higher.
+//
+// breadth multiplier (×1.0–1.25): heroes that counter many enemies at once rank
+//   higher than those dominating just one. Fraction of enemies countered scales it.
+//
+// pool multiplier (×1.0–1.5): heroes that someone on our team plays with a good
+//   pub WR get a smooth boost. Best player's WR drives it — 50% → no bonus,
+//   70%+ → +50%. This keeps great counterpicks at the top even without pool heroes.
+function daScoreHero(candidateId, enemyMatchupSets, pubList, candidateName, baseWRs) {
+  const baseline = (baseWRs && baseWRs[candidateId]) || 0.50;
+  let matchupScore = 0;
+  let counteredEnemies = 0;
   for (const matchups of enemyMatchupSets) {
     const entry = matchups.find(m => m.hero_id === candidateId);
     if (!entry || !entry.games_played) continue;
-    const wr = entry.wins / entry.games_played;
-    score += Math.max(0, wr - 0.50);
+    // OpenDota wins = queried hero's (enemy's) wins; invert to get candidate's WR vs enemy.
+    const wr = 1 - entry.wins / entry.games_played;
+    const advantage = wr - baseline;
+    if (advantage <= 0) continue;
+    matchupScore += advantage * Math.log(entry.games_played + 1);
+    counteredEnemies++;
   }
-  if (!score) return 0;
+  if (!matchupScore) return 0;
 
+  // Breadth: fraction of enemy picks countered, scaled to [1.0, 1.25]
+  const breadth = counteredEnemies / Math.max(1, enemyMatchupSets.length);
+  matchupScore *= (1 + 0.25 * breadth);
+
+  // Pool: best player's WR with this hero gives a smooth [0, +50%] bonus
   if (DA.pubWeighting && pubList.length) {
-    const found = pubList.filter(p => p.heroName === candidateName && p.games >= 10);
-    if (found.length) {
-      // Boost by up to 25% based on average WR of players who have the hero
-      const avgWR = found.reduce((s,p) => s + p.wr, 0) / found.length;
-      score *= (1 + Math.min(0.25, (avgWR - 50) / 100));
+    const playerEntries = pubList.filter(p => p.heroName === candidateName && p.games >= 10);
+    if (playerEntries.length) {
+      const bestWR = Math.max(...playerEntries.map(p => p.wr));
+      const poolBonus = Math.max(0, Math.min(0.5, (bestWR - 50) / 40));
+      matchupScore *= (1 + poolBonus);
     }
   }
-  return score;
+
+  return matchupScore;
 }
 
 // ── Render toggle button ──────────────────────────────────────────────────────
@@ -843,6 +863,23 @@ function renderDraftBoard() {
     </div>`;
   }
 
+  const _intelPatterns = (DA.scoutData?.draftTendencies?.orderPatterns || []).filter(p => p.pct >= 40).slice(0, 5);
+  const intelHTML = _intelPatterns.length
+    ? '<div style="margin-bottom:16px;padding:10px 12px;background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:var(--radius)">'
+      + '<div style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:8px' + (isConsole?';font-family:Orbitron,monospace':'') + '">⚠ Scouting intel — opponent tendencies</div>'
+      + '<div style="display:flex;gap:6px;flex-wrap:wrap">'
+      + _intelPatterns.map(p => {
+          const url = heroIconUrl(p.hero, p.iconUrl || '');
+          const col = p.isPick ? 'var(--win)' : 'var(--loss)';
+          return '<div style="display:flex;align-items:center;gap:5px;padding:4px 8px;background:var(--line-2);border:1px solid var(--line);border-left:2px solid ' + col + ';border-radius:4px">'
+            + '<span style="font-size:9px;color:var(--ink-4);text-transform:uppercase;white-space:nowrap;margin-right:2px">' + p.label + '</span>'
+            + (url ? '<img src="' + url + '" style="width:16px;height:16px;border-radius:2px;object-fit:cover">' : '')
+            + '<span style="font-size:12px;color:var(--ink);font-weight:600;margin-left:3px">' + p.hero + '</span>'
+            + '<span style="font-size:10px;color:' + col + ';font-family:var(--mono);margin-left:4px">' + p.pct + '%</span></div>';
+        }).join('')
+      + '</div></div>'
+    : '';
+
   panel.innerHTML = `<div class="page-section page-section-bans" style="margin-top:0;border-top:none;border-radius:0 0 14px 14px">
     <!-- Controls -->
     <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--line)">
@@ -867,6 +904,7 @@ function renderDraftBoard() {
       </div>
     </div>
 
+    ${intelHTML}
     <!-- Draft board -->
     <div style="margin-bottom:24px">
       <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-4);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--line);${isConsole?'font-family:Orbitron,monospace;':''}">
@@ -998,6 +1036,8 @@ async function daUpdateSuggestions() {
   const el = document.getElementById('da-suggestions');
   if (!el) return;
 
+  const gen = ++DA._suggGen;
+
   const isConsole = document.documentElement.getAttribute('data-theme') === 'console';
 
   // Enemy picks = slots assigned to opponent that are picks (not bans)
@@ -1014,21 +1054,28 @@ async function daUpdateSuggestions() {
 
   el.innerHTML = `<div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-4);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--line);${isConsole?'font-family:Orbitron,monospace;':''}">Counterpick suggestions</div><div style="font-size:12px;color:var(--ink-4);padding:8px 0">Calculating\u2026</div>`;
 
-  // Fetch hero list and matchup data for all enemy picks
-  const heroes = await daFetchHeroList();
+  // Fetch hero list, pub heroes, and base WRs in parallel; then all matchups in parallel
+  const [heroes, pubList, baseWRs] = await Promise.all([
+    daFetchHeroList(),
+    DA.pubWeighting ? daFetchOurPubHeroes() : Promise.resolve([]),
+    daFetchHeroBaseWRs(),
+  ]);
+  if (gen !== DA._suggGen) return;
+
   if (!heroes.length) {
     el.innerHTML += '<div style="color:var(--loss);font-size:12px">Could not load hero data.</div>';
     return;
   }
 
-  const pubList = DA.pubWeighting ? await daFetchOurPubHeroes() : [];
-
-  // Fetch matchups for each enemy pick
-  const enemyMatchupSets = [];
-  for (const ep of enemyPicks) {
+  // Fetch matchups for all enemy picks in parallel — keyed by heroId so indices never drift
+  const enemyMatchupMap = {}; // heroId -> matchup array
+  await Promise.all(enemyPicks.map(async ep => {
     const matchups = await daFetchMatchups(ep.heroId);
-    if (matchups.length) enemyMatchupSets.push(matchups);
-  }
+    if (matchups.length) enemyMatchupMap[ep.heroId] = matchups;
+  }));
+  if (gen !== DA._suggGen) return;
+
+  const enemyMatchupSets = Object.values(enemyMatchupMap);
 
   if (!enemyMatchupSets.length) {
     el.innerHTML = '<div style="font-size:12px;color:var(--ink-4)">Could not fetch matchup data.</div>';
@@ -1040,15 +1087,16 @@ async function daUpdateSuggestions() {
     .filter(h => !taken.has(h.localized_name))
     .map(h => ({
       hero: h,
-      score: daScoreHero(h.id, enemyMatchupSets, pubList, h.localized_name),
+      score: daScoreHero(h.id, enemyMatchupSets, pubList, h.localized_name, baseWRs),
       lane: heroToLane(h),
       pubPlayers: pubList.filter(p => p.heroName === h.localized_name && p.games >= 10),
       counters: enemyPicks.filter(ep => {
-        const set = enemyMatchupSets[enemyPicks.indexOf(ep)];
+        const set = enemyMatchupMap[ep.heroId];
         if (!set) return false;
         const entry = set.find(m => m.hero_id === h.id);
         if (!entry || !entry.games_played) return false;
-        return (entry.wins / entry.games_played) > 0.50;
+        // wins = enemy's wins; invert to get candidate's WR vs this enemy pick.
+        return (1 - entry.wins / entry.games_played) > ((baseWRs[h.id] || 0.50) + 0.01);
       }).map(ep => ep.heroName),
     }))
     .filter(s => s.score > 0)
@@ -1056,17 +1104,8 @@ async function daUpdateSuggestions() {
 
   const maxScore = scored[0]?.score || 1;
 
-  // Flat top suggestions — filtered by lane if set, capped at 5
-  // Weighting: Our pool mode prioritises heroes players have 10+ games on (pass 1),
-  // then fills with best general picks (pass 2). General = pure matchup score.
-  let pool;
-  if (DA.pubWeighting && pubList.length) {
-    const inPool    = scored.filter(s => s.pubPlayers.length > 0);
-    const notInPool = scored.filter(s => s.pubPlayers.length === 0);
-    pool = [...inPool, ...notInPool];
-  } else {
-    pool = scored;
-  }
+  // Pool multiplier is already baked into score — just sort and show.
+  const pool = scored;
 
   // Apply lane filter
   const visible = DA.laneFilter
@@ -1165,6 +1204,7 @@ async function daUpdateSuggestions() {
       : `<div style="font-size:12px;color:var(--ink-4)">No suggestions for this filter — try a different lane or add more enemy picks.</div>`}
   `;
 
+  if (gen !== DA._suggGen) return;
   el.innerHTML = html;
 }
 
@@ -1194,33 +1234,49 @@ async function _daBanSuggestions() {
     }
   }
 
-  // Counter-threat bonus: fetch matchup data for each of our revealed picks
+  // Counter-threat bonus: fetch matchup data for all revealed picks in parallel.
+  // Heroes that counter our picks get a score boost; unscouted counters are merged in.
+  const extThreats = {};
   if (ourPicks.length) {
-    const heroes = await daFetchHeroList();
-    for (const ourPick of ourPicks) {
-      const ourHero = heroes.find(h => h.localized_name === ourPick.heroName);
-      if (!ourHero) continue;
-      // matchups for ourHero: entry.wins/games_played is the WR of the candidate
-      // hero when playing AGAINST ourHero. Above 50% = that hero beats our pick.
-      const matchups = await daFetchMatchups(ourHero.id);
+    const [heroes, baseWRs] = await Promise.all([daFetchHeroList(), daFetchHeroBaseWRs()]);
+
+    // Pre-fetch all matchups in parallel, then process from cache
+    const ourPicksWithHeroes = ourPicks
+      .map(p => ({ pick: p, hero: heroes.find(h => h.localized_name === p.heroName) }))
+      .filter(p => p.hero);
+    await Promise.all(ourPicksWithHeroes.map(p => daFetchMatchups(p.hero.id)));
+
+    for (const { hero: ourHero } of ourPicksWithHeroes) {
+      const matchups = DA.matchupCache[ourHero.id] || [];
       for (const m of matchups) {
         if (!m.games_played) continue;
-        const theirWR = m.wins / m.games_played;
-        if (theirWR <= 0.50) continue;
+        // wins = our hero's wins against opponent m; invert to get opponent's WR vs our pick.
+        const theirWR = 1 - m.wins / m.games_played;
+        const baseline = baseWRs[m.hero_id] || 0.50;
+        const advantage = theirWR - baseline;
+        if (advantage <= 0.005) continue;
         const threatHero = heroes.find(h => h.id === m.hero_id);
         if (!threatHero) continue;
         const threatName = threatHero.localized_name;
-        // Only boost heroes already in the opponent scouted pool
-        if (!baseMap[threatName]) continue;
-        // Bonus scales with how much above 50% this hero beats our pick
-        baseMap[threatName].score += (theirWR - 0.50) * 1.5;
+        if (baseMap[threatName]) {
+          baseMap[threatName].score += advantage * 1.5;
+        } else {
+          if (!extThreats[threatName]) {
+            extThreats[threatName] = { name: threatName, score: 0, iconUrl: DA.heroIconMap[threatName] || '', external: true };
+          }
+          extThreats[threatName].score += advantage * 1.5;
+        }
       }
     }
   }
 
-  // Filter taken, sort, deduplicate
+  // Merge scouted heroes and external threats, sort by score, deduplicate
+  const allCandidates = [
+    ...Object.values(baseMap),
+    ...Object.values(extThreats).filter(c => c.score > 0.01),
+  ];
   const seen = new Set();
-  return Object.values(baseMap)
+  return allCandidates
     .filter(c => !taken.has(c.name))
     .sort((a, b) => b.score - a.score)
     .filter(c => { if (seen.has(c.name)) return false; seen.add(c.name); return true; });
@@ -1228,19 +1284,23 @@ async function _daBanSuggestions() {
 
 // Fills ban hint ghost icons into pre-rendered slot containers after async scoring
 async function daUpdateBanHints() {
+  const gen = ++DA._banGen;
   const suggestions = await _daBanSuggestions();
+  if (gen !== DA._banGen) return;
   const isUs = slot => DA.weAreFirst ? slot.isFirst : !slot.isFirst;
   let hintIdx = 0;
   for (const slot of CM_SLOTS) {
     if (!slot.isBan || !isUs(slot)) continue;
     const el = document.getElementById('da-hint-' + slot.idx);
     if (!el) continue;
-    const suggestion = suggestions[hintIdx++];
     const filled = DA.slots[slot.idx];
-    if (suggestion && !filled) {
+    if (filled) { el.innerHTML = ''; continue; }
+    const suggestion = suggestions[hintIdx++];
+    if (suggestion) {
       const url = heroIconUrl(suggestion.name, suggestion.iconUrl || '');
+      const tipPrefix = suggestion.external ? 'Unscouted counter: ' : 'Suggested ban: ';
       el.innerHTML = url
-        ? '<img src="' + url + '" alt="' + suggestion.name + '" title="Suggested ban: ' + suggestion.name + '" style="width:16px;height:16px;border-radius:2px;opacity:0.5;position:absolute;bottom:2px;right:2px">'
+        ? '<img src="' + url + '" alt="' + suggestion.name + '" title="' + tipPrefix + suggestion.name + '" style="width:16px;height:16px;border-radius:2px;opacity:0.5;position:absolute;bottom:2px;right:2px">'
         : '';
     } else {
       el.innerHTML = '';
