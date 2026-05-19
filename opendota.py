@@ -34,12 +34,16 @@ def get_hero_stats(account_id: int) -> list[dict]:
     return [h for h in data if h.get("games", 0) > 0]
 
 
-def get_wl(account_id: int) -> dict:
+def get_wl(account_id: int, days: int | None = None) -> dict:
     """
     Win/loss totals for a player.
     Returns: { win: int, lose: int }
     """
-    return _get(f"/players/{account_id}/wl")
+    import time
+    params = {}
+    if days is not None:
+        params["date_gt"] = int(time.time()) - days * 86400
+    return _get(f"/players/{account_id}/wl", params=params or None)
 
 
 def get_recent_matches(account_id: int, limit: int = 20) -> list[dict]:

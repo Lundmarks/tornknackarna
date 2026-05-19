@@ -844,7 +844,7 @@ def _fetch_player_data(
     rank_tier = profile.get("rank_tier")
     rank_name, rank_stars = opendota.rank_tier_to_label(rank_tier)
     time.sleep(OPENDOTA_DELAY)
-    wl      = opendota.get_wl(account_id)
+    wl      = opendota.get_wl(account_id, days=30)
     winrate = _calc_winrate(wl)
     time.sleep(OPENDOTA_DELAY)
     recent = opendota.get_recent_matches(account_id, limit=10)
