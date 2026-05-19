@@ -876,8 +876,8 @@ def _fetch_player_data(
         "name": name, "accountId": account_id, "confirmed": confirmed,
         "lane": None, "rankTier": rank_tier, "rankLabel": rank_label,
         "rankStars": rank_stars, "rankMedal": rank_name,
-        "winrate": winrate, "form": form,
-        "tournamentHeroes": tournament_heroes, "pubHeroes": pub_heroes,
+        "winrate": winrate, "pubGamesTotal": wl.get("win", 0) + wl.get("lose", 0),
+        "form": form, "tournamentHeroes": tournament_heroes, "pubHeroes": pub_heroes,
     }
 
 
