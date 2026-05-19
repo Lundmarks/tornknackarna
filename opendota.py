@@ -41,10 +41,9 @@ def get_wl(account_id: int, days: int | None = None) -> dict:
     Win/loss totals for a player.
     Returns: { win: int, lose: int }
     """
-    import time
     params = {}
     if days is not None:
-        params["date_gt"] = int(time.time()) - days * 86400
+        params["date"] = days
     return _get(f"/players/{account_id}/wl", params=params or None)
 
 
