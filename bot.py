@@ -918,7 +918,10 @@ if __name__ == "__main__":
     else:
         console.print(f"[dim]Scheduling daily run at [bold]{RUN_AT}[/][/]")
         schedule.every().day.at(RUN_AT).do(run)
-        run(skip_opendota=args.no_opendota)
+        try:
+            run(skip_opendota=args.no_opendota)
+        except Exception as e:
+            log.error(f"Bot cycle failed: {e} — will retry at {RUN_AT}")
         while True:
             schedule.run_pending()
             time.sleep(60)

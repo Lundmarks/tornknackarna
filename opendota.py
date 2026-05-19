@@ -6,12 +6,14 @@ All methods take account_id in Steam32 format (OpenDota's native format).
 """
 
 import logging
+import time
 import httpx
 
 log = logging.getLogger(__name__)
 
 BASE = "https://api.opendota.com/api"
-TIMEOUT = 15
+TIMEOUT = 30
+RETRIES = 3
 
 
 def get_player(account_id: int) -> dict:
@@ -100,13 +102,22 @@ def rank_tier_to_label(rank_tier: int | None) -> tuple[str, int]:
 
 def _get(path: str, params: dict | None = None) -> dict | list:
     url = BASE + path
-    try:
-        r = httpx.get(url, params=params, timeout=TIMEOUT)
-        r.raise_for_status()
-        return r.json()
-    except httpx.HTTPStatusError as e:
-        log.error(f"OpenDota {e.response.status_code}: {url}")
-        raise
-    except Exception as e:
-        log.error(f"OpenDota request failed: {url} — {e}")
-        raise
+    for attempt in range(1, RETRIES + 1):
+        try:
+            r = httpx.get(url, params=params, timeout=TIMEOUT)
+            r.raise_for_status()
+            return r.json()
+        except httpx.HTTPStatusError as e:
+            status = e.response.status_code
+            if status >= 500 and attempt < RETRIES:
+                log.warning(f"OpenDota {status} (attempt {attempt}/{RETRIES}): {url} — retrying in 10s")
+                time.sleep(10)
+                continue
+            log.error(f"OpenDota {status}: {url}")
+            raise
+        except Exception as e:
+            if attempt == RETRIES:
+                log.error(f"OpenDota request failed after {RETRIES} attempts: {url} — {e}")
+                raise
+            log.warning(f"OpenDota request failed (attempt {attempt}/{RETRIES}): {e} — retrying in 5s")
+            time.sleep(5)
