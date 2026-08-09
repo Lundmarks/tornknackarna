@@ -1,7 +1,9 @@
 .env
 .venv
+CLAUDE.md
 player_map.json
 state.json
 **.backup
 __pycache__/
 media/
+backups/

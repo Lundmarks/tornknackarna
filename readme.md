@@ -107,8 +107,8 @@ python bot.py --run-once --no-opendota   # skip OpenDota API calls (fast debug m
 Update these two constants at the top of `bot.py` at the start of each season:
 
 ```python
-CURRENT_SEASON_ID = 67
-EXTRA_SEASONS     = [6, 17, 27, 43, 60]  # older seasons to include; set to [] for current only
+CURRENT_SEASON_ID = 77
+EXTRA_SEASONS     = [6, 17, 27, 43, 60, 67]  # older seasons to include; set to [] for current only
 ```
 
 After changing season, delete `state.json` and re-run to regenerate all gists.

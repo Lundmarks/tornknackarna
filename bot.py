@@ -53,8 +53,8 @@ ESPARVEN_TEAM_ID  = int(os.environ["ESPARVEN_TEAM_ID"])
 GITHUB_TOKEN      = os.environ["GITHUB_TOKEN"]
 GITHUB_USERNAME   = os.environ.get("GITHUB_USERNAME", "Lundmarks")
 INDEX_GIST_ID     = os.environ.get("GIST_INDEX_ID") or None
-CURRENT_SEASON_ID = 67  # update each season
-EXTRA_SEASONS     = [6, 17, 27, 43, 60]  # additional seasons to include; set to [] for current season only
+CURRENT_SEASON_ID = 77  # update each season
+EXTRA_SEASONS     = [6, 17, 27, 43, 60, 67]  # additional seasons to include; set to [] for current season only
 
 STATE_PATH     = Path(__file__).parent / "state.json"
 OUR_TEAM_ID    = ESPARVEN_TEAM_ID
@@ -176,7 +176,13 @@ def run(skip_opendota: bool = False):
         members = opponent.get("members", [])
         _resolve_steam_ids(esp, meeting_id, opponent_id, members)
 
-        scout = build_scout_data(meeting, opponent, members, heroes, status="upcoming", esp=esp, skip_opendota=skip_opendota)
+        our_contender   = _find_contender(meeting, OUR_TEAM_ID)
+        our_account_ids = _account_ids_for_members(our_contender.get("members", []) if our_contender else [])
+
+        scout = build_scout_data(
+            meeting, opponent, members, heroes, status="upcoming", esp=esp,
+            skip_opendota=skip_opendota, our_account_ids=our_account_ids,
+        )
 
         _step("↑", f"Writing bin for [yellow]{opponent_name}[/] (upcoming)...")
         bin_id = state["meetings"].get(str(meeting_id), {}).get("bin_id")
@@ -319,6 +325,7 @@ def _update_our_team_bin(esp, jb, state, heroes, skip_opendota: bool = False):
             "lane": None, "rankTier": None, "rankLabel": None,
             "rankMedal": None, "rankStars": None, "winrate": None,
             "form": [], "tournamentHeroes": [], "pubHeroes": [],
+            "privateProfile": False,
         }
         if account_id and not skip_opendota:
             try:
@@ -338,11 +345,7 @@ def _update_our_team_bin(esp, jb, state, heroes, skip_opendota: bool = False):
 
     history = _build_history_from_data(all_parsed, opponent_account_ids=set())
 
-    our_account_ids = {
-        str(player_map.get_account_id(m["inGameName"]))
-        for m in members
-        if m.get("inGameName") and player_map.get_account_id(m["inGameName"])
-    }
+    our_account_ids = _account_ids_for_members(members)
     tendencies = _draft_tendencies(all_parsed, our_account_ids)
 
     our_bin_data = {
@@ -402,7 +405,14 @@ def _process_past_meetings(esp, jb, state, heroes, index_entries, skip_opendota:
 
         _section(f"Past: vs {opponent_name} ({result})")
         _resolve_steam_ids(esp, meeting_id, opponent_id, members)
-        scout = build_scout_data(meeting, opponent, members, heroes, status=result, esp=esp, skip_opendota=skip_opendota)
+
+        our_contender   = _find_contender(meeting, OUR_TEAM_ID)
+        our_account_ids = _account_ids_for_members(our_contender.get("members", []) if our_contender else [])
+
+        scout = build_scout_data(
+            meeting, opponent, members, heroes, status=result, esp=esp,
+            skip_opendota=skip_opendota, our_account_ids=our_account_ids,
+        )
 
         _step("↑", f"Writing bin for [yellow]{opponent_name}[/] ({result})...")
         bin_id = meeting_ref.get("bin_id")
@@ -566,7 +576,9 @@ def _get_tournament_heroes_from_data(
 def _build_history_from_data(
     parsed_matches: list[dict],
     opponent_account_ids: set,
+    our_account_ids: set | None = None,
 ) -> list[dict]:
+    our_account_ids = our_account_ids or set()
     history = []
     for match in parsed_matches:
         opponent_team = _resolve_opponent_team(match, opponent_account_ids)
@@ -574,6 +586,9 @@ def _build_history_from_data(
         if opponent_team is not None:
             radiant_win  = match.get("radiantWin", False)
             opponent_won = radiant_win if opponent_team == 0 else not radiant_win
+
+        our_team = _resolve_opponent_team(match, our_account_ids)
+        vs_us = opponent_team is not None and our_team is not None and opponent_team != our_team
 
         picks = [
             {"heroName": pb["HeroName"], "iconUrl": pb.get("HeroIconUrl", ""), "team": pb["Team"]}
@@ -590,6 +605,7 @@ def _build_history_from_data(
             "seasonId":     match.get("seasonId"),
             "opponentTeam": opponent_team,
             "opponentWon":  opponent_won,
+            "vsUs":         vs_us,
             "picks":        picks,
             "bans":         bans,
         })
@@ -743,6 +759,7 @@ def build_scout_data(
     status: str,
     esp=None,
     skip_opendota: bool = False,
+    our_account_ids: set | None = None,
 ) -> dict:
     date_str    = meeting.get("matches", [{}])[0].get("matchDate", "")
     opponent_id = opponent["id"]
@@ -774,11 +791,7 @@ def build_scout_data(
 
     log.info(f"Parsed [bold]{len(parsed_matches)}[/] tournament game(s) total")
 
-    opponent_account_ids = {
-        str(player_map.get_account_id(m["inGameName"]))
-        for m in members
-        if m.get("inGameName") and player_map.get_account_id(m["inGameName"])
-    }
+    opponent_account_ids = _account_ids_for_members(members)
 
     eligible = [m for m in members if m.get("inGameName")]
     if skip_opendota:
@@ -798,6 +811,7 @@ def build_scout_data(
             "lane": None, "rankTier": None, "rankLabel": None,
             "rankMedal": None, "rankStars": None, "winrate": None,
             "form": [], "tournamentHeroes": [], "pubHeroes": [],
+            "privateProfile": False,
         }
         if account_id and not skip_opendota:
             try:
@@ -816,7 +830,7 @@ def build_scout_data(
             _step("   [dim]–[/]", f"[dim]OpenDota skipped[/]")
         players.append(player_data)
 
-    history = _build_history_from_data(parsed_matches, opponent_account_ids)
+    history = _build_history_from_data(parsed_matches, opponent_account_ids, our_account_ids)
     tendencies = _draft_tendencies(parsed_matches, opponent_account_ids)
 
     return {
@@ -857,6 +871,10 @@ def _fetch_player_data(
     time.sleep(OPENDOTA_DELAY)
     hero_stats = opendota.get_hero_stats(account_id)
     hero_stats.sort(key=lambda h: h.get("games", 0), reverse=True)
+    # A ranked player (rank_tier assigned, so placement matches were played) with zero
+    # career hero games means OpenDota can't see any of their matches — the account's
+    # "expose public match data" setting is off, not that they've never played.
+    private_profile = rank_tier is not None and not hero_stats
     pub_heroes = [
         {
             "name":  heroes.get(h["hero_id"], f"Hero {h['hero_id']}"),
@@ -878,6 +896,7 @@ def _fetch_player_data(
         "rankStars": rank_stars, "rankMedal": rank_name,
         "winrate": winrate, "pubGamesTotal": wl.get("win", 0) + wl.get("lose", 0),
         "form": form, "tournamentHeroes": tournament_heroes, "pubHeroes": pub_heroes,
+        "privateProfile": private_profile,
     }
 
 
@@ -886,6 +905,21 @@ def _find_opponent(meeting: dict, our_team_id: int) -> dict | None:
         if contender["id"] != our_team_id:
             return contender
     return None
+
+
+def _find_contender(meeting: dict, team_id: int) -> dict | None:
+    for contender in meeting.get("meetingContenders", []):
+        if contender["id"] == team_id:
+            return contender
+    return None
+
+
+def _account_ids_for_members(members: list) -> set:
+    return {
+        str(player_map.get_account_id(m["inGameName"]))
+        for m in members
+        if m.get("inGameName") and player_map.get_account_id(m["inGameName"])
+    }
 
 
 def _get_result(meeting: dict, our_team_id: int) -> str:

@@ -169,6 +169,9 @@
   .player-card:nth-child(1){animation-delay:.10s}.player-card:nth-child(2){animation-delay:.15s}.player-card:nth-child(3){animation-delay:.20s}
   .player-card:nth-child(4){animation-delay:.25s}.player-card:nth-child(5){animation-delay:.30s}
   .player-card:hover { box-shadow:var(--shadow-h); transform:translateY(-2px); border-color:var(--ink-4); }
+  .player-card.private-profile { border-color:var(--loss); background:var(--loss-bg); }
+  .player-card.private-profile:hover { border-color:var(--loss); }
+  .private-badge { display:inline-flex; align-items:center; gap:4px; font-size:9px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--loss); background:var(--loss-bg); border:1px solid var(--loss); border-radius:4px; padding:2px 7px; margin-top:6px; width:fit-content; }
   .player-card-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; }
   .player-name { font-size:15px; font-weight:600; color:var(--ink); margin-bottom:5px; }
   .player-meta { display:flex; flex-direction:column; gap:5px; }
@@ -362,7 +365,7 @@ const RANK_THEME={Herald:{lbg:'#f3f4f6',lc:'#374151',dbg:'#1c1f27',dc:'#9ca3af'}
 function rankBadgeHTML(rankMedal,rankLabel){const medal=rankMedal||'Unknown';const cfg=RANK_THEME[medal]||RANK_THEME.Unknown;const isLight=document.documentElement.getAttribute('data-theme')==='light';const bg=isLight?cfg.lbg:cfg.dbg,color=isLight?cfg.lc:cfg.dc;const imgUrl=`${MEDALS_BASE}${medal.toLowerCase().replace(/\s+/g,'_')}.png`;return`<div class="rank-badge" style="background:${bg};color:${color}"><img class="rank-medal-img" src="${imgUrl}" alt="${medal}" onerror="this.style.display='none'">${rankLabel||'Unknown'}</div>`;}
 
 const HERO_SLUG={'Anti-Mage':'antimage','Axe':'axe','Beastmaster':'beastmaster','Bristleback':'bristleback','Centaur':'centaur','Centaur Warrunner':'centaur','Chen':'chen','Clockwerk':'rattletrap','Crystal Maiden':'crystal_maiden','Dark Willow':'dark_willow','Death Prophet':'death_prophet','Dragon Knight':'dragon_knight','Drow Ranger':'drow_ranger','Earth Spirit':'earth_spirit','Earthshaker':'earthshaker','Ember Spirit':'ember_spirit','Enigma':'enigma','Huskar':'huskar','Invoker':'invoker','Jakiro':'jakiro','Juggernaut':'juggernaut','Leshrac':'leshrac','Lina':'lina','Lion':'lion','Lycan':'lycan','Magnus':'magnataur','Mars':'mars','Medusa':'medusa','Muerta':'muerta','Naga Siren':'naga_siren',"Nature's Prophet":'furion','Omniknight':'omniknight','Phantom Assassin':'phantom_assassin','Phantom Lancer':'phantom_lancer','Phoenix':'phoenix','Pudge':'pudge','Puck':'puck','Queen of Pain':'queenofpain','Razor':'razor','Rubick':'rubick','Shadow Demon':'shadow_demon','Shadow Fiend':'nevermore','Shadow Shaman':'shadow_shaman','Slardar':'slardar','Snapfire':'snapfire','Spectre':'spectre','Spirit Breaker':'spirit_breaker','Storm Spirit':'storm_spirit','Techies':'techies','Templar Assassin':'templar_assassin','Timbersaw':'shredder','Tinker':'tinker','Tidehunter':'tidehunter','Troll Warlord':'troll_warlord','Ursa':'ursa','Vengeful Spirit':'vengefulspirit','Viper':'viper','Void Spirit':'void_spirit','Warlock':'warlock','Weaver':'weaver','Winter Wyvern':'winter_wyvern','Witch Doctor':'witch_doctor','Wraith King':'skeleton_king','Clinkz':'clinkz','Disruptor':'disruptor','Gyrocopter':'gyrocopter','Skywrath Mage':'skywrath_mage','Tiny':'tiny','Pugna':'pugna','Lich':'lich','Windranger':'windrunner','Sven':'sven','Bounty Hunter':'bounty_hunter','Legion Commander':'legion_commander','Mirana':'mirana','Hoodwink':'hoodwink','Bane':'bane','Dazzle':'dazzle','Abaddon':'abaddon','Alchemist':'alchemist','Ancient Apparition':'ancient_apparition','Arc Warden':'arc_warden','Batrider':'batrider','Bloodseeker':'bloodseeker','Brewmaster':'brewmaster','Broodmother':'broodmother','Chaos Knight':'chaos_knight','Doom':'doom','Elder Titan':'elder_titan','Faceless Void':'faceless_void','Grimstroke':'grimstroke','Io':'wisp','Keeper of the Light':'keeper_of_the_light','Kunkka':'kunkka','Lifestealer':'life_stealer','Lone Druid':'lone_druid','Marci':'marci','Meepo':'meepo','Monkey King':'monkey_king','Morphling':'morphling','Night Stalker':'night_stalker','Nyx Assassin':'nyx_assassin','Ogre Magi':'ogre_magi','Oracle':'oracle','Outworld Destroyer':'obsidian_destroyer','Pangolier':'pangolier','Primal Beast':'primal_beast','Ring Master':'ringmaster','Riki':'riki','Sand King':'sand_king','Silencer':'silencer','Slark':'slark','Terrorblade':'terrorblade','Treant Protector':'treant','Tusk':'tusk','Underlord':'underlord','Undying':'undying','Venomancer':'venomancer','Visage':'visage','Zeus':'zuus','Necrophos':'necrolyte','Sniper':'sniper','Luna':'luna','Enchantress':'enchantress','Kez':'kez','Dawnbreaker':'dawnbreaker','Largo':'largo','Dark Seer':'dark_seer','Ringmaster':'ringmaster'};
-function heroIconUrl(name,directUrl){if(directUrl)return directUrl.startsWith('http')?directUrl:`https://steamcdn-a.akamaihd.net${directUrl}`;const slug=HERO_SLUG[name];if(slug)return`https://steamcdn-a.akamaihd.net/apps/dota2/images/dota_react/heroes/icons/${slug}.png`;return DA.heroIconMap[name]||null;}
+function heroIconUrl(name,directUrl){if(directUrl)return directUrl.startsWith('http')?directUrl:`https://steamcdn-a.akamaihd.net${directUrl}`;const slug=HERO_SLUG[name];if(slug)return`https://steamcdn-a.akamaihd.net/apps/dota2/images/dota_react/heroes/icons/${slug}.png`;return HERO_DATA.heroIconMap[name]||null;}
 function heroIconTag(name,wrapClass,directUrl){const url=heroIconUrl(name,directUrl);return`<div class="${wrapClass}">${url?`<img src="${url}" alt="${name}" loading="lazy" onerror="this.parentElement.style.opacity='0.3'">`:''}</div>`;}
 
 function resolveHeroStats(h){if(currentSeasonOnly){return{games:h.currentSeasonGames??h.tournamentGames,wr:h.currentSeasonWR??h.tournamentWR};}return{games:h.tournamentGames,wr:h.tournamentWR};}
@@ -384,6 +387,15 @@ const col=(title,items,color)=>!items.length?'':`<div style="flex:1;min-width:18
 function renderDraftTendencies(tendencies){if(!tendencies||!tendencies.totalGames)return'';const isConsole=document.documentElement.getAttribute('data-theme')==='console';const total=tendencies.totalGames;const heroIconSmall=(name,iconUrl)=>{const src=heroIconUrl(name,iconUrl||'')||'';return src?`<img src="${src}" alt="${name}" style="width:20px;height:20px;border-radius:3px;object-fit:cover;flex-shrink:0" onerror="this.style.display='none'">`:'';}; const row=item=>{const pct=Math.round(item.count/total*100);const barW=Math.min(100,pct);return`<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><div style="width:20px;height:20px;flex-shrink:0">${heroIconSmall(item.name,item.iconUrl||'')}</div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px"><span style="font-size:12px;color:var(--ink-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${item.name}</span><span style="font-size:11px;color:var(--ink-3);flex-shrink:0;margin-left:8px">${item.count}\u00d7&nbsp;<span style="color:var(--ink-4)">${pct}%</span></span></div><div style="height:3px;background:var(--surface-2);border-radius:2px"><div style="height:3px;width:${barW}%;background:var(--accent);border-radius:2px;opacity:0.7"></div></div></div></div>`;};
 const col=(title,items,color)=>!items||!items.length?'':`<div style="flex:1;min-width:180px"><div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:${color};margin-bottom:10px;${isConsole?'font-family:Orbitron,monospace;letter-spacing:3px;':''}">${isConsole?'// ':''}${title}</div>${items.map(row).join('')}</div>`;return`<div class="ban-section" style="margin-top:28px"><div class="section-title" style="margin-bottom:4px">${isConsole?'// ':''}Draft presence</div><div style="font-size:11px;color:var(--ink-4);margin-bottom:16px">Based on ${total} tracked game${total===1?'':'s'}</div><div style="display:flex;gap:32px;flex-wrap:wrap">${col('Most banned',tendencies.mostBanned,'var(--loss)')}${col('Most picked',tendencies.mostPicked,'var(--win)')}</div>${renderDraftOrderPatterns(tendencies.orderPatterns)}</div>`;}
 
+// ── Rivalry meter: head-to-head record vs Tornknäckarna specifically ──────────
+// history entries are tagged vsUs=true only when our own roster's account IDs
+// were resolved on the other side of that game — distinct from the opponent's
+// overall CM history against the rest of the league.
+
+function computeRivalry(history){const games=(history||[]).filter(m=>m.vsUs&&m.opponentWon!=null).slice().sort((a,b)=>Number(a.matchId)-Number(b.matchId));if(!games.length)return null;let ourWins=0,theirWins=0;const sequence=games.map(m=>{const weWon=!m.opponentWon;if(weWon)ourWins++;else theirWins++;return{result:weWon?'w':'l',matchId:m.matchId,duration:m.duration||'',patch:m.patch||''};});let streak=0,streakType=null;for(let i=sequence.length-1;i>=0;i--){if(streakType===null){streakType=sequence[i].result;streak=1;}else if(sequence[i].result===streakType){streak++;}else break;}return{ourWins,theirWins,total:games.length,sequence,streak,streakType};}
+
+function renderRivalryMeter(history){const r=computeRivalry(history);if(!r)return'';const isConsole=document.documentElement.getAttribute('data-theme')==='console';const weLead=r.ourWins>r.theirWins,theyLead=r.theirWins>r.ourWins;const recordColor=weLead?'var(--win)':theyLead?'var(--loss)':'var(--ink-3)';const summary=weLead?`Tornknäckarna lead the head-to-head`:theyLead?`Tornknäckarna trail the head-to-head`:`Dead even head-to-head`;const gamesNote=r.total===1?'1 game played':`${r.total} games played`;const pips=r.sequence.map(g=>{const label=g.result==='w'?'Win':'Loss';const details=[g.duration,g.patch?`patch ${g.patch}`:''].filter(Boolean).join(' · ');const tip=details?`${label} · ${details} — view match`:`${label} — view match`;return`<a class="form-pip ${g.result}" href="https://www.opendota.com/matches/${g.matchId}" target="_blank" rel="noopener noreferrer" title="${tip}" style="text-decoration:none;color:#fff;cursor:pointer">${g.result.toUpperCase()}</a>`;}).join('');const streakText=r.streak>=2?(r.streakType==='w'?`On a ${r.streak}-game win streak against them`:`On a ${r.streak}-game losing skid against them`):'';return`<div class="ban-section" style="margin-top:0"><div class="section-title" style="margin-bottom:14px">${isConsole?'// ':''}Rivalry meter</div><div style="display:flex;align-items:center;gap:22px;flex-wrap:wrap"><div style="font-size:30px;font-weight:800;font-family:var(--mono);color:${recordColor};letter-spacing:.02em;flex-shrink:0">${r.ourWins}<span style="color:var(--ink-4);font-weight:600;margin:0 6px">–</span>${r.theirWins}</div><div style="display:flex;flex-direction:column;gap:8px;min-width:0"><div style="font-size:11px;color:var(--ink-3)">${summary} · ${gamesNote}</div><div style="display:flex;gap:4px;flex-wrap:wrap">${pips}</div>${streakText?`<div style="font-size:11px;font-weight:600;color:${r.streakType==='w'?'var(--win)':'var(--loss)'}">${streakText}</div>`:''}</div></div></div>`;}
+
 // ── Hero winrate breakdown: computed from history, per team ───────────────────
 // "with"    = scouted team picked hero X; did they win?
 // "against" = opponent picked hero X;     did scouted team win?
@@ -398,7 +410,7 @@ function wrClass(wr){return wr>=60?'high':wr<45?'low':'';}
 
 function renderHeroRows(heroes,isTournament,isSelf){if(!heroes||!heroes.length)return'<div style="font-size:12px;color:var(--ink-4);padding:4px 0">No data</div>';if(isTournament){heroes=[...heroes].sort((a,b)=>{const sa=resolveHeroStats(a),sb=resolveHeroStats(b);return sb.games-sa.games||sb.wr-sa.wr;});}let anyVisible=false;const rows=heroes.map(h=>{let wr,games;if(isTournament){const s=resolveHeroStats(h);wr=s.wr;games=s.games;if(games===0)return'';}else{wr=h.wr;games=h.games;}anyVisible=true;const isKey=!isSelf&&isTournament&&keyPickScore(h)>=2.4&&games>=3;return`<div class="hero-row">${heroIconTag(h.name,'hero-icon-wrap',h.iconUrl)}<div class="hero-name">${h.name}</div><div class="hero-games">${games}g</div><div class="hero-wr-bar"><div class="hero-wr-fill ${wrClass(wr)}" style="width:${wr}%"></div></div><div class="hero-wr-pct">${wr}%</div>${isKey?'<div class="key-pick-dot" title="Ban candidate"></div>':'<div style="width:6px"></div>'}</div>`;}).join('');return anyVisible?rows:'<div style="font-size:12px;color:var(--ink-4);padding:4px 0">No games this season</div>';}
 
-function renderPlayerCard(p,isSelf){const form=(p.form||[]).map(r=>`<div class="form-pip ${r}">${r.toUpperCase()}</div>`).join('');const noId=!p.accountId?`<span style="font-size:9px;color:var(--ink-4);margin-left:6px;font-weight:600">no ID</span>`:'';const hasBanCandidate=!isSelf&&(p.tournamentHeroes||[]).some(h=>{const{games}=resolveHeroStats(h);return keyPickScore(h)>=2.4&&games>=3;});const isConsole=document.documentElement.getAttribute('data-theme')==='console';return`<div class="player-card"><div class="player-card-top"><div class="player-meta"><div class="player-name">${p.name}${noId}</div>${rankBadgeHTML(p.rankMedal||'Unknown',p.rankLabel)}</div><div class="player-wr">${p.winrate!=null?`<div class="wr-number">${p.winrate}%</div><div class="wr-label">${isConsole?'PUB WR':'pub wr'}</div>${p.pubGamesTotal!=null?`<div class="wr-label" style="margin-top:2px">${p.pubGamesTotal} games (30d)</div>`:''}`:'<div class="wr-number" style="font-size:14px;color:var(--ink-4)">\u2014</div>'}</div></div><div class="hero-section"><div class="hero-section-label">${isConsole?'// ':''}CM picks (E-Sparven)${hasBanCandidate?`<span style="font-size:9px;color:var(--ban-high);margin-left:4px">\u25cf ban candidate</span>`:''}</div>${renderHeroRows(p.tournamentHeroes,true,isSelf)}</div><div class="hero-section"><div class="hero-section-label">${isConsole?'// ':''}Pub pool</div>${renderHeroRows(p.pubHeroes,false,isSelf)}</div>${form?`<div class="form-row"><div class="form-label">Form</div>${form}</div>`:''}${profileLinks(p.accountId)}</div>`;}
+function renderPlayerCard(p,isSelf){const form=(p.form||[]).map(r=>`<div class="form-pip ${r}">${r.toUpperCase()}</div>`).join('');const noId=!p.accountId?`<span style="font-size:9px;color:var(--ink-4);margin-left:6px;font-weight:600">no ID</span>`:'';const hasBanCandidate=!isSelf&&(p.tournamentHeroes||[]).some(h=>{const{games}=resolveHeroStats(h);return keyPickScore(h)>=2.4&&games>=3;});const isConsole=document.documentElement.getAttribute('data-theme')==='console';const privateBadge=p.privateProfile?`<div class="private-badge" title="Rank is visible but match history is hidden \u2014 OpenDota/Dotabuff can't see their games">\u26a0 Private profile</div>`:'';return`<div class="player-card${p.privateProfile?' private-profile':''}"><div class="player-card-top"><div class="player-meta"><div class="player-name">${p.name}${noId}</div>${rankBadgeHTML(p.rankMedal||'Unknown',p.rankLabel)}${privateBadge}</div><div class="player-wr">${p.winrate!=null?`<div class="wr-number">${p.winrate}%</div><div class="wr-label">${isConsole?'PUB WR':'pub wr'}</div>${p.pubGamesTotal!=null?`<div class="wr-label" style="margin-top:2px">${p.pubGamesTotal} games (30d)</div>`:''}`:'<div class="wr-number" style="font-size:14px;color:var(--ink-4)">\u2014</div>'}</div></div><div class="hero-section"><div class="hero-section-label">${isConsole?'// ':''}CM picks (E-Sparven)${hasBanCandidate?`<span style="font-size:9px;color:var(--ban-high);margin-left:4px">\u25cf ban candidate</span>`:''}</div>${renderHeroRows(p.tournamentHeroes,true,isSelf)}</div><div class="hero-section"><div class="hero-section-label">${isConsole?'// ':''}Pub pool</div>${renderHeroRows(p.pubHeroes,false,isSelf)}</div>${form?`<div class="form-row"><div class="form-label">Form</div>${form}</div>`:''}${profileLinks(p.accountId)}</div>`;}
 
 function renderHistory(history,currentSeasonId){if(!history||!history.length)return'';const isConsole=document.documentElement.getAttribute('data-theme')==='console';const filtered=history.filter(m=>{if(!currentSeasonOnly)return true;if(m.seasonId==null)return true;return m.seasonId===currentSeasonId;});const seasonLabel=currentSeasonOnly?' this season':'';const title=`${isConsole?'// ':''}Opponent's E-Sparven match history${seasonLabel}`;if(!filtered.length)return`<div class="page-section page-section-history history-section"><div class="section-title">${title}</div><div style="font-size:13px;color:var(--ink-4)">No games recorded${seasonLabel}.</div></div>`;const chipGroup=(picks,team)=>{const chips=(picks||[]).filter(pk=>pk.team===team).map(pk=>{const url=heroIconUrl(pk.heroName,pk.iconUrl);return`<span class="hero-chip"><div class="hero-chip-icon">${url?`<img src="${url}" alt="${pk.heroName}" loading="lazy">`:''}</div>${pk.heroName}</span>`;}).join('');return chips||'<span style="font-size:11px;color:var(--ink-4)">\u2014</span>';};const rows=filtered.map(m=>{const oppTeam=m.opponentTeam??null,oppWon=m.opponentWon??null;const resultBadge=oppWon===true?'<span class="result-badge win">W</span>':oppWon===false?'<span class="result-badge loss">L</span>':'';const sideLabel=t=>oppTeam===null?'':t===oppTeam?`<span style="font-size:9px;font-weight:700;letter-spacing:.05em;color:var(--upcoming);background:var(--upcoming-bg);padding:1px 5px;border-radius:${isConsole?'0':'3px'};margin-right:4px${isConsole?';font-family:Orbitron,monospace;letter-spacing:2px':''}">OPP</span>`:`<span style="font-size:9px;color:var(--ink-4);background:var(--line-2);padding:1px 5px;border-radius:${isConsole?'0':'3px'};margin-right:4px">vs</span>`;return`<tr><td class="mono">${m.duration||'\u2014'}</td><td>${resultBadge?`<span style="margin-right:6px">${resultBadge}</span>`:''}${sideLabel(0)}${chipGroup(m.picks,0)}</td><td>${sideLabel(1)}${chipGroup(m.picks,1)}</td><td class="mono" style="color:var(--ink-4)">${m.patch?`patch ${m.patch}`:''}</td><td style="white-space:nowrap"><a class="player-link" href="https://www.opendota.com/matches/${m.matchId}" target="_blank" rel="noopener noreferrer" style="font-size:10.5px;padding:2px 8px">Match</a></td></tr>`;}).join('');return`<div class="page-section page-section-history history-section"><div class="section-title">${title}</div><table class="history-table"><thead><tr><th>Duration</th><th>Radiant</th><th>Dire</th><th>Patch</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`;}
 
@@ -494,823 +506,35 @@ async function loadMatch(binId,meetingId,btn){document.querySelectorAll('.match-
 
 function _renderOurTeamPanel(data){const isConsole=document.documentElement.getAttribute('data-theme')==='console';const currentSeasonId=data.currentSeasonId??null;document.getElementById('main-panel').innerHTML=`<div class="match-header"><div class="match-title"><strong>Tornkn\u00e4ckarna</strong>${consoleCursor()}</div><div class="match-meta"><span>Dota 2 \u00b7 Captain\'s Mode \u00b7 E-Sparven</span></div><div class="notice notice-snapshot" style="margin-top:8px">Refreshed daily by the bot</div>${seasonToggleHTML()}</div>${data.draftTendencies?`<div class="page-section page-section-bans">${renderDraftTendencies(data.draftTendencies)}${renderMatchupStats(data.history,currentSeasonId)}</div>`:''}<div class="page-section page-section-roster"><div class="section-title" style="margin-bottom:16px">${isConsole?'// ':''}Our roster</div><div class="player-grid">${(data.players||[]).map(p=>renderPlayerCard(p,true)).join('')}</div></div>${renderHistory(data.history,currentSeasonId)}`;}
 
-function _renderMatchPanel(data,meetingId){const status=data.status||'upcoming';const badgeClass={upcoming:'badge-upcoming',win:'badge-win',loss:'badge-loss',tie:'badge-loss'}[status]||'badge-upcoming';const badgeText={upcoming:'Upcoming',win:'Win',loss:'Loss',tie:'Tie'}[status]||status;const notice=status==='upcoming'?`<div class="notice notice-live">Live data \u00b7 refreshed daily until match day</div>`:`<div class="notice notice-snapshot">Snapshot \u00b7 ${fmtDate(data.snapshotAt)}</div>`;const esparvenUrl=meetingId?`https://esparven.se/none/Meeting/Details/${meetingId}`:null;const isConsole=document.documentElement.getAttribute('data-theme')==='console';const currentSeasonId=data.currentSeasonId??null;document.getElementById('main-panel').innerHTML=`<div class="match-header"><div style="margin-bottom:10px"><span class="mi-badge ${badgeClass}" style="font-size:11px">${badgeText}</span></div><div class="match-title">vs <strong>${data.opponent}</strong>${consoleCursor()}</div><div class="match-meta"><span>${fmtDate(data.date)}</span><span>Dota 2 \u00b7 Captain\'s Mode</span>${esparvenUrl?`<a href="${esparvenUrl}" target="_blank" rel="noopener noreferrer" style="color:var(--accent);text-decoration:none;font-size:13px">E-Sparven</a>`:''}</div>${notice}${seasonToggleHTML()}</div>${renderDraftAssistantToggle(data)}${status==='upcoming'?`<div class="page-section page-section-bans">${renderBanSection(data.players||[])}${renderDraftTendencies(data.draftTendencies)}${renderMatchupStats(data.history,currentSeasonId)}</div>`:`<div class="page-section page-section-bans">${renderDraftTendencies(data.draftTendencies)}${renderMatchupStats(data.history,currentSeasonId)}</div>`}<div class="page-section page-section-roster"><div class="section-title" style="margin-bottom:16px">${isConsole?'// ':''}Opponent roster</div><div class="player-grid">${(data.players||[]).map(p=>renderPlayerCard(p,false)).join('')}</div></div>${renderHistory(data.history,currentSeasonId)}`;initDraftAssistant(data);}
+function _renderMatchPanel(data,meetingId){const status=data.status||'upcoming';const badgeClass={upcoming:'badge-upcoming',win:'badge-win',loss:'badge-loss',tie:'badge-loss'}[status]||'badge-upcoming';const badgeText={upcoming:'Upcoming',win:'Win',loss:'Loss',tie:'Tie'}[status]||status;const notice=status==='upcoming'?`<div class="notice notice-live">Live data \u00b7 refreshed daily until match day</div>`:`<div class="notice notice-snapshot">Snapshot \u00b7 ${fmtDate(data.snapshotAt)}</div>`;const esparvenUrl=meetingId?`https://esparven.se/none/Meeting/Details/${meetingId}`:null;const isConsole=document.documentElement.getAttribute('data-theme')==='console';const currentSeasonId=data.currentSeasonId??null;document.getElementById('main-panel').innerHTML=`<div class="match-header"><div style="margin-bottom:10px"><span class="mi-badge ${badgeClass}" style="font-size:11px">${badgeText}</span></div><div class="match-title">vs <strong>${data.opponent}</strong>${consoleCursor()}</div><div class="match-meta"><span>${fmtDate(data.date)}</span><span>Dota 2 \u00b7 Captain\'s Mode</span>${esparvenUrl?`<a href="${esparvenUrl}" target="_blank" rel="noopener noreferrer" style="color:var(--accent);text-decoration:none;font-size:13px">E-Sparven</a>`:''}</div>${notice}${seasonToggleHTML()}</div>${renderRivalryMeter(data.history)}${status==='upcoming'?`<div class="page-section page-section-bans">${renderBanSection(data.players||[])}${renderDraftTendencies(data.draftTendencies)}${renderMatchupStats(data.history,currentSeasonId)}</div>`:`<div class="page-section page-section-bans">${renderDraftTendencies(data.draftTendencies)}${renderMatchupStats(data.history,currentSeasonId)}</div>`}<div class="page-section page-section-roster"><div class="section-title" style="margin-bottom:16px">${isConsole?'// ':''}Opponent roster</div><div class="player-grid">${(data.players||[]).map(p=>renderPlayerCard(p,false)).join('')}</div></div>${renderHistory(data.history,currentSeasonId)}`;}
 
 
-// ══════════════════════════════════════════════════════════════════════════════
-// DRAFT ASSISTANT MODULE
-// ══════════════════════════════════════════════════════════════════════════════
-//
-// Collapsible panel attached to match panels.
-// Features:
-//   - Side selector (we are first pick / second pick)
-//   - 24-slot CM draft board in correct 7.34 order, colour-coded per team
-//   - Hero dropdowns with search, icons, per slot
-//   - Live counterpick suggestions per lane (safe/mid/off/soft/hard)
-//   - Scores by summing positive matchup WR contributions across all enemy picks
-//   - Pub pool weighting toggle (default ON) — reads our team gist pub heroes
-//   - Scouting ban suggestions pre-filled alongside our ban slots
-//   - Session-cached OpenDota matchup data and hero list
+// ── Hero icon map ────────────────────────────────────────────────────────────
+// Fetched once per session so heroIconUrl() can resolve icons for heroes not
+// present in the static HERO_SLUG table.
+const HERO_DATA = { heroList: null, heroIconMap: {} };
 
-// ── State ────────────────────────────────────────────────────────────────────
-const DA = {
-  open:          false,
-  weAreFirst:    true,    // true = we have first pick
-  pubWeighting:  true,    // default ON
-  slots:         Array(24).fill(null), // { heroName, heroId, isUs, isBan }
-  heroList:      null,    // fetched from OpenDota once
-  heroIconMap:   {},      // localized_name -> full CDN icon URL, built from heroList
-  matchupCache:  {},      // hero_id -> matchup array
-  heroBaseWRs:   null,    // hero_id -> global pub WR, from /api/heroStats
-  ourPubHeroes:  null,    // fetched from OUR_TEAM_GIST once per session
-  scoutData:     null,    // current match gist data
-  laneFilter:    null,    // null = all lanes, or 'safe','mid','off','soft','hard'
-  _suggGen:      0,       // generation counters — prevents stale async renders
-  _banGen:       0,
-};
-
-// ── CM draft sequence (7.34) ─────────────────────────────────────────────────
-// isFirst = true means this slot belongs to the first-pick team
-// isBan = true means this is a ban slot
-// phase label for display
-const CM_SLOTS = [
-  // Phase 1 bans (15s each) — 7 bans total: first=3, second=4
-  {idx:0,  isBan:true,  isFirst:true,  phase:'Ban phase 1', label:'Ban 1'},
-  {idx:1,  isBan:true,  isFirst:false, phase:'Ban phase 1', label:'Ban 1'},
-  {idx:2,  isBan:true,  isFirst:true,  phase:'Ban phase 1', label:'Ban 2'},
-  {idx:3,  isBan:true,  isFirst:false, phase:'Ban phase 1', label:'Ban 2'},
-  {idx:4,  isBan:true,  isFirst:true,  phase:'Ban phase 1', label:'Ban 3'},
-  {idx:5,  isBan:true,  isFirst:false, phase:'Ban phase 1', label:'Ban 3'},
-  {idx:6,  isBan:true,  isFirst:false, phase:'Ban phase 1', label:'Ban 4'},
-  // Phase 2 picks — 1 each
-  {idx:7,  isBan:false, isFirst:true,  phase:'Pick phase 1', label:'Pick 1'},
-  {idx:8,  isBan:false, isFirst:false, phase:'Pick phase 1', label:'Pick 1'},
-  // Phase 3 bans — first gets 2 consecutive, second gets 1
-  {idx:9,  isBan:true,  isFirst:true,  phase:'Ban phase 2', label:'Ban 4'},
-  {idx:10, isBan:true,  isFirst:true,  phase:'Ban phase 2', label:'Ban 5'},
-  {idx:11, isBan:true,  isFirst:false, phase:'Ban phase 2', label:'Ban 5'},
-  // Phase 4 picks — 1-2-2-1 alternating
-  {idx:12, isBan:false, isFirst:true,  phase:'Pick phase 2', label:'Pick 2'},
-  {idx:13, isBan:false, isFirst:false, phase:'Pick phase 2', label:'Pick 2'},
-  {idx:14, isBan:false, isFirst:false, phase:'Pick phase 2', label:'Pick 3'},
-  {idx:15, isBan:false, isFirst:true,  phase:'Pick phase 2', label:'Pick 3'},
-  {idx:16, isBan:false, isFirst:true,  phase:'Pick phase 2', label:'Pick 4'},
-  {idx:17, isBan:false, isFirst:false, phase:'Pick phase 2', label:'Pick 4'},
-  // Phase 5 bans — 2 each alternating
-  {idx:18, isBan:true,  isFirst:true,  phase:'Ban phase 3', label:'Ban 6'},
-  {idx:19, isBan:true,  isFirst:false, phase:'Ban phase 3', label:'Ban 6'},
-  {idx:20, isBan:true,  isFirst:true,  phase:'Ban phase 3', label:'Ban 7'},
-  {idx:21, isBan:true,  isFirst:false, phase:'Ban phase 3', label:'Ban 7'},
-  // Phase 6 picks — second pick gets last pick (counterpick advantage)
-  {idx:22, isBan:false, isFirst:false, phase:'Pick phase 3', label:'Pick 5'},
-  {idx:23, isBan:false, isFirst:true,  phase:'Pick phase 3', label:'Pick 5'},
-];
-
-// ── Hero role → lane mapping ─────────────────────────────────────────────────
-// Explicit position overrides; role-tag cascade is the fallback for unlisted heroes.
-const HERO_LANE_OVERRIDE = {
-  // Pos 1 — Carry
-  'Anti-Mage':'safe','Juggernaut':'safe','Phantom Assassin':'safe','Spectre':'safe',
-  'Faceless Void':'safe','Medusa':'safe','Terrorblade':'safe','Morphling':'safe',
-  'Drow Ranger':'safe','Gyrocopter':'safe','Luna':'safe','Naga Siren':'safe',
-  'Phantom Lancer':'safe','Lifestealer':'safe','Ursa':'safe','Wraith King':'safe',
-  'Troll Warlord':'safe','Alchemist':'safe','Arc Warden':'safe','Slark':'safe',
-  'Sniper':'safe','Weaver':'safe','Bloodseeker':'safe','Clinkz':'safe',
-  'Lone Druid':'safe','Chaos Knight':'safe',
-  // Pos 2 — Mid
-  'Invoker':'mid','Storm Spirit':'mid','Queen of Pain':'mid','Puck':'mid',
-  'Lina':'mid','Shadow Fiend':'mid','Templar Assassin':'mid','Viper':'mid',
-  'Dragon Knight':'mid','Ember Spirit':'mid','Void Spirit':'mid',
-  'Death Prophet':'mid','Razor':'mid','Tinker':'mid','Zeus':'mid',
-  'Outworld Destroyer':'mid','Leshrac':'mid','Huskar':'mid','Pugna':'mid',
-  'Muerta':'mid','Kez':'mid',
-  // Pos 3 — Off lane
-  'Axe':'off','Bristleback':'off','Centaur Warrunner':'off','Tidehunter':'off',
-  'Magnus':'off','Night Stalker':'off','Underlord':'off','Enigma':'off',
-  'Dark Seer':'off','Clockwerk':'off','Mars':'off','Doom':'off',
-  'Primal Beast':'off','Sand King':'off','Slardar':'off','Spirit Breaker':'off',
-  'Batrider':'off','Brewmaster':'off','Beastmaster':'off','Timbersaw':'off',
-  'Lycan':'off','Pangolier':'off','Elder Titan':'off','Broodmother':'off',
-  'Dawnbreaker':'off','Marci':'off',
-  // Pos 4 — Soft support
-  'Bounty Hunter':'soft','Tusk':'soft','Disruptor':'soft','Rubick':'soft',
-  'Earth Spirit':'soft','Shadow Demon':'soft','Vengeful Spirit':'soft',
-  'Skywrath Mage':'soft','Hoodwink':'soft','Snapfire':'soft','Warlock':'soft',
-  'Mirana':'soft','Windranger':'soft','Riki':'soft','Earthshaker':'soft',
-  'Pudge':'soft','Omniknight':'soft','Silencer':'soft',
-  // Pos 5 — Hard support
-  'Crystal Maiden':'hard','Witch Doctor':'hard','Lion':'hard',
-  'Keeper of the Light':'hard','Dazzle':'hard','Ancient Apparition':'hard',
-  'Io':'hard','Winter Wyvern':'hard','Abaddon':'hard','Lich':'hard',
-  'Bane':'hard','Oracle':'hard','Phoenix':'hard','Treant Protector':'hard',
-  'Grimstroke':'hard','Enchantress':'hard','Undying':'hard',
-  'Shadow Shaman':'hard','Jakiro':'hard','Ogre Magi':'hard','Ringmaster':'hard',
-};
-
-function heroToLane(h) {
-  const override = HERO_LANE_OVERRIDE[h.localized_name];
-  if (override) return override;
-  const roles = h.roles || [];
-  const has = r => roles.includes(r);
-  if (has('Support') && has('Healer')) return 'hard';
-  if (has('Support') && (has('Disabler') || has('Initiator') || has('Nuker') || has('Escape'))) return 'soft';
-  if (has('Support')) return 'hard';
-  if (has('Carry') && !has('Initiator')) return 'safe';
-  if ((has('Nuker') || has('Escape')) && !has('Durable') && !has('Initiator')) return 'mid';
-  if (has('Initiator') || has('Durable')) return 'off';
-  if (has('Carry')) return 'safe';
-  if (has('Pusher') || has('Jungler')) return 'off';
-  return 'mid';
-}
-
-const LANE_LABELS = {safe:'Carry · Pos 1',mid:'Mid · Pos 2',off:'Offlane · Pos 3',soft:'Soft support · Pos 4',hard:'Hard support · Pos 5'};
-const LANE_ORDER  = ['safe','mid','off','soft','hard'];
-
-// ── OpenDota fetchers ─────────────────────────────────────────────────────────
-async function daFetchHeroList() {
-  if (DA.heroList) return DA.heroList;
+async function fetchHeroList() {
+  if (HERO_DATA.heroList) return HERO_DATA.heroList;
   try {
     const r = await fetch('https://api.opendota.com/api/heroes');
-    DA.heroList = await r.json();
-    // Build name -> icon URL map for all heroes, including new ones not in HERO_SLUG
-    for (const h of DA.heroList) {
+    HERO_DATA.heroList = await r.json();
+    for (const h of HERO_DATA.heroList) {
       if (h.localized_name && h.icon) {
         const url = h.icon.startsWith('http')
           ? h.icon
           : `https://steamcdn-a.akamaihd.net${h.icon}`;
-        DA.heroIconMap[h.localized_name] = url;
+        HERO_DATA.heroIconMap[h.localized_name] = url;
       }
     }
   } catch(e) {
-    DA.heroList = [];
+    HERO_DATA.heroList = [];
   }
-  return DA.heroList;
-}
-
-async function daFetchMatchups(heroId) {
-  if (DA.matchupCache[heroId]) return DA.matchupCache[heroId];
-  try {
-    const r = await fetch(`https://api.opendota.com/api/heroes/${heroId}/matchups`);
-    const data = await r.json();
-    DA.matchupCache[heroId] = data;
-    return data;
-  } catch(e) {
-    return [];
-  }
-}
-
-async function daFetchOurPubHeroes() {
-  if (DA.ourPubHeroes !== null) return DA.ourPubHeroes;
-  if (!OUR_TEAM_GIST_ID) { DA.ourPubHeroes = []; return []; }
-  try {
-    const data = await fetchGist(OUR_TEAM_GIST_ID);
-    // Flatten all players' pubHeroes into [{playerName, heroName, games, wr}]
-    const list = [];
-    for (const p of (data.players || [])) {
-      for (const h of (p.pubHeroes || [])) {
-        list.push({playerName: p.name, heroName: h.name, games: h.games || 0, wr: h.wr || 0});
-      }
-    }
-    DA.ourPubHeroes = list;
-  } catch(e) {
-    DA.ourPubHeroes = [];
-  }
-  return DA.ourPubHeroes;
-}
-
-async function daFetchHeroBaseWRs() {
-  if (DA.heroBaseWRs !== null) return DA.heroBaseWRs;
-  try {
-    const r = await fetch('https://api.opendota.com/api/heroStats');
-    const data = await r.json();
-    const map = {};
-    for (const h of data) {
-      if (h.id && h.pub_pick) map[h.id] = h.pub_win / h.pub_pick;
-    }
-    DA.heroBaseWRs = map;
-  } catch(e) {
-    DA.heroBaseWRs = {};
-  }
-  return DA.heroBaseWRs;
-}
-
-// ── Scoring ───────────────────────────────────────────────────────────────────
-// Combined score = matchup quality × breadth multiplier × pool multiplier.
-//
-// matchup quality: sum of (WR advantage above global baseline × log(sample size))
-//   for each enemy pick this hero beats. Larger sample and bigger advantage = higher.
-//
-// breadth multiplier (×1.0–1.25): heroes that counter many enemies at once rank
-//   higher than those dominating just one. Fraction of enemies countered scales it.
-//
-// pool multiplier (×1.0–1.5): heroes that someone on our team plays with a good
-//   pub WR get a smooth boost. Best player's WR drives it — 50% → no bonus,
-//   70%+ → +50%. This keeps great counterpicks at the top even without pool heroes.
-function daScoreHero(candidateId, enemyMatchupSets, pubList, candidateName, baseWRs) {
-  const baseline = (baseWRs && baseWRs[candidateId]) || 0.50;
-  let matchupScore = 0;
-  let counteredEnemies = 0;
-  for (const matchups of enemyMatchupSets) {
-    const entry = matchups.find(m => m.hero_id === candidateId);
-    if (!entry || !entry.games_played) continue;
-    // OpenDota wins = queried hero's (enemy's) wins; invert to get candidate's WR vs enemy.
-    const wr = 1 - entry.wins / entry.games_played;
-    const advantage = wr - baseline;
-    if (advantage <= 0) continue;
-    matchupScore += advantage * Math.log(entry.games_played + 1);
-    counteredEnemies++;
-  }
-  if (!matchupScore) return 0;
-
-  // Breadth: fraction of enemy picks countered, scaled to [1.0, 1.25]
-  const breadth = counteredEnemies / Math.max(1, enemyMatchupSets.length);
-  matchupScore *= (1 + 0.25 * breadth);
-
-  // Pool: best player's WR with this hero gives a smooth [0, +50%] bonus
-  if (DA.pubWeighting && pubList.length) {
-    const playerEntries = pubList.filter(p => p.heroName === candidateName && p.games >= 10);
-    if (playerEntries.length) {
-      const bestWR = Math.max(...playerEntries.map(p => p.wr));
-      const poolBonus = Math.max(0, Math.min(0.5, (bestWR - 50) / 40));
-      matchupScore *= (1 + poolBonus);
-    }
-  }
-
-  return matchupScore;
-}
-
-// ── Render toggle button ──────────────────────────────────────────────────────
-function renderDraftAssistantToggle(data) {
-  const isConsole = document.documentElement.getAttribute('data-theme') === 'console';
-  return `<div id="da-toggle-wrap" style="margin-bottom:28px">
-    <button onclick="toggleDraftAssistant()" id="da-toggle-btn" style="
-      display:block;width:100%;
-      background:var(--surface);
-      border:1px solid var(--accent);
-      border-radius:var(--radius);
-      cursor:pointer;font-family:inherit;
-      font-size:12px;font-weight:600;letter-spacing:.06em;
-      color:var(--accent);
-      padding:12px 24px;
-      transition:background var(--tr),color var(--tr),border-color var(--tr);
-      ${isConsole?'border-radius:0;font-family:Orbitron,monospace;font-size:9px;letter-spacing:3px;':''}
-    ">
-      ⚔ Draft assistant
-    </button>
-  </div>
-  <div id="da-panel" style="display:none"></div>`;
-}
-
-function toggleDraftAssistant() {
-  DA.open = !DA.open;
-  const panel = document.getElementById('da-panel');
-  const btn   = document.querySelector('#da-toggle-wrap button');
-  if (!panel) return;
-  if (DA.open) {
-    panel.style.display = 'block';
-    if (btn) {
-      btn.textContent = '✕ Close draft assistant';
-      btn.style.background = 'var(--accent)';
-      btn.style.color = '#fff';
-      btn.style.borderColor = 'var(--accent)';
-    }
-    renderDraftBoard();
-    daUpdateBanHints();
-    daUpdateSuggestions();
-  } else {
-    panel.style.display = 'none';
-    if (btn) {
-      btn.textContent = '⚔ Draft assistant';
-      btn.style.background = 'var(--surface)';
-      btn.style.color = 'var(--accent)';
-      btn.style.borderColor = 'var(--accent)';
-    }
-    // Reset state on close
-    DA.slots = Array(24).fill(null);
-    DA.weAreFirst = true;
-    DA.pubWeighting = true;
-    DA.laneFilter = null;
-  }
-}
-
-function initDraftAssistant(data) {
-  DA.scoutData = data;
-  DA.slots = Array(24).fill(null);
-  DA.open = false;
-}
-
-// ── Draft board renderer ──────────────────────────────────────────────────────
-function renderDraftBoard() {
-  const panel = document.getElementById('da-panel');
-  if (!panel) return;
-  const isConsole = document.documentElement.getAttribute('data-theme') === 'console';
-
-  // Group slots by phase for display
-  const phases = {};
-  for (const slot of CM_SLOTS) {
-    if (!phases[slot.phase]) phases[slot.phase] = [];
-    phases[slot.phase].push(slot);
-  }
-
-  const isUs = slot => DA.weAreFirst ? slot.isFirst : !slot.isFirst;
-  const usColor   = 'var(--win)';
-  const themColor = 'var(--loss)';
-
-  let phasesHtml = '';
-  for (const [phaseName, slots] of Object.entries(phases)) {
-    const isBanPhase = slots[0].isBan;
-    phasesHtml += `<div style="margin-bottom:16px">
-      <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-4);margin-bottom:8px;${isConsole?'font-family:Orbitron,monospace;':''}">
-        ${phaseName}
-      </div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap">
-        ${slots.map(slot => {
-          const us = isUs(slot);
-          const color = us ? usColor : themColor;
-          const teamLabel = us ? 'US' : 'OPP';
-          const filled = DA.slots[slot.idx];
-          const iconHtml = filled
-            ? (() => {
-                const url = heroIconUrl(filled.heroName, '');
-                return url ? `<img src="${url}" alt="${filled.heroName}" style="width:24px;height:24px;border-radius:3px;object-fit:cover;flex-shrink:0">` : '';
-              })()
-            : '';
-
-          const suggHtml = `<span id="da-hint-${slot.idx}"></span>`;
-
-          return `<div style="position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;width:58px">
-            <div style="font-size:8px;font-weight:700;color:${color};letter-spacing:.05em;${isConsole?'font-family:Orbitron,monospace;':''}">
-              ${teamLabel}
-            </div>
-            <div onclick="daCycleSlot(${slot.idx},event)" style="
-              width:54px;height:54px;border-radius:${isConsole?'0':'8px'};
-              border:2px solid ${filled ? color : 'var(--line)'};
-              background:${filled ? (slot.isBan ? 'rgba(0,0,0,0.4)' : 'var(--surface)') : 'var(--line-2)'};
-              display:flex;align-items:center;justify-content:center;
-              cursor:pointer;position:relative;
-              ${slot.isBan && filled ? 'opacity:0.6;' : ''}
-              transition:border-color .15s;
-            " title="${slot.label} — click to set hero">
-              ${iconHtml || `<span style="font-size:9px;color:var(--ink-4)">${slot.isBan?'BAN':'PICK'}</span>`}
-              ${suggHtml}
-            </div>
-            <div style="font-size:8px;color:var(--ink-4);text-align:center;line-height:1.2;max-width:54px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-              ${filled ? filled.heroName : slot.label}
-            </div>
-          </div>`;
-        }).join('')}
-      </div>
-    </div>`;
-  }
-
-  const _intelPatterns = (DA.scoutData?.draftTendencies?.orderPatterns || []).filter(p => p.pct >= 40).slice(0, 5);
-  const intelHTML = _intelPatterns.length
-    ? '<div style="margin-bottom:16px;padding:10px 12px;background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:var(--radius)">'
-      + '<div style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:8px' + (isConsole?';font-family:Orbitron,monospace':'') + '">⚠ Scouting intel — opponent tendencies</div>'
-      + '<div style="display:flex;gap:6px;flex-wrap:wrap">'
-      + _intelPatterns.map(p => {
-          const url = heroIconUrl(p.hero, p.iconUrl || '');
-          const col = p.isPick ? 'var(--win)' : 'var(--loss)';
-          return '<div style="display:flex;align-items:center;gap:5px;padding:4px 8px;background:var(--line-2);border:1px solid var(--line);border-left:2px solid ' + col + ';border-radius:4px">'
-            + '<span style="font-size:9px;color:var(--ink-4);text-transform:uppercase;white-space:nowrap;margin-right:2px">' + p.label + '</span>'
-            + (url ? '<img src="' + url + '" style="width:16px;height:16px;border-radius:2px;object-fit:cover">' : '')
-            + '<span style="font-size:12px;color:var(--ink);font-weight:600;margin-left:3px">' + p.hero + '</span>'
-            + '<span style="font-size:10px;color:' + col + ';font-family:var(--mono);margin-left:4px">' + p.pct + '%</span></div>';
-        }).join('')
-      + '</div></div>'
-    : '';
-
-  panel.innerHTML = `<div class="page-section page-section-bans" style="margin-top:0;border-top:none;border-radius:0 0 14px 14px">
-    <!-- Controls -->
-    <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--line)">
-      <div>
-        <div style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-4);margin-bottom:6px;${isConsole?'font-family:Orbitron,monospace;':''}">Our side</div>
-        <div style="display:inline-flex;border:1px solid var(--line);border-radius:var(--radius-sm);overflow:hidden;background:var(--line-2)">
-          <button class="season-toggle-btn${DA.weAreFirst?' active':''}" onclick="daSetSide(true)">First pick</button>
-          <div class="season-divider"></div>
-          <button class="season-toggle-btn${!DA.weAreFirst?' active':''}" onclick="daSetSide(false)">Second pick</button>
-        </div>
-      </div>
-      <div>
-        <div style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-4);margin-bottom:6px;${isConsole?'font-family:Orbitron,monospace;':''}">Suggestions</div>
-        <div style="display:inline-flex;border:1px solid var(--line);border-radius:var(--radius-sm);overflow:hidden;background:var(--line-2)">
-          <button class="season-toggle-btn da-weight-btn${DA.pubWeighting?' active':''}" data-weight="on" onclick="daSetWeighting(true)">Our pool</button>
-          <div class="season-divider"></div>
-          <button class="season-toggle-btn da-weight-btn${!DA.pubWeighting?' active':''}" data-weight="off" onclick="daSetWeighting(false)">General</button>
-        </div>
-      </div>
-      <div style="margin-left:auto">
-        <button onclick="daClearAll()" style="background:none;border:1px solid var(--line);border-radius:var(--radius-sm);cursor:pointer;font-family:inherit;font-size:10px;color:var(--ink-4);padding:5px 12px">Clear draft</button>
-      </div>
-    </div>
-
-    ${intelHTML}
-    <!-- Draft board -->
-    <div style="margin-bottom:24px">
-      <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-4);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--line);${isConsole?'font-family:Orbitron,monospace;':''}">
-        Draft board — <span style="color:var(--win)">■ Us</span> &nbsp; <span style="color:var(--loss)">■ Them</span> &nbsp; <span style="color:var(--ink-4);font-weight:400;font-size:9px">Click a slot to assign a hero</span>
-      </div>
-      ${phasesHtml}
-    </div>
-
-    <!-- Hero picker modal (inline) -->
-    <div id="da-picker" style="display:none;margin-bottom:20px;padding:16px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius)">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-        <input id="da-search" type="text" placeholder="Search hero…" oninput="daFilterHeroes()" style="flex:1;background:var(--line-2);border:1px solid var(--line);border-radius:6px;color:var(--ink);font-size:13px;padding:7px 12px;font-family:inherit;outline:none">
-        <button onclick="daClosePicker()" style="background:none;border:none;color:var(--ink-4);cursor:pointer;font-size:18px;padding:0 4px">\u00d7</button>
-      </div>
-      <div id="da-hero-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(56px,1fr));gap:6px;max-height:260px;overflow-y:auto"></div>
-    </div>
-
-    <!-- Suggestions -->
-    <div id="da-suggestions">
-      <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-4);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--line);${isConsole?'font-family:Orbitron,monospace;':''}">
-        Counterpick suggestions
-      </div>
-      <div style="font-size:12px;color:var(--ink-4)">Add enemy picks to the draft board to see counterpick suggestions.</div>
-    </div>
-  </div>
-
-  <!-- Hero picker slot state -->`;
-}
-
-// ── Picker ────────────────────────────────────────────────────────────────────
-let _daActiveSlot = null;
-
-function daCycleSlot(idx, event) {
-  event.stopPropagation();
-  _daActiveSlot = idx;
-  const picker = document.getElementById('da-picker');
-  if (!picker) return;
-  picker.style.display = 'block';
-  const search = document.getElementById('da-search');
-  if (search) { search.value = ''; search.focus(); }
-  daFilterHeroes();
-}
-
-function daClosePicker() {
-  _daActiveSlot = null;
-  const picker = document.getElementById('da-picker');
-  if (picker) picker.style.display = 'none';
-}
-
-function daFilterHeroes() {
-  const grid = document.getElementById('da-hero-grid');
-  const search = document.getElementById('da-search');
-  if (!grid || !DA.heroList) {
-    if (grid) grid.innerHTML = '<div style="font-size:12px;color:var(--ink-4)">Loading heroes…</div>';
-    daFetchHeroList().then(() => daFilterHeroes());
-    return;
-  }
-  const q = (search ? search.value : '').toLowerCase();
-  const taken = new Set(DA.slots.filter(Boolean).map(s => s.heroName));
-
-  const filtered = [...DA.heroList]
-    .filter(h => h.localized_name.toLowerCase().includes(q))
-    .sort((a, b) => a.localized_name.localeCompare(b.localized_name));
-
-  grid.innerHTML = filtered.map(h => {
-    const url = heroIconUrl(h.localized_name, '');
-    const isTaken = taken.has(h.localized_name);
-    return `<div onclick="${isTaken?'':'daSelectHero('+h.id+')'}" title="${h.localized_name}${isTaken?' (in draft)':''}" style="
-      display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px;
-      border-radius:6px;cursor:${isTaken?'not-allowed':'pointer'};
-      opacity:${isTaken?'0.3':'1'};
-      background:var(--line-2);
-      border:1px solid var(--line);
-      transition:background .12s;
-    " onmouseover="if(!${isTaken})this.style.background='var(--line)'" onmouseout="this.style.background='var(--line-2)'">
-      ${url?`<img src="${url}" style="width:32px;height:32px;border-radius:4px;object-fit:cover">` : '<div style="width:32px;height:32px;background:var(--line);border-radius:4px"></div>'}
-      <div style="font-size:8px;color:var(--ink-3);text-align:center;max-width:52px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${h.localized_name}</div>
-    </div>`;
-  }).join('');
-}
-
-function daSelectHero(heroId) {
-  if (_daActiveSlot === null || !DA.heroList) return;
-  const hero = DA.heroList.find(h => h.id === heroId);
-  if (!hero) return;
-  const slot = CM_SLOTS[_daActiveSlot];
-  const isUs = DA.weAreFirst ? slot.isFirst : !slot.isFirst;
-  DA.slots[_daActiveSlot] = { heroName: hero.localized_name, heroId, isUs, isBan: slot.isBan };
-  daClosePicker();
-  renderDraftBoard();
-  daUpdateBanHints();
-  daUpdateSuggestions();
-}
-
-function daClearAll() {
-  DA.slots = Array(24).fill(null);
-  renderDraftBoard();
-  daUpdateBanHints();
-  daUpdateSuggestions();
-}
-
-function daSetSide(isFirst) {
-  DA.weAreFirst = isFirst;
-  renderDraftBoard();
-  daUpdateBanHints();
-  daUpdateSuggestions();
-}
-
-function daSetLaneFilter(lane) {
-  DA.laneFilter = lane;
-  daUpdateSuggestions();
-}
-
-function daSetWeighting(on) {
-  DA.pubWeighting = on;
-  // Update button active states without full re-render
-  const panel = document.getElementById('da-panel');
-  if (panel) {
-    panel.querySelectorAll('.da-weight-btn').forEach(btn => {
-      const wantsOn = btn.dataset.weight === 'on';
-      btn.classList.toggle('active', wantsOn === on);
-    });
-  }
-  daUpdateSuggestions();
-}
-
-// ── Suggestions ───────────────────────────────────────────────────────────────
-async function daUpdateSuggestions() {
-  const el = document.getElementById('da-suggestions');
-  if (!el) return;
-
-  const gen = ++DA._suggGen;
-
-  const isConsole = document.documentElement.getAttribute('data-theme') === 'console';
-
-  // Enemy picks = slots assigned to opponent that are picks (not bans)
-  const enemyPicks = DA.slots.filter(s => s && !s.isUs && !s.isBan);
-  // Our picks already chosen = remove from suggestions
-  const ourPicks   = new Set(DA.slots.filter(s => s && s.isUs && !s.isBan).map(s => s.heroName));
-  // All taken heroes (both sides, picks + bans)
-  const taken      = new Set(DA.slots.filter(Boolean).map(s => s.heroName));
-
-  if (!enemyPicks.length) {
-    el.innerHTML = `<div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-4);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--line);${isConsole?'font-family:Orbitron,monospace;':''}">Counterpick suggestions</div><div style="font-size:12px;color:var(--ink-4)">Add enemy picks to the draft board to see counterpick suggestions.</div>`;
-    return;
-  }
-
-  el.innerHTML = `<div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-4);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--line);${isConsole?'font-family:Orbitron,monospace;':''}">Counterpick suggestions</div><div style="font-size:12px;color:var(--ink-4);padding:8px 0">Calculating\u2026</div>`;
-
-  // Fetch hero list, pub heroes, and base WRs in parallel; then all matchups in parallel
-  const [heroes, pubList, baseWRs] = await Promise.all([
-    daFetchHeroList(),
-    DA.pubWeighting ? daFetchOurPubHeroes() : Promise.resolve([]),
-    daFetchHeroBaseWRs(),
-  ]);
-  if (gen !== DA._suggGen) return;
-
-  if (!heroes.length) {
-    el.innerHTML += '<div style="color:var(--loss);font-size:12px">Could not load hero data.</div>';
-    return;
-  }
-
-  // Fetch matchups for all enemy picks in parallel — keyed by heroId so indices never drift
-  const enemyMatchupMap = {}; // heroId -> matchup array
-  await Promise.all(enemyPicks.map(async ep => {
-    const matchups = await daFetchMatchups(ep.heroId);
-    if (matchups.length) enemyMatchupMap[ep.heroId] = matchups;
-  }));
-  if (gen !== DA._suggGen) return;
-
-  const enemyMatchupSets = Object.values(enemyMatchupMap);
-
-  if (!enemyMatchupSets.length) {
-    el.innerHTML = '<div style="font-size:12px;color:var(--ink-4)">Could not fetch matchup data.</div>';
-    return;
-  }
-
-  // Score all non-taken heroes
-  const scored = heroes
-    .filter(h => !taken.has(h.localized_name))
-    .map(h => ({
-      hero: h,
-      score: daScoreHero(h.id, enemyMatchupSets, pubList, h.localized_name, baseWRs),
-      lane: heroToLane(h),
-      pubPlayers: pubList.filter(p => p.heroName === h.localized_name && p.games >= 10),
-      counters: enemyPicks.filter(ep => {
-        const set = enemyMatchupMap[ep.heroId];
-        if (!set) return false;
-        const entry = set.find(m => m.hero_id === h.id);
-        if (!entry || !entry.games_played) return false;
-        // wins = enemy's wins; invert to get candidate's WR vs this enemy pick.
-        return (1 - entry.wins / entry.games_played) > ((baseWRs[h.id] || 0.50) + 0.01);
-      }).map(ep => ep.heroName),
-    }))
-    .filter(s => s.score > 0)
-    .sort((a, b) => b.score - a.score);
-
-  const maxScore = scored[0]?.score || 1;
-
-  // Pool multiplier is already baked into score — just sort and show.
-  const pool = scored;
-
-  // Apply lane filter
-  const visible = DA.laneFilter
-    ? pool.filter(s => s.lane === DA.laneFilter)
-    : pool;
-
-  const top = visible.slice(0, 5);
-
-  // Lane filter buttons
-  const laneFilterHTML = () => {
-    const btn = (lane, label) => {
-      const active = DA.laneFilter === lane;
-      return `<button onclick="daSetLaneFilter(${lane?`'${lane}'`:'null'})" style="
-        background:${active?'var(--accent)':'var(--line-2)'};
-        color:${active?'#fff':'var(--ink-3)'};
-        border:1px solid ${active?'var(--accent)':'var(--line)'};
-        border-radius:var(--radius-sm);
-        cursor:pointer;font-family:inherit;
-        font-size:10px;font-weight:600;letter-spacing:.04em;
-        padding:4px 10px;white-space:nowrap;
-        transition:background .12s,color .12s;
-      ">${label}</button>`;
-    };
-    return `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;align-items:center">
-      <span style="font-size:10px;color:var(--ink-4);flex-shrink:0">Lane:</span>
-      ${btn(null,      'All')}
-      ${btn('safe',    'Safe')}
-      ${btn('mid',     'Mid')}
-      ${btn('off',     'Off')}
-      ${btn('soft',    'Soft supp')}
-      ${btn('hard',    'Hard supp')}
-    </div>`;
-  };
-
-  // Enemy picks chips
-  const enemySummary = enemyPicks.map(ep => {
-    const url = heroIconUrl(ep.heroName, '');
-    return `<span style="display:inline-flex;align-items:center;gap:4px;background:var(--loss-bg);border:1px solid var(--loss);border-radius:4px;padding:2px 7px 2px 3px;font-size:11px;color:var(--loss)">
-      ${url?`<img src="${url}" style="width:16px;height:16px;border-radius:2px;object-fit:cover">`:''}
-      ${ep.heroName}
-    </span>`;
-  }).join('');
-
-  // Suggestion cards
-  const suggCard = (s, rank) => {
-    const url = heroIconUrl(s.hero.localized_name, '');
-    const barW = Math.round((s.score / maxScore) * 100);
-    const laneLabel = LANE_LABELS[s.lane] || s.lane;
-    const counterText = s.counters.length ? s.counters.join(', ') : '';
-    const playerText  = s.pubPlayers.length
-      ? s.pubPlayers.map(p => `${p.playerName} · ${p.games}g ${p.wr}%`).join('  ·  ')
-      : '';
-    const inPool = s.pubPlayers.length > 0;
-
-    return `<div style="
-      display:flex;align-items:center;gap:12px;
-      padding:12px 14px;
-      background:var(--surface);
-      border:1px solid ${inPool && DA.pubWeighting ? 'var(--win)' : 'var(--line)'};
-      border-left:3px solid ${inPool && DA.pubWeighting ? 'var(--win)' : 'var(--line)'};
-      border-radius:${isConsole?'0':'8px'};
-      margin-bottom:8px;
-    ">
-      <div style="font-size:11px;font-weight:700;color:var(--ink-4);width:18px;text-align:center;flex-shrink:0">${rank}</div>
-      ${url
-        ? `<img src="${url}" style="width:40px;height:40px;border-radius:6px;object-fit:cover;flex-shrink:0">`
-        : `<div style="width:40px;height:40px;background:var(--line-2);border-radius:6px;flex-shrink:0"></div>`}
-      <div style="flex:1;min-width:0">
-        <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:4px">
-          <span style="font-size:14px;font-weight:600;color:var(--ink)">${s.hero.localized_name}</span>
-          <span style="font-size:10px;color:var(--ink-4);background:var(--line-2);padding:1px 6px;border-radius:3px">${laneLabel}</span>
-          ${inPool && DA.pubWeighting ? `<span style="font-size:10px;color:var(--win)">In our pool</span>` : ''}
-        </div>
-        <div style="height:3px;background:var(--line);border-radius:2px;margin-bottom:6px;overflow:hidden">
-          <div style="height:3px;width:${barW}%;background:var(--win);border-radius:2px"></div>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:2px">
-          ${counterText ? `<div style="font-size:11px;color:var(--win)">✓ Counters: ${counterText}</div>` : ''}
-          ${playerText  ? `<div style="font-size:11px;color:var(--ink-3)">${playerText}</div>` : ''}
-        </div>
-      </div>
-    </div>`;
-  };
-
-  let html = `
-    <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-4);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--line);${isConsole?'font-family:Orbitron,monospace;':''}">
-      Counterpick suggestions
-    </div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
-      <span style="font-size:10px;color:var(--ink-4);flex-shrink:0">Against:</span>
-      ${enemySummary}
-    </div>
-    ${laneFilterHTML()}
-    ${top.length
-      ? top.map((s, i) => suggCard(s, i + 1)).join('')
-      : `<div style="font-size:12px;color:var(--ink-4)">No suggestions for this filter — try a different lane or add more enemy picks.</div>`}
-  `;
-
-  if (gen !== DA._suggGen) return;
-  el.innerHTML = html;
-}
-
-// ── Ban suggestions from scouting data ────────────────────────────────────────────
-// Base score: keyPickScore from opponent CM history (games, WR, delta vs pub).
-// Counter-threat bonus: for each of our revealed picks, fetch matchup data.
-//   Any hero in the opponent pool that beats our pick gets a bonus proportional
-//   to how far above 50% its win rate is against that pick. The more of our picks
-//   it threatens, the higher it scores as a ban priority.
-// Already-taken heroes are always filtered out regardless.
-
-async function _daBanSuggestions() {
-  if (!DA.scoutData) return [];
-
-  const taken = new Set(DA.slots.filter(Boolean).map(s => s.heroName));
-  const ourPicks = DA.slots.filter(s => s && s.isUs && !s.isBan);
-
-  // Build base candidates from opponent CM history
-  const baseMap = {};
-  for (const p of (DA.scoutData.players || [])) {
-    for (const h of (p.tournamentHeroes || [])) {
-      const score = keyPickScore(h);
-      if (!score) continue;
-      if (!baseMap[h.name] || score > baseMap[h.name].score) {
-        baseMap[h.name] = { name: h.name, iconUrl: h.iconUrl || '', score };
-      }
-    }
-  }
-
-  // Counter-threat bonus: fetch matchup data for all revealed picks in parallel.
-  // Heroes that counter our picks get a score boost; unscouted counters are merged in.
-  const extThreats = {};
-  if (ourPicks.length) {
-    const [heroes, baseWRs] = await Promise.all([daFetchHeroList(), daFetchHeroBaseWRs()]);
-
-    // Pre-fetch all matchups in parallel, then process from cache
-    const ourPicksWithHeroes = ourPicks
-      .map(p => ({ pick: p, hero: heroes.find(h => h.localized_name === p.heroName) }))
-      .filter(p => p.hero);
-    await Promise.all(ourPicksWithHeroes.map(p => daFetchMatchups(p.hero.id)));
-
-    for (const { hero: ourHero } of ourPicksWithHeroes) {
-      const matchups = DA.matchupCache[ourHero.id] || [];
-      for (const m of matchups) {
-        if (!m.games_played) continue;
-        // wins = our hero's wins against opponent m; invert to get opponent's WR vs our pick.
-        const theirWR = 1 - m.wins / m.games_played;
-        const baseline = baseWRs[m.hero_id] || 0.50;
-        const advantage = theirWR - baseline;
-        if (advantage <= 0.005) continue;
-        const threatHero = heroes.find(h => h.id === m.hero_id);
-        if (!threatHero) continue;
-        const threatName = threatHero.localized_name;
-        if (baseMap[threatName]) {
-          baseMap[threatName].score += advantage * 1.5;
-        } else {
-          if (!extThreats[threatName]) {
-            extThreats[threatName] = { name: threatName, score: 0, iconUrl: DA.heroIconMap[threatName] || '', external: true };
-          }
-          extThreats[threatName].score += advantage * 1.5;
-        }
-      }
-    }
-  }
-
-  // Merge scouted heroes and external threats, sort by score, deduplicate
-  const allCandidates = [
-    ...Object.values(baseMap),
-    ...Object.values(extThreats).filter(c => c.score > 0.01),
-  ];
-  const seen = new Set();
-  return allCandidates
-    .filter(c => !taken.has(c.name))
-    .sort((a, b) => b.score - a.score)
-    .filter(c => { if (seen.has(c.name)) return false; seen.add(c.name); return true; });
-}
-
-// Fills ban hint ghost icons into pre-rendered slot containers after async scoring
-async function daUpdateBanHints() {
-  const gen = ++DA._banGen;
-  const suggestions = await _daBanSuggestions();
-  if (gen !== DA._banGen) return;
-  const isUs = slot => DA.weAreFirst ? slot.isFirst : !slot.isFirst;
-  let hintIdx = 0;
-  for (const slot of CM_SLOTS) {
-    if (!slot.isBan || !isUs(slot)) continue;
-    const el = document.getElementById('da-hint-' + slot.idx);
-    if (!el) continue;
-    const filled = DA.slots[slot.idx];
-    if (filled) { el.innerHTML = ''; continue; }
-    const suggestion = suggestions[hintIdx++];
-    if (suggestion) {
-      const url = heroIconUrl(suggestion.name, suggestion.iconUrl || '');
-      const tipPrefix = suggestion.external ? 'Unscouted counter: ' : 'Suggested ban: ';
-      el.innerHTML = url
-        ? '<img src="' + url + '" alt="' + suggestion.name + '" title="' + tipPrefix + suggestion.name + '" style="width:16px;height:16px;border-radius:2px;opacity:0.5;position:absolute;bottom:2px;right:2px">'
-        : '';
-    } else {
-      el.innerHTML = '';
-    }
-  }
+  return HERO_DATA.heroList;
 }
 
 // ── Debug mode (Shift+B) ─────────────────────────────────────────────────────────────
 // No API calls are made to generate the debug panel.
-// OpenDota matchup calls will still fire if you use the draft assistant.
 
 (function() {
   const DEBUG_HEROES = [
@@ -1384,12 +608,13 @@ async function daUpdateBanHints() {
       const bans = pick(DEBUG_HEROES.filter(h => !picks.find(p => p.heroName === h)), 14)
         .map((heroName, j) => ({ heroName, iconUrl: '', team: j % 2 }));
       history.push({
-        matchId:      String(rnd(7000000000, 7999999999)),
+        matchId:      String(7000000000 + i),
         duration:     `${rnd(28, 55)}:${String(rnd(0,59)).padStart(2,'0')}`,
         patch:        '7.37',
         seasonId:     67,
         opponentTeam: oppTeam,
         opponentWon:  oppWon,
+        vsUs:         true,
         picks,
         bans,
       });
@@ -1456,7 +681,7 @@ async function daUpdateBanHints() {
     // Deselect sidebar items
     document.querySelectorAll('.match-item').forEach(el => el.classList.remove('active'));
 
-    // Cache the fake data so the season toggle and draft assistant work
+    // Cache the fake data so the season toggle works
     _currentMatchData    = { ...data };
     _currentMatchContext = { meetingId: 'DEBUG', isSelf: false };
 
@@ -1474,7 +699,7 @@ async function daUpdateBanHints() {
   // Shift+B listener
   document.addEventListener('keydown', e => {
     if (e.shiftKey && e.key === 'B' && !e.ctrlKey && !e.altKey && !e.metaKey) {
-      // Don't fire if focus is in a text input (e.g. the hero search box)
+      // Don't fire if focus is in a text input
       const tag = document.activeElement?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA') return;
       activateDebug();
@@ -1484,7 +709,7 @@ async function daUpdateBanHints() {
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
 (async()=>{// Fetch hero icon map and index gist in parallel
-daFetchHeroList();// fire-and-forget — populates DA.heroIconMap before panels render
+fetchHeroList();// fire-and-forget — populates HERO_DATA.heroIconMap before panels render
 let index;try{index=await fetchGist(INDEX_GIST_ID);}catch(e){document.getElementById('sidebar-content').innerHTML=`<div style="padding:20px 22px;color:var(--loss);font-size:13px">Failed to load index: ${e.message}</div>`;return;}const matches=index.matches||[];const tickerSnippets=index.tickerSnippets||[];buildSidebar(matches,tickerSnippets);const first=matches.find(m=>m.status==='upcoming')||[...matches].reverse().find(m=>m.status!=='upcoming');if(first)loadMatch(first.gistId,first.meetingId||'',document.querySelector(`[data-bin="${first.gistId}"]`));})();
 </script>
 </body>
