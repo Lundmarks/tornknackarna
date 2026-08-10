@@ -1,4 +1,4 @@
-"""
+""" 
 bot.py - Tornknäckarna scouting bot (all-seasons update)
 See inline comments for what changed vs previous version.
 """
