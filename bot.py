@@ -18,6 +18,7 @@ from rich.console import Console
 from rich.logging import RichHandler
 from rich.theme import Theme
 
+import discord_events
 import opendota
 import player_map
 import steam
@@ -61,6 +62,14 @@ OUR_TEAM_ID    = ESPARVEN_TEAM_ID
 COMPETITION    = "dota2cm"
 RUN_TIMES      = [t.strip() for t in os.environ.get("RUN_TIMES", "06:00,14:00,22:00").split(",")]
 OPENDOTA_DELAY = 2.5
+
+# Discord scheduled events: create one once a match is this many days out or
+# closer. "or closer" (<=, not ==) matters because meetings are sometimes
+# first synced by E-Sparven with fewer than this many days left already --
+# see discord_events.py for the creation call and the dedup flag
+# (state["meetings"][id]["discord_event_id"]) that keeps this idempotent
+# across daily runs.
+DISCORD_EVENT_WINDOW_DAYS = 12
 
 
 def load_state() -> dict:
@@ -208,6 +217,16 @@ def run(skip_opendota: bool = False):
                 top_bans=_top_bans_for_embed(scout.get("players", [])),
             )
 
+        # Discord scheduled event -- create once the match enters the
+        # DISCORD_EVENT_WINDOW_DAYS window, then keep its time in sync with
+        # E-Sparven on every later run (reschedule handling); never deletes.
+        # State is saved once at the end of run(), not here.
+        # AGENT-RESUME: this whole block is untested against a real Discord
+        # bot/guild -- see discord_events.py's module docstring for the exact
+        # checklist to run through once DISCORD_BOT_TOKEN/DISCORD_GUILD_ID
+        # exist in .env.
+        _sync_discord_event(esp, state, meeting_id, opponent_name, opponent_id, meeting_date)
+
         index_entries.append({
             "meetingId": meeting_id,
             "gistId":     bin_id,
@@ -262,6 +281,112 @@ def run(skip_opendota: bool = False):
     our_bin = state.get("our_team_bin_id")
     if our_bin:
         console.print(f"[yellow]Set in index.html:[/] [bold]OUR_TEAM_GIST_ID = '{our_bin}'[/]\n")
+
+
+def _sync_discord_event(
+    esp: EsparvenClient,
+    state: dict,
+    meeting_id: int,
+    opponent_name: str,
+    opponent_id: int,
+    meeting_date: str,
+) -> None:
+    """
+    Create OR reschedule the Discord scheduled event for `meeting_id`.
+    Mutates state["meetings"][str(meeting_id)] in place; caller saves state.
+
+    Three cases, in order:
+      1. No event yet, still >DISCORD_EVENT_WINDOW_DAYS out -> no-op.
+      2. No event yet, <=DISCORD_EVENT_WINDOW_DAYS out -> create one, and
+         record the matchDate string we created it with.
+      3. Event already exists -> compare E-Sparven's current matchDate
+         against the one we stored when we last created/updated the event;
+         if it changed (a reschedule), PATCH the existing event's time.
+         This branch runs UNCONDITIONALLY, ignoring DISCORD_EVENT_WINDOW_DAYS
+         in both directions -- an event that already exists is only ever
+         retimed in place, NEVER deleted or recreated, even if the
+         reschedule pushes the match back out past the 12-day window. (User
+         requirement, explicit: rescheduling must not remove the event.)
+
+    discord_event_match_date is stored as the raw E-Sparven string (not a
+    parsed datetime) so the comparison is a trivial equality check -- if
+    E-Sparven's own string formatting for the same instant ever drifts
+    between calls this could trigger a harmless spurious PATCH (Discord
+    idempotently accepts the same time again), never a missed one.
+
+    Cover image is fully best-effort: logo scraping or compositing failing
+    just means no image on the event, never a skipped/failed event. See
+    discord_events.build_cover_image()'s docstring for the known caveat
+    about our own team's logo possibly being a placeholder.
+
+    This function is only ever called from the upcoming-meetings loop in
+    run(). Once a meeting is played it drops out of that loop entirely and
+    this stops being called for it -- see _maybe_complete_discord_event
+    (called from _process_past_meetings instead) for what happens to the
+    event at that point: marked COMPLETED, never deleted.
+    """
+    try:
+        match_dt = datetime.fromisoformat(meeting_date.replace("Z", "+00:00"))
+    except ValueError:
+        log.warning(f"Meeting {meeting_id}: unparseable matchDate {meeting_date!r} -- skipping Discord event sync")
+        return
+
+    meeting_entry = state["meetings"][str(meeting_id)]
+    existing_event_id = meeting_entry.get("discord_event_id")
+
+    if existing_event_id:
+        stored_date = meeting_entry.get("discord_event_match_date")
+        if stored_date != meeting_date:
+            log.info(f"Meeting {meeting_id}: matchDate changed ({stored_date!r} -> {meeting_date!r}), rescheduling Discord event")
+            if discord_events.update_match_event(existing_event_id, match_dt):
+                meeting_entry["discord_event_match_date"] = meeting_date
+            # on failure, stored_date is left untouched -- retried next run
+        return
+
+    days_until = (match_dt - datetime.now(timezone.utc)).days
+    if days_until > DISCORD_EVENT_WINDOW_DAYS:
+        return
+
+    cover = None
+    logos = esp.scrape_team_logo_urls(meeting_id)
+    our_logo = logos.get(OUR_TEAM_ID)
+    opp_logo = logos.get(opponent_id)
+    if our_logo and opp_logo:
+        cover = discord_events.build_cover_image(our_logo, opp_logo)
+
+    event_id = discord_events.create_match_event(
+        opponent_name=opponent_name,
+        match_date=match_dt,
+        meeting_id=meeting_id,
+        cover_image_bytes=cover,
+    )
+    if event_id:
+        meeting_entry["discord_event_id"] = event_id
+        meeting_entry["discord_event_match_date"] = meeting_date
+
+
+def _maybe_complete_discord_event(discord_event_id: str | None, already_completed: bool) -> dict:
+    """
+    Returns the state keys to merge into a played meeting's state entry,
+    attempting to mark its Discord event COMPLETED if it isn't already.
+    Used from _process_past_meetings, in BOTH the "just froze this meeting"
+    branch and the "already frozen, skip re-scouting" fast-path branch --
+    deliberately called every run regardless, not just once, so a failed
+    completion attempt (network blip, bad permission, whatever) is retried
+    on a later run rather than leaving the event stuck SCHEDULED forever;
+    on failure this returns {"discord_event_id": ...} with no "completed"
+    key, so the next run's already_completed check is still False.
+
+    Returns {} if there was never a Discord event for this meeting (token
+    wasn't configured when it was upcoming, creation failed, etc.) --
+    nothing to complete, nothing to merge.
+    """
+    if not discord_event_id:
+        return {}
+    result = {"discord_event_id": discord_event_id}
+    if already_completed or discord_events.complete_match_event(discord_event_id):
+        result["discord_event_completed"] = True
+    return result
 
 
 def _update_our_team_bin(esp, jb, state, heroes, skip_opendota: bool = False):
@@ -385,6 +510,13 @@ def _process_past_meetings(esp, jb, state, heroes, index_entries, skip_opendota:
             result        = _get_result(meeting, OUR_TEAM_ID)
             meeting_date  = meeting.get("matches", [{}])[0].get("matchDate", "")
             _step("[dim]~[/]", f"[dim]Skipping frozen: vs {opponent_name} ({result})[/]")
+            # Retried every run (not just the run that first froze this
+            # meeting) so a one-off Discord API failure doesn't leave the
+            # event stuck SCHEDULED forever -- see _maybe_complete_discord_event.
+            state["meetings"][str(meeting_id)].update(_maybe_complete_discord_event(
+                meeting_ref.get("discord_event_id"),
+                meeting_ref.get("discord_event_completed", False),
+            ))
             index_entries.append({
                 "meetingId": meeting_id,
                 "gistId":     meeting_ref["bin_id"],
@@ -433,6 +565,12 @@ def _process_past_meetings(esp, jb, state, heroes, index_entries, skip_opendota:
             "frozen":          True,
             "tickerSnippets":  snippets,
         }
+        # Preserve + complete the Discord event across this rewrite -- this
+        # dict replaces meeting_ref wholesale, so discord_event_id would
+        # otherwise be silently dropped the moment a meeting first freezes.
+        state["meetings"][str(meeting_id)].update(_maybe_complete_discord_event(
+            meeting_ref.get("discord_event_id"), False,
+        ))
         index_entries.append({
             "meetingId": meeting_id,
             "gistId":     bin_id,

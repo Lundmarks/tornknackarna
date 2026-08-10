@@ -40,6 +40,9 @@ API_PREFIX = f"{BASE_URL}/api"
 # Numeric-only player ID at the end of an OpenDota or Dotabuff URL path
 _NUMERIC_ID_RE = re.compile(r"/players/(\d+)$")
 
+# Team ID embedded in a "/none/Team/About/{id}" or "/Team/About/{id}" link
+_TEAM_ID_RE = re.compile(r"/Team/About/(\d+)")
+
 
 class EsparvenClient:
     def __init__(self, api_key: str):
@@ -110,6 +113,29 @@ class EsparvenClient:
         result = _extract_player_rows(r.text)
         log.info(f"Scraped {len(result)} players from meeting {meeting_id}")
         return result
+
+    def scrape_team_logo_urls(self, meeting_id: int) -> dict[int, str]:
+        """
+        Scrape the public meeting page and return { team_id: logo_url } for
+        the two teams in the head-to-head header (see _extract_team_logos
+        docstring for the exact structure this depends on). Used only for
+        Discord scheduled-event cover images (discord_events.py) -- returns
+        {} on any fetch failure, which the caller treats as "no cover image
+        this time", never as fatal.
+        """
+        url = f"{BASE_URL}/Game/Meeting/Details/{meeting_id}"
+        try:
+            r = httpx.get(url, headers=self._scrape_headers, follow_redirects=True, timeout=15)
+            r.raise_for_status()
+        except httpx.HTTPError as e:
+            log.warning(f"Could not fetch meeting page {meeting_id} for team logos: {e}")
+            return {}
+
+        if "login" in str(r.url).lower():
+            log.warning(f"Meeting page {meeting_id} requires login -- cannot scrape logos")
+            return {}
+
+        return _extract_team_logos(r.text)
 
     # ── Internal ──────────────────────────────────────────────────────────────
 
@@ -189,5 +215,53 @@ def _extract_player_rows(html: str) -> dict[str, int | None]:
 
     if not result:
         log.warning("No player rows found in meeting page -- structure may have changed")
+
+    return result
+
+
+def _extract_team_logos(html: str) -> dict[int, str]:
+    """
+    Parse the meeting page's head-to-head header and return
+    { team_id: logo_url } for both teams.
+
+    Row structure (from one observed PLAYED-meeting page, Meeting/Details/1):
+        <div class="col-md-6 text-light" ...>
+          <div class="row"><div class="col-md-12 text-center">
+            <img class="team-page-header-emblem" src="..." alt="" />
+          </div></div>
+          <div class="row"><div class="col-md-12 text-center" ...>
+            <h3><a class="link-light" href="/none/Team/About/{id}">Name</a></h3>
+          </div></div>
+          ... (roster table follows, not needed here)
+        </div>
+    two such col-md-6 blocks appear back to back for the two contenders.
+
+    AGENT-RESUME 2026-08-10: sample page used to derive this was a PLAYED
+    match (had "Match 1"/"Match 2" result sections). Those sections reuse
+    the same "team-page-header-emblem" img class for the per-game winner
+    logo, which is why this function stops at 2 results instead of
+    collecting every match -- untested whether an UNPLAYED meeting page
+    (the actual case this is used for, since events are only created for
+    upcoming matches) has any structural differences up top. If logo
+    scraping starts returning {} or wrong logos in practice, diff a real
+    unplayed meeting page's HTML against the docstring above first.
+    """
+    soup = BeautifulSoup(html, "html.parser")
+    result: dict[int, str] = {}
+
+    for block in soup.find_all("div", class_="col-md-6"):
+        img = block.find("img", class_="team-page-header-emblem")
+        link = block.find("a", href=_TEAM_ID_RE)
+        if not img or not link:
+            continue
+        m = _TEAM_ID_RE.search(link["href"])
+        src = img.get("src")
+        if m and src:
+            result[int(m.group(1))] = src
+        if len(result) == 2:
+            break
+
+    if len(result) != 2:
+        log.warning(f"Expected 2 team logos in meeting page, found {len(result)} -- structure may have changed")
 
     return result

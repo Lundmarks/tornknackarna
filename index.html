@@ -128,6 +128,16 @@
   .page-section-bans { background:var(--section-bans-bg); border:1px solid var(--section-bans-bdr); }
   .page-section-roster { background:var(--section-roster-bg); border:1px solid var(--section-roster-bdr); }
   .page-section-history { background:var(--section-hist-bg); border:1px solid var(--section-hist-bdr); }
+  .page-section-lineup { background:var(--surface); border:1px solid var(--line); }
+  .lineup-chip-grid { display:flex; flex-wrap:wrap; gap:8px; }
+  .lineup-chip { font-family:inherit; font-size:12.5px; font-weight:500; color:var(--ink-2); background:var(--line-2); border:1px solid var(--line); border-radius:20px; padding:7px 14px; cursor:pointer; transition:background var(--tr),border-color var(--tr),color var(--tr); }
+  .lineup-chip:hover { border-color:var(--ink-4); }
+  .lineup-chip.selected { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .lineup-clear { background:none; border:none; color:var(--ink-4); font-size:11px; cursor:pointer; text-decoration:underline; font-family:inherit; padding:0; }
+  .lineup-clear:hover { color:var(--ink-2); }
+  [data-theme="console"] .page-section-lineup { border-radius:0; }
+  [data-theme="console"] .lineup-chip { border-radius:0; font-family:'Share Tech Mono',monospace; }
+  [data-theme="console"] .lineup-chip.selected { background:var(--accent); color:#000; }
   [data-theme="console"] .page-section { border-radius:0; position:relative; }
   [data-theme="console"] .page-section::before { content:''; position:absolute; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,var(--accent),transparent); }
   [data-theme="console"] .section-title { font-family:'Orbitron',monospace; font-size:9px; letter-spacing:3px; color:var(--ink-3); }
@@ -358,6 +368,45 @@ let currentSeasonOnly=true;
 let _currentMatchData=null;
 let _currentMatchContext=null;
 
+// Starting-lineup picker: which 5 of a (possibly larger, bench-inclusive)
+// roster are actually playing this meeting. Purely a client-side scouting
+// aid -- keyed by meetingId, persisted per-browser only (no backend write),
+// since it's a manual judgment call the scout makes while prepping, not
+// E-Sparven-sourced data. AGENT-RESUME: intentionally does NOT touch
+// draftTendencies/history/renderMatchupStats/renderRivalryMeter -- those
+// are pre-aggregated server-side across a team's full historical match
+// log (see bot.py's _draft_tendencies), not recomputable client-side from
+// just the current gist's players[] array, and represent the team's
+// overall tendencies regardless of tonight's specific lineup. Only
+// renderBanSection (computed client-side from players[] at render time,
+// see computeBans()) and the roster player-grid itself are filtered.
+const _lineupSelections=JSON.parse(localStorage.getItem('lineupSelections')||'{}');
+function getLineupSelection(meetingId){return _lineupSelections[meetingId]||[];}
+function _saveLineupSelections(){localStorage.setItem('lineupSelections',JSON.stringify(_lineupSelections));}
+function toggleLineupPlayer(meetingId,name){
+  const sel=_lineupSelections[meetingId]||(_lineupSelections[meetingId]=[]);
+  const idx=sel.indexOf(name);
+  if(idx>=0)sel.splice(idx,1);
+  else{if(sel.length>=5)return;sel.push(name);} // silently ignore a 6th pick rather than replacing one -- deselect first is the intuitive path
+  _saveLineupSelections();
+  if(_currentMatchData&&_currentMatchContext&&!_currentMatchContext.isSelf)_renderMatchPanel(_currentMatchData,_currentMatchContext.meetingId);
+}
+function clearLineupSelection(meetingId){
+  delete _lineupSelections[meetingId];
+  _saveLineupSelections();
+  if(_currentMatchData&&_currentMatchContext&&!_currentMatchContext.isSelf)_renderMatchPanel(_currentMatchData,_currentMatchContext.meetingId);
+}
+function renderLineupPicker(players,meetingId){
+  if(!players||players.length<=5||!meetingId)return''; // nothing to filter when the whole roster IS the starting five
+  const isConsole=document.documentElement.getAttribute('data-theme')==='console';
+  const sel=getLineupSelection(meetingId);
+  const chip=p=>{const on=sel.includes(p.name);const safeName=p.name.replace(/"/g,'&quot;');return`<button class="lineup-chip${on?' selected':''}" data-name="${safeName}" onclick="toggleLineupPlayer('${meetingId}',this.dataset.name)">${on?'✓ ':''}${p.name}</button>`;};
+  const remaining=5-sel.length;
+  const hint=sel.length===5?'Roster and suggested bans below are filtered to these 5.':`Click ${remaining} more player${remaining===1?'':'s'} to filter the roster and bans to tonight's confirmed lineup.`;
+  const clearBtn=sel.length?`<button class="lineup-clear" onclick="clearLineupSelection('${meetingId}')">Clear</button>`:'';
+  return`<div class="page-section page-section-lineup"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><div class="section-title" style="margin-bottom:0;padding-bottom:0;border-bottom:none">${isConsole?'// ':''}Starting lineup <span style="font-weight:400;text-transform:none;letter-spacing:normal;color:var(--ink-3)">(${sel.length}/5)</span></div>${clearBtn}</div><div style="font-size:12px;color:var(--ink-4);margin-bottom:12px">${hint} Roster has ${players.length} registered players.</div><div class="lineup-chip-grid">${players.map(chip).join('')}</div></div>`;
+}
+
 const THEMES=['dark','light','console'];
 const THEME_LABELS={dark:'Dark',light:'Light',console:'Console'};
 function applyTheme(t){document.documentElement.setAttribute('data-theme',t);const btn=document.getElementById('theme-toggle');if(btn)btn.textContent=THEME_LABELS[t]||t;if(t==='console')setTimeout(startConsoleLogo,0);if(t==='dark'||t==='light')setTimeout(startCleanLogo,0);}
@@ -557,7 +606,7 @@ async function loadMatch(binId,meetingId,btn){document.querySelectorAll('.match-
 
 function _renderOurTeamPanel(data){const isConsole=document.documentElement.getAttribute('data-theme')==='console';const currentSeasonId=data.currentSeasonId??null;document.getElementById('main-panel').innerHTML=`<div class="match-header"><div class="match-title"><strong>Tornkn\u00e4ckarna</strong>${consoleCursor()}</div><div class="match-meta"><span>Dota 2 \u00b7 Captain\'s Mode \u00b7 E-Sparven</span></div><div class="notice notice-snapshot" style="margin-top:8px">Refreshed daily by the bot</div>${seasonToggleHTML()}</div>${data.draftTendencies?`<div class="page-section page-section-bans">${renderDraftTendencies(data.draftTendencies)}${renderMatchupStats(data.history,currentSeasonId)}</div>`:''}<div class="page-section page-section-roster">${_secTitle('roster',`${isConsole?'// ':''}Our roster`,'margin-bottom:16px')}${_secBody('roster',`<div class="player-grid">${(data.players||[]).map(p=>renderPlayerCard(p,true)).join('')}</div>`)}</div>${renderHistory(data.history,currentSeasonId)}`;}
 
-function _renderMatchPanel(data,meetingId){const status=data.status||'upcoming';const badgeClass={upcoming:'badge-upcoming',win:'badge-win',loss:'badge-loss',tie:'badge-loss'}[status]||'badge-upcoming';const badgeText={upcoming:'Upcoming',win:'Win',loss:'Loss',tie:'Tie'}[status]||status;const notice=status==='upcoming'?`<div class="notice notice-live">Live data \u00b7 refreshed daily until match day</div>`:`<div class="notice notice-snapshot">Snapshot \u00b7 ${fmtDate(data.snapshotAt)}</div>`;const esparvenUrl=meetingId?`https://esparven.se/none/Meeting/Details/${meetingId}`:null;const isConsole=document.documentElement.getAttribute('data-theme')==='console';const currentSeasonId=data.currentSeasonId??null;document.getElementById('main-panel').innerHTML=`<div class="match-header"><div style="margin-bottom:10px"><span class="mi-badge ${badgeClass}" style="font-size:11px">${badgeText}</span></div><div class="match-title">vs <strong>${data.opponent}</strong>${consoleCursor()}</div><div class="match-meta"><span>${fmtDate(data.date)}</span><span>Dota 2 \u00b7 Captain\'s Mode</span>${esparvenUrl?`<a href="${esparvenUrl}" target="_blank" rel="noopener noreferrer" style="color:var(--accent);text-decoration:none;font-size:13px">E-Sparven</a>`:''}</div>${notice}${seasonToggleHTML()}</div>${renderRivalryMeter(data.history)}${status==='upcoming'?`<div class="page-section page-section-bans">${renderBanSection(data.players||[])}${renderDraftTendencies(data.draftTendencies)}${renderMatchupStats(data.history,currentSeasonId)}</div>`:`<div class="page-section page-section-bans">${renderDraftTendencies(data.draftTendencies)}${renderMatchupStats(data.history,currentSeasonId)}</div>`}<div class="page-section page-section-roster">${_secTitle('roster',`${isConsole?'// ':''}Opponent roster`,'margin-bottom:16px')}${_secBody('roster',`<div class="player-grid">${(data.players||[]).map(p=>renderPlayerCard(p,false)).join('')}</div>`)}</div>${renderHistory(data.history,currentSeasonId)}`;}
+function _renderMatchPanel(data,meetingId){const allPlayers=data.players||[];const lineupSel=meetingId?getLineupSelection(meetingId):[];const lineupActive=lineupSel.length===5;const rosterPlayers=lineupActive?allPlayers.filter(p=>lineupSel.includes(p.name)):allPlayers;const status=data.status||'upcoming';const badgeClass={upcoming:'badge-upcoming',win:'badge-win',loss:'badge-loss',tie:'badge-loss'}[status]||'badge-upcoming';const badgeText={upcoming:'Upcoming',win:'Win',loss:'Loss',tie:'Tie'}[status]||status;const notice=status==='upcoming'?`<div class="notice notice-live">Live data \u00b7 refreshed daily until match day</div>`:`<div class="notice notice-snapshot">Snapshot \u00b7 ${fmtDate(data.snapshotAt)}</div>`;const esparvenUrl=meetingId?`https://esparven.se/none/Meeting/Details/${meetingId}`:null;const isConsole=document.documentElement.getAttribute('data-theme')==='console';const currentSeasonId=data.currentSeasonId??null;document.getElementById('main-panel').innerHTML=`<div class="match-header"><div style="margin-bottom:10px"><span class="mi-badge ${badgeClass}" style="font-size:11px">${badgeText}</span></div><div class="match-title">vs <strong>${data.opponent}</strong>${consoleCursor()}</div><div class="match-meta"><span>${fmtDate(data.date)}</span><span>Dota 2 \u00b7 Captain\'s Mode</span>${esparvenUrl?`<a href="${esparvenUrl}" target="_blank" rel="noopener noreferrer" style="color:var(--accent);text-decoration:none;font-size:13px">E-Sparven</a>`:''}</div>${notice}${seasonToggleHTML()}</div>${renderLineupPicker(allPlayers,meetingId)}${renderRivalryMeter(data.history)}${status==='upcoming'?`<div class="page-section page-section-bans">${renderBanSection(rosterPlayers)}${renderDraftTendencies(data.draftTendencies)}${renderMatchupStats(data.history,currentSeasonId)}</div>`:`<div class="page-section page-section-bans">${renderDraftTendencies(data.draftTendencies)}${renderMatchupStats(data.history,currentSeasonId)}</div>`}<div class="page-section page-section-roster">${_secTitle('roster',`${isConsole?'// ':''}Opponent roster${lineupActive?` · ${rosterPlayers.length} confirmed`:''}`,'margin-bottom:16px')}${_secBody('roster',`<div class="player-grid">${rosterPlayers.map(p=>renderPlayerCard(p,false)).join('')}</div>`)}</div>${renderHistory(data.history,currentSeasonId)}`;}
 
 
 // ── Hero icon map ────────────────────────────────────────────────────────────
