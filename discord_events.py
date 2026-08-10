@@ -107,6 +107,11 @@ def _enabled() -> bool:
     return True
 
 
+def event_url(event_id: str) -> str:
+    """Deep link to a guild scheduled event, for use in webhook announcements."""
+    return f"https://discord.com/events/{GUILD_ID}/{event_id}"
+
+
 def _fetch_image_bytes(url: str) -> bytes | None:
     try:
         r = httpx.get(url, timeout=10)
@@ -210,7 +215,8 @@ def create_match_event(
         "description": (
             f"Captain's Mode match vs {opponent_name}.\n\n"
             f"Scouting dashboard: {DASHBOARD_URL}\n"
-            f"E-Sparven: {esparven_url}"
+            f"E-Sparven: {esparven_url}\n\n"
+            f"Ready check: click **Interested** above to confirm you're in."
         ),
     }
 

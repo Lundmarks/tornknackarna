@@ -24,6 +24,7 @@ TIMEOUT_SECONDS = 8
 # Ferrari red as the embed accent colour (decimal)
 EMBED_COLOR_UPCOMING  = 0xCC1100  # red — new threat incoming
 EMBED_COLOR_MATCHDAY  = 0xF06050  # lighter red — day-of urgency
+EMBED_COLOR_EVENT     = 0x5865F2  # Discord blurple — matches the platform the event lives on
 
 
 def _enabled() -> bool:
@@ -112,6 +113,50 @@ def notify_new_match(
 
     _post(payload)
     log.info(f"Discord: notified new match vs [bold]{opponent_name}[/]")
+
+
+def notify_event_created(
+    opponent_name: str,
+    match_date: str,
+    event_url: str,
+) -> None:
+    """
+    Fire right after discord_events.create_match_event() succeeds for a
+    newly created scheduled event (not on reschedule — that's a silent
+    in-place retime, per discord_events.py's "never delete/recreate"
+    contract, so no separate announcement there). Points people at the
+    event itself rather than repeating its content, since the ready-check
+    lives there.
+    """
+    if not _enabled():
+        return
+
+    date_str = match_date
+    try:
+        dt = datetime.fromisoformat(match_date.replace("Z", "+00:00"))
+        date_str = dt.strftime("%A %-d %B %Y")
+    except Exception:
+        pass
+
+    payload = {
+        "embeds": [
+            {
+                "title": f"📅  Event created — vs {opponent_name}",
+                "description": (
+                    f"**{date_str}**\n\n"
+                    f"[Open the event]({event_url}) and click **Interested** to confirm you're in — that's our ready check."
+                ),
+                "color": EMBED_COLOR_EVENT,
+                "footer": {
+                    "text": "Tornknäckarna Scouting"
+                },
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            }
+        ]
+    }
+
+    _post(payload)
+    log.info(f"Discord: notified event creation for [bold]{opponent_name}[/]")
 
 
 def notify_match_day(

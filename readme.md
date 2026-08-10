@@ -62,6 +62,11 @@ ESPARVEN_TEAM_ID=67
 GITHUB_TOKEN=ghp_...
 GITHUB_USERNAME=your_github_username
 GIST_INDEX_ID=        # leave blank on first run, paste in after
+
+# Optional: Discord notifications and scheduled events — see "Discord integration" below
+DISCORD_WEBHOOK_URL=
+DISCORD_BOT_TOKEN=
+DISCORD_GUILD_ID=
 ```
 
 **Creating a GitHub token:**
@@ -96,9 +101,30 @@ Push `index.html` to GitHub to deploy.
 ```bash
 python bot.py --run-once                 # run once then exit
 python bot.py --run-once --no-opendota   # skip OpenDota API calls (fast debug mode)
+python bot.py --force-next-event         # admin debug: force-create a Discord event for the soonest upcoming match, then exit
 ```
 
 `--no-opendota` skips all per-player OpenDota calls (rank, winrate, recent matches, pub heroes). Tournament heroes are still built from E-Sparven match data. Useful for testing without waiting on API rate limits.
+
+`--force-next-event` bypasses the normal 12-day creation window (see "Discord integration" below) to immediately create an event for the soonest upcoming match — a no-op if there's no upcoming match or it already has an event. Useful for verifying the Discord bot setup without waiting for a match to enter the window naturally.
+
+---
+
+## Discord integration
+
+Both pieces are optional and independently gated — set only `DISCORD_WEBHOOK_URL` for notifications, only `DISCORD_BOT_TOKEN`/`DISCORD_GUILD_ID` for scheduled events, or both. Leave the relevant variable(s) unset to disable.
+
+**Webhook notifications** (`webhook.py`, `DISCORD_WEBHOOK_URL`) — posts to a channel via an incoming webhook:
+- New upcoming match detected, with top ban targets
+- A scheduled event was created for a match (see below), linking to it
+- Match day reminder, once per match
+
+**Scheduled events** (`discord_events.py`, `DISCORD_BOT_TOKEN` + `DISCORD_GUILD_ID`) — creates a native Discord Guild Scheduled Event once a match is 12 days out or closer (`DISCORD_EVENT_WINDOW_DAYS` in `bot.py`), with a cover image composited from both teams' logos when available. If E-Sparven later reschedules the match, the existing event is retimed in place — never deleted or recreated. Once the match is played, the event is marked Completed rather than left stale. **Ready check:** players confirm attendance by clicking **Interested** on the event itself — this is stated in both the event description and the webhook announcement.
+
+This needs a separate bot application (not the webhook above) with the **Manage Events** permission in the target server:
+1. [Discord Developer Portal](https://discord.com/developers/applications) → New Application → Bot → copy the token into `DISCORD_BOT_TOKEN`
+2. OAuth2 → URL Generator → scope `bot`, permission `Manage Events` → open the generated URL to invite it to your server
+3. Enable Developer Mode in Discord (User Settings → Advanced), right-click the server icon → Copy Server ID → `DISCORD_GUILD_ID`
 
 ---
 

@@ -11,6 +11,7 @@ import os
 import time
 from datetime import datetime, timezone
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import schedule
 from dotenv import load_dotenv
@@ -70,6 +71,17 @@ OPENDOTA_DELAY = 2.5
 # (state["meetings"][id]["discord_event_id"]) that keeps this idempotent
 # across daily runs.
 DISCORD_EVENT_WINDOW_DAYS = 12
+
+# E-Sparven's matchDate strings carry no UTC offset or "Z" suffix (confirmed
+# 2026-08-10 against live API output, e.g. "2026-08-23T19:00:00") -- they are
+# Europe/Stockholm wall-clock time, not UTC. index.html's fmtDate() already
+# relies on this implicitly: JS's `new Date(iso)` on an offset-less string is
+# interpreted in the browser's local zone, which for Swedish viewers matches
+# esparven.se's own display. Localizing here (rather than assuming UTC) is
+# what makes DISCORD_EVENT_WINDOW_DAYS day-math and the event's
+# scheduled_start_time both correct -- getting this wrong silently shifts
+# Discord events by 1-2h depending on DST.
+ESPARVEN_TZ = ZoneInfo("Europe/Stockholm")
 
 
 def load_state() -> dict:
@@ -290,6 +302,7 @@ def _sync_discord_event(
     opponent_name: str,
     opponent_id: int,
     meeting_date: str,
+    force: bool = False,
 ) -> None:
     """
     Create OR reschedule the Discord scheduled event for `meeting_id`.
@@ -297,8 +310,10 @@ def _sync_discord_event(
 
     Three cases, in order:
       1. No event yet, still >DISCORD_EVENT_WINDOW_DAYS out -> no-op.
-      2. No event yet, <=DISCORD_EVENT_WINDOW_DAYS out -> create one, and
-         record the matchDate string we created it with.
+      2. No event yet, <=DISCORD_EVENT_WINDOW_DAYS out -> create one, record
+         the matchDate string we created it with, and fire a webhook
+         announcement pointing at the event (webhook.notify_event_created).
+         Reschedules (case 3) don't re-announce -- same event, just retimed.
       3. Event already exists -> compare E-Sparven's current matchDate
          against the one we stored when we last created/updated the event;
          if it changed (a reschedule), PATCH the existing event's time.
@@ -319,6 +334,12 @@ def _sync_discord_event(
     discord_events.build_cover_image()'s docstring for the known caveat
     about our own team's logo possibly being a placeholder.
 
+    force=True (only passed from the --force-next-event admin debug
+    entrypoint) skips the DISCORD_EVENT_WINDOW_DAYS gate in case 2 so an
+    event is created immediately regardless of how far out the match is.
+    Case 3 (reschedule of an already-existing event) is unaffected by
+    force -- there's nothing to force there, it already runs unconditionally.
+
     This function is only ever called from the upcoming-meetings loop in
     run(). Once a meeting is played it drops out of that loop entirely and
     this stops being called for it -- see _maybe_complete_discord_event
@@ -327,6 +348,9 @@ def _sync_discord_event(
     """
     try:
         match_dt = datetime.fromisoformat(meeting_date.replace("Z", "+00:00"))
+        if match_dt.tzinfo is None:
+            match_dt = match_dt.replace(tzinfo=ESPARVEN_TZ)
+        match_dt = match_dt.astimezone(timezone.utc)
     except ValueError:
         log.warning(f"Meeting {meeting_id}: unparseable matchDate {meeting_date!r} -- skipping Discord event sync")
         return
@@ -344,7 +368,7 @@ def _sync_discord_event(
         return
 
     days_until = (match_dt - datetime.now(timezone.utc)).days
-    if days_until > DISCORD_EVENT_WINDOW_DAYS:
+    if not force and days_until > DISCORD_EVENT_WINDOW_DAYS:
         return
 
     cover = None
@@ -363,6 +387,67 @@ def _sync_discord_event(
     if event_id:
         meeting_entry["discord_event_id"] = event_id
         meeting_entry["discord_event_match_date"] = meeting_date
+        webhook.notify_event_created(
+            opponent_name=opponent_name,
+            match_date=meeting_date,
+            event_url=discord_events.event_url(event_id),
+        )
+
+
+def force_create_next_event() -> None:
+    """
+    Admin debug entrypoint (--force-next-event): immediately creates a
+    Discord scheduled event for the single soonest upcoming meeting,
+    bypassing DISCORD_EVENT_WINDOW_DAYS. No-ops if there's no upcoming
+    meeting, or if the soonest one already has an event (nothing to force --
+    reschedules on a normal run already keep an existing event's time in
+    sync). Deliberately narrow: doesn't touch gist bins, ticker snippets, or
+    webhook notifications, unlike a full run().
+    """
+    state = load_state()
+    esp   = EsparvenClient(ESPARVEN_KEY)
+
+    try:
+        upcoming = esp.get_upcoming_meetings(COMPETITION)
+    except Exception as e:
+        log.error(f"Failed to fetch upcoming meetings: {e}")
+        return
+
+    our_meetings = [
+        m for m in upcoming
+        if any(c["id"] == OUR_TEAM_ID for c in m.get("meetingContenders", []))
+    ]
+    if not our_meetings:
+        log.warning("No upcoming meetings found -- nothing to force-create an event for")
+        return
+
+    def _match_date(m):
+        return m.get("matches", [{}])[0].get("matchDate", "")
+
+    our_meetings.sort(key=_match_date)
+    meeting      = our_meetings[0]
+    meeting_id   = meeting["id"]
+    meeting_date = _match_date(meeting)
+
+    opponent = _find_opponent(meeting, OUR_TEAM_ID)
+    if not opponent:
+        log.warning(f"Meeting {meeting_id}: could not identify opponent, skipping")
+        return
+
+    existing_event_id = state["meetings"].get(str(meeting_id), {}).get("discord_event_id")
+    if existing_event_id:
+        log.info(f"Meeting {meeting_id} vs {opponent['name']} already has a Discord event ({existing_event_id}) -- nothing to force")
+        return
+
+    log.info(f"Forcing Discord event creation for meeting {meeting_id} vs {opponent['name']} ({meeting_date}), bypassing the {DISCORD_EVENT_WINDOW_DAYS}-day window")
+    state["meetings"].setdefault(str(meeting_id), {})
+    _sync_discord_event(esp, state, meeting_id, opponent["name"], opponent["id"], meeting_date, force=True)
+    save_state(state)
+
+    if state["meetings"][str(meeting_id)].get("discord_event_id"):
+        log.info("[green]✓[/] Event created")
+    else:
+        log.error("Event creation failed -- check DISCORD_BOT_TOKEN/DISCORD_GUILD_ID and prior log lines")
 
 
 def _maybe_complete_discord_event(discord_event_id: str | None, already_completed: bool) -> dict:
@@ -1082,10 +1167,13 @@ def _calc_winrate(profile: dict) -> int | None:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--run-once",    action="store_true", help="Run once then exit")
-    parser.add_argument("--no-opendota", action="store_true", help="Skip OpenDota API calls (fast debug mode — pub stats will be blank)")
+    parser.add_argument("--run-once",         action="store_true", help="Run once then exit")
+    parser.add_argument("--no-opendota",      action="store_true", help="Skip OpenDota API calls (fast debug mode — pub stats will be blank)")
+    parser.add_argument("--force-next-event", action="store_true", help="Admin debug: force-create a Discord scheduled event for the soonest upcoming meeting, bypassing the 12-day window, then exit")
     args = parser.parse_args()
-    if args.run_once:
+    if args.force_next_event:
+        force_create_next_event()
+    elif args.run_once:
         run(skip_opendota=args.no_opendota)
     else:
         console.print(f"[dim]Scheduling daily runs at [bold]{', '.join(RUN_TIMES)}[/] UTC[/]")
