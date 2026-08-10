@@ -319,14 +319,11 @@ def _sync_discord_event(
     discord_events.build_cover_image()'s docstring for the known caveat
     about our own team's logo possibly being a placeholder.
 
-    AGENT-RESUME: this function is only ever called from the upcoming-
-    meetings loop in run(). Once a meeting is played it drops out of that
-    loop entirely and this stops being called for it -- its Discord event
-    is never marked COMPLETED/CANCELED and is never deleted by us. See the
-    longer AGENT-RESUME note at the top of discord_events.py for whether
-    Discord itself does anything automatic about that (short answer: no,
-    for EXTERNAL entity type events, per training-knowledge / not verified
-    live against current docs).
+    This function is only ever called from the upcoming-meetings loop in
+    run(). Once a meeting is played it drops out of that loop entirely and
+    this stops being called for it -- see _maybe_complete_discord_event
+    (called from _process_past_meetings instead) for what happens to the
+    event at that point: marked COMPLETED, never deleted.
     """
     try:
         match_dt = datetime.fromisoformat(meeting_date.replace("Z", "+00:00"))
@@ -366,6 +363,30 @@ def _sync_discord_event(
     if event_id:
         meeting_entry["discord_event_id"] = event_id
         meeting_entry["discord_event_match_date"] = meeting_date
+
+
+def _maybe_complete_discord_event(discord_event_id: str | None, already_completed: bool) -> dict:
+    """
+    Returns the state keys to merge into a played meeting's state entry,
+    attempting to mark its Discord event COMPLETED if it isn't already.
+    Used from _process_past_meetings, in BOTH the "just froze this meeting"
+    branch and the "already frozen, skip re-scouting" fast-path branch --
+    deliberately called every run regardless, not just once, so a failed
+    completion attempt (network blip, bad permission, whatever) is retried
+    on a later run rather than leaving the event stuck SCHEDULED forever;
+    on failure this returns {"discord_event_id": ...} with no "completed"
+    key, so the next run's already_completed check is still False.
+
+    Returns {} if there was never a Discord event for this meeting (token
+    wasn't configured when it was upcoming, creation failed, etc.) --
+    nothing to complete, nothing to merge.
+    """
+    if not discord_event_id:
+        return {}
+    result = {"discord_event_id": discord_event_id}
+    if already_completed or discord_events.complete_match_event(discord_event_id):
+        result["discord_event_completed"] = True
+    return result
 
 
 def _update_our_team_bin(esp, jb, state, heroes, skip_opendota: bool = False):
@@ -489,6 +510,13 @@ def _process_past_meetings(esp, jb, state, heroes, index_entries, skip_opendota:
             result        = _get_result(meeting, OUR_TEAM_ID)
             meeting_date  = meeting.get("matches", [{}])[0].get("matchDate", "")
             _step("[dim]~[/]", f"[dim]Skipping frozen: vs {opponent_name} ({result})[/]")
+            # Retried every run (not just the run that first froze this
+            # meeting) so a one-off Discord API failure doesn't leave the
+            # event stuck SCHEDULED forever -- see _maybe_complete_discord_event.
+            state["meetings"][str(meeting_id)].update(_maybe_complete_discord_event(
+                meeting_ref.get("discord_event_id"),
+                meeting_ref.get("discord_event_completed", False),
+            ))
             index_entries.append({
                 "meetingId": meeting_id,
                 "gistId":     meeting_ref["bin_id"],
@@ -537,6 +565,12 @@ def _process_past_meetings(esp, jb, state, heroes, index_entries, skip_opendota:
             "frozen":          True,
             "tickerSnippets":  snippets,
         }
+        # Preserve + complete the Discord event across this rewrite -- this
+        # dict replaces meeting_ref wholesale, so discord_event_id would
+        # otherwise be silently dropped the moment a meeting first freezes.
+        state["meetings"][str(meeting_id)].update(_maybe_complete_discord_event(
+            meeting_ref.get("discord_event_id"), False,
+        ))
         index_entries.append({
             "meetingId": meeting_id,
             "gistId":     bin_id,

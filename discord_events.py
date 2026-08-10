@@ -182,8 +182,17 @@ def create_match_event(
     contract).
 
     match_date must be tz-aware (UTC). meeting_id is used only to build the
-    E-Sparven deep link in the event description, same URL pattern as
-    webhook.py's esparven_url.
+    E-Sparven deep link, same URL pattern as webhook.py's esparven_url.
+
+    Links both the scouting dashboard and the E-Sparven meeting page:
+    entity_metadata.location carries the dashboard URL (Discord's client
+    shows this field prominently, right under the cover image, and
+    auto-linkifies it since it's a valid URL -- AGENT-RESUME: that
+    auto-linkify behavior is from training-knowledge, not verified live,
+    same caveat as the rest of this module) so that's the one-click link;
+    the description repeats both URLs as plain text, which Discord also
+    auto-linkifies as bare URLs, as a fallback in clients/contexts where
+    the location field isn't rendered as prominently.
     """
     if not _enabled():
         return None
@@ -197,11 +206,11 @@ def create_match_event(
         "scheduled_start_time": match_date.isoformat(),
         "scheduled_end_time": end.isoformat(),
         "entity_type": 3,  # EXTERNAL
-        "entity_metadata": {"location": "esparven.se — Dota 2 Captain's Mode"},
+        "entity_metadata": {"location": DASHBOARD_URL},
         "description": (
             f"Captain's Mode match vs {opponent_name}.\n\n"
-            f"E-Sparven: {esparven_url}\n"
-            f"Scouting dashboard: {DASHBOARD_URL}"
+            f"Scouting dashboard: {DASHBOARD_URL}\n"
+            f"E-Sparven: {esparven_url}"
         ),
     }
 
@@ -270,4 +279,64 @@ def update_match_event(event_id: str, match_date: datetime) -> bool:
         return True
     except Exception as e:
         log.warning(f"Discord event reschedule failed for {event_id}: {e}")
+        return False
+
+
+def complete_match_event(event_id: str) -> bool:
+    """
+    Mark a played match's event COMPLETED, once, so it stays visible in
+    Discord's "Past events" list for history instead of either lingering
+    forever as a stale SCHEDULED event (see the "does Discord auto-clean
+    this up" AGENT-RESUME at the top of this file -- it doesn't) or being
+    deleted (explicit product decision: keep events for history, never
+    delete). Returns True on success, False on any failure -- caller
+    (bot.py's _process_past_meetings, via _maybe_complete_discord_event)
+    is expected to leave its "completed" flag unset on False so this is
+    retried on a later run rather than the event getting stuck forever.
+
+    AGENT-RESUME 2026-08-10: Discord's documented status state machine
+    (from training knowledge, NOT verified live -- discord.com was
+    unreachable from this sandbox at write time, same caveat as the
+    reschedule/expiry note above) does not allow SCHEDULED -> COMPLETED
+    directly; it requires SCHEDULED -> ACTIVE -> COMPLETED, hence the two
+    sequential PATCH calls below. Two follow-on risks worth checking once
+    real events exist:
+      1. If this function's own first call (-> ACTIVE) previously
+         succeeded but the second (-> COMPLETED) then failed (e.g.
+         network blip), the event is left stuck in ACTIVE with our
+         "completed" flag still unset -- retrying calls -> ACTIVE again,
+         which is probably an invalid transition from an already-ACTIVE
+         state and would then fail loudly instead of quietly recovering.
+         If that happens in practice, GET the event first and branch on
+         its current `status` field rather than blindly PATCHing -> ACTIVE
+         every retry.
+      2. Never confirmed whether Discord requires an EXTERNAL event's
+         entity_metadata.location / scheduled_end_time to still be present
+         on these status-only PATCH calls, or whether omitting them (as
+         done here) is treated as "leave unchanged" -- if this starts
+         erroring, try including the full payload create_match_event sent
+         originally, not just {"status": ...}.
+    """
+    if not _enabled():
+        return False
+
+    try:
+        r1 = httpx.patch(
+            f"{API_BASE}/guilds/{GUILD_ID}/scheduled-events/{event_id}",
+            headers={"Authorization": f"Bot {BOT_TOKEN}"},
+            json={"status": 2},  # ACTIVE
+            timeout=TIMEOUT_S,
+        )
+        r1.raise_for_status()
+        r2 = httpx.patch(
+            f"{API_BASE}/guilds/{GUILD_ID}/scheduled-events/{event_id}",
+            headers={"Authorization": f"Bot {BOT_TOKEN}"},
+            json={"status": 3},  # COMPLETED
+            timeout=TIMEOUT_S,
+        )
+        r2.raise_for_status()
+        log.info(f"Discord: marked event {event_id} as completed")
+        return True
+    except Exception as e:
+        log.warning(f"Discord event completion failed for {event_id}: {e}")
         return False
