@@ -4,3 +4,4 @@ python-dotenv==1.0.1
 schedule==1.2.2
 rich==13.7.1
 requests
+Pillow==10.4.0

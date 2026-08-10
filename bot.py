@@ -18,6 +18,7 @@ from rich.console import Console
 from rich.logging import RichHandler
 from rich.theme import Theme
 
+import discord_events
 import opendota
 import player_map
 import steam
@@ -61,6 +62,14 @@ OUR_TEAM_ID    = ESPARVEN_TEAM_ID
 COMPETITION    = "dota2cm"
 RUN_AT         = "06:00"
 OPENDOTA_DELAY = 2.5
+
+# Discord scheduled events: create one once a match is this many days out or
+# closer. "or closer" (<=, not ==) matters because meetings are sometimes
+# first synced by E-Sparven with fewer than this many days left already --
+# see discord_events.py for the creation call and the dedup flag
+# (state["meetings"][id]["discord_event_id"]) that keeps this idempotent
+# across daily runs.
+DISCORD_EVENT_WINDOW_DAYS = 12
 
 
 def load_state() -> dict:
@@ -208,6 +217,17 @@ def run(skip_opendota: bool = False):
                 top_bans=_top_bans_for_embed(scout.get("players", [])),
             )
 
+        # Discord scheduled event -- create once, when the match first enters
+        # the DISCORD_EVENT_WINDOW_DAYS window. Idempotent via the
+        # discord_event_id flag on the meeting's state entry (same pattern as
+        # match_day_notified further below); state is saved once at the end
+        # of run(), not here.
+        # AGENT-RESUME: this whole block is untested against a real Discord
+        # bot/guild -- see discord_events.py's module docstring for the exact
+        # checklist to run through once DISCORD_BOT_TOKEN/DISCORD_GUILD_ID
+        # exist in .env.
+        _maybe_create_discord_event(esp, state, meeting_id, opponent_name, opponent_id, meeting_date)
+
         index_entries.append({
             "meetingId": meeting_id,
             "gistId":     bin_id,
@@ -262,6 +282,55 @@ def run(skip_opendota: bool = False):
     our_bin = state.get("our_team_bin_id")
     if our_bin:
         console.print(f"[yellow]Set in index.html:[/] [bold]OUR_TEAM_GIST_ID = '{our_bin}'[/]\n")
+
+
+def _maybe_create_discord_event(
+    esp: EsparvenClient,
+    state: dict,
+    meeting_id: int,
+    opponent_name: str,
+    opponent_id: int,
+    meeting_date: str,
+) -> None:
+    """
+    Create a Discord scheduled event for `meeting_id` if it's within
+    DISCORD_EVENT_WINDOW_DAYS and hasn't already got one. Mutates
+    state["meetings"][str(meeting_id)] in place; caller saves state.
+
+    Cover image is fully best-effort: logo scraping or compositing failing
+    just means no image on the event, never a skipped/failed event. See
+    discord_events.build_cover_image()'s docstring for the known caveat
+    about our own team's logo possibly being a placeholder.
+    """
+    try:
+        match_dt = datetime.fromisoformat(meeting_date.replace("Z", "+00:00"))
+    except ValueError:
+        log.warning(f"Meeting {meeting_id}: unparseable matchDate {meeting_date!r} -- skipping Discord event check")
+        return
+
+    meeting_entry = state["meetings"][str(meeting_id)]
+    if meeting_entry.get("discord_event_id"):
+        return  # already created on a prior run
+
+    days_until = (match_dt - datetime.now(timezone.utc)).days
+    if days_until > DISCORD_EVENT_WINDOW_DAYS:
+        return
+
+    cover = None
+    logos = esp.scrape_team_logo_urls(meeting_id)
+    our_logo = logos.get(OUR_TEAM_ID)
+    opp_logo = logos.get(opponent_id)
+    if our_logo and opp_logo:
+        cover = discord_events.build_cover_image(our_logo, opp_logo)
+
+    event_id = discord_events.create_match_event(
+        opponent_name=opponent_name,
+        match_date=match_dt,
+        meeting_id=meeting_id,
+        cover_image_bytes=cover,
+    )
+    if event_id:
+        meeting_entry["discord_event_id"] = event_id
 
 
 def _update_our_team_bin(esp, jb, state, heroes, skip_opendota: bool = False):
