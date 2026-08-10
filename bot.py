@@ -217,16 +217,15 @@ def run(skip_opendota: bool = False):
                 top_bans=_top_bans_for_embed(scout.get("players", [])),
             )
 
-        # Discord scheduled event -- create once, when the match first enters
-        # the DISCORD_EVENT_WINDOW_DAYS window. Idempotent via the
-        # discord_event_id flag on the meeting's state entry (same pattern as
-        # match_day_notified further below); state is saved once at the end
-        # of run(), not here.
+        # Discord scheduled event -- create once the match enters the
+        # DISCORD_EVENT_WINDOW_DAYS window, then keep its time in sync with
+        # E-Sparven on every later run (reschedule handling); never deletes.
+        # State is saved once at the end of run(), not here.
         # AGENT-RESUME: this whole block is untested against a real Discord
         # bot/guild -- see discord_events.py's module docstring for the exact
         # checklist to run through once DISCORD_BOT_TOKEN/DISCORD_GUILD_ID
         # exist in .env.
-        _maybe_create_discord_event(esp, state, meeting_id, opponent_name, opponent_id, meeting_date)
+        _sync_discord_event(esp, state, meeting_id, opponent_name, opponent_id, meeting_date)
 
         index_entries.append({
             "meetingId": meeting_id,
@@ -284,7 +283,7 @@ def run(skip_opendota: bool = False):
         console.print(f"[yellow]Set in index.html:[/] [bold]OUR_TEAM_GIST_ID = '{our_bin}'[/]\n")
 
 
-def _maybe_create_discord_event(
+def _sync_discord_event(
     esp: EsparvenClient,
     state: dict,
     meeting_id: int,
@@ -293,24 +292,59 @@ def _maybe_create_discord_event(
     meeting_date: str,
 ) -> None:
     """
-    Create a Discord scheduled event for `meeting_id` if it's within
-    DISCORD_EVENT_WINDOW_DAYS and hasn't already got one. Mutates
-    state["meetings"][str(meeting_id)] in place; caller saves state.
+    Create OR reschedule the Discord scheduled event for `meeting_id`.
+    Mutates state["meetings"][str(meeting_id)] in place; caller saves state.
+
+    Three cases, in order:
+      1. No event yet, still >DISCORD_EVENT_WINDOW_DAYS out -> no-op.
+      2. No event yet, <=DISCORD_EVENT_WINDOW_DAYS out -> create one, and
+         record the matchDate string we created it with.
+      3. Event already exists -> compare E-Sparven's current matchDate
+         against the one we stored when we last created/updated the event;
+         if it changed (a reschedule), PATCH the existing event's time.
+         This branch runs UNCONDITIONALLY, ignoring DISCORD_EVENT_WINDOW_DAYS
+         in both directions -- an event that already exists is only ever
+         retimed in place, NEVER deleted or recreated, even if the
+         reschedule pushes the match back out past the 12-day window. (User
+         requirement, explicit: rescheduling must not remove the event.)
+
+    discord_event_match_date is stored as the raw E-Sparven string (not a
+    parsed datetime) so the comparison is a trivial equality check -- if
+    E-Sparven's own string formatting for the same instant ever drifts
+    between calls this could trigger a harmless spurious PATCH (Discord
+    idempotently accepts the same time again), never a missed one.
 
     Cover image is fully best-effort: logo scraping or compositing failing
     just means no image on the event, never a skipped/failed event. See
     discord_events.build_cover_image()'s docstring for the known caveat
     about our own team's logo possibly being a placeholder.
+
+    AGENT-RESUME: this function is only ever called from the upcoming-
+    meetings loop in run(). Once a meeting is played it drops out of that
+    loop entirely and this stops being called for it -- its Discord event
+    is never marked COMPLETED/CANCELED and is never deleted by us. See the
+    longer AGENT-RESUME note at the top of discord_events.py for whether
+    Discord itself does anything automatic about that (short answer: no,
+    for EXTERNAL entity type events, per training-knowledge / not verified
+    live against current docs).
     """
     try:
         match_dt = datetime.fromisoformat(meeting_date.replace("Z", "+00:00"))
     except ValueError:
-        log.warning(f"Meeting {meeting_id}: unparseable matchDate {meeting_date!r} -- skipping Discord event check")
+        log.warning(f"Meeting {meeting_id}: unparseable matchDate {meeting_date!r} -- skipping Discord event sync")
         return
 
     meeting_entry = state["meetings"][str(meeting_id)]
-    if meeting_entry.get("discord_event_id"):
-        return  # already created on a prior run
+    existing_event_id = meeting_entry.get("discord_event_id")
+
+    if existing_event_id:
+        stored_date = meeting_entry.get("discord_event_match_date")
+        if stored_date != meeting_date:
+            log.info(f"Meeting {meeting_id}: matchDate changed ({stored_date!r} -> {meeting_date!r}), rescheduling Discord event")
+            if discord_events.update_match_event(existing_event_id, match_dt):
+                meeting_entry["discord_event_match_date"] = meeting_date
+            # on failure, stored_date is left untouched -- retried next run
+        return
 
     days_until = (match_dt - datetime.now(timezone.utc)).days
     if days_until > DISCORD_EVENT_WINDOW_DAYS:
@@ -331,6 +365,7 @@ def _maybe_create_discord_event(
     )
     if event_id:
         meeting_entry["discord_event_id"] = event_id
+        meeting_entry["discord_event_match_date"] = meeting_date
 
 
 def _update_our_team_bin(esp, jb, state, heroes, skip_opendota: bool = False):

@@ -25,6 +25,32 @@ a meeting inside the 12-day window and confirm in Discord that:
   (c) the cover image (if PIL path taken) doesn't exceed Discord's image
       size ceiling for this endpoint -- not enforced client-side here.
 Search this file for "AGENT-RESUME" for other open items.
+
+AGENT-RESUME 2026-08-10 (reschedule/expiry question, answered from training
+knowledge -- discord.com/developers docs was unreachable from this sandbox's
+network egress policy at write time, so this is UNVERIFIED against a live
+fetch, only against long-standing memory of the API's documented status
+enum): Discord does NOT auto-delete or auto-complete a scheduled event once
+its time passes. The status field (SCHEDULED=1/ACTIVE=2/COMPLETED=3/
+CANCELED=4) only auto-transitions for STAGE_INSTANCE/VOICE entity types,
+tied to the actual stage/voice channel going live and ending. For our
+entity_type=EXTERNAL events, nothing happens automatically -- an event
+whose end time has passed just sits there in SCHEDULED status indefinitely
+until a human (or a future API call this codebase doesn't make yet) PATCHes
+its status to COMPLETED/CANCELED or DELETEs it outright. Practical
+consequence: once a meeting moves out of bot.py's `our_meetings` (upcoming)
+list -- i.e. the match has been played -- update_match_event() stops being
+called for it, so its Discord event is never touched again and will remain
+visible as a stale past event in the server's Events list. Confirm this
+empirically once real events exist (check the server's Event list a day
+after a match with no manual action taken); if it's a real ongoing
+annoyance, the fix is a small addition to bot.py's `_process_past_meetings`
+(which already knows the win/loss/tie result) that PATCHes status to
+COMPLETED via a new discord_events.complete_match_event() -- not built
+here since it wasn't asked for, and status transitions for EXTERNAL events
+require an extra `entity_metadata`-preserving PATCH sequence (per API docs,
+untested) that's worth its own verification pass rather than bolting on
+speculatively.
 """
 
 import base64
@@ -201,3 +227,47 @@ def create_match_event(
         # guessing from the generic httpx exception message alone.
         log.warning(f"Discord event creation failed: {e}")
         return None
+
+
+def update_match_event(event_id: str, match_date: datetime) -> bool:
+    """
+    PATCH an already-created event's start/end time after E-Sparven reports
+    a reschedule. Returns True on success, False on any failure -- caller
+    (bot.py's _sync_discord_event) is expected to leave its stored
+    "last known match date" untouched on False so the update is retried on
+    the next daily run rather than silently dropped.
+
+    Deliberately does NOT touch name/description/entity_metadata/image --
+    only time fields, since a reschedule doesn't change the opponent or
+    cover art. Deliberately never called for a date that hasn't changed
+    (bot.py checks that) and never deletes/cancels the event for any
+    reason, including a reschedule that pushes the match back outside the
+    12-day creation window -- once an event exists it is retimed in place,
+    never removed, per explicit product decision (a user asked for this
+    exact behavior after the initial build).
+
+    AGENT-RESUME: untested against a real Discord event, same caveat as
+    create_match_event -- log r.text on failure if this starts erroring in
+    practice, not just the exception message.
+    """
+    if not _enabled():
+        return False
+
+    end = match_date + ESTIMATED_DURATION
+    payload = {
+        "scheduled_start_time": match_date.isoformat(),
+        "scheduled_end_time": end.isoformat(),
+    }
+    try:
+        r = httpx.patch(
+            f"{API_BASE}/guilds/{GUILD_ID}/scheduled-events/{event_id}",
+            headers={"Authorization": f"Bot {BOT_TOKEN}"},
+            json=payload,
+            timeout=TIMEOUT_S,
+        )
+        r.raise_for_status()
+        log.info(f"Discord: rescheduled event {event_id} -> {match_date.isoformat()}")
+        return True
+    except Exception as e:
+        log.warning(f"Discord event reschedule failed for {event_id}: {e}")
+        return False
