@@ -1,4 +1,4 @@
-"""
+""" 
 bot.py - Tornknäckarna scouting bot (all-seasons update)
 See inline comments for what changed vs previous version.
 """
@@ -60,7 +60,7 @@ EXTRA_SEASONS     = [6, 17, 27, 43, 60, 67]  # additional seasons to include; se
 STATE_PATH     = Path(__file__).parent / "state.json"
 OUR_TEAM_ID    = ESPARVEN_TEAM_ID
 COMPETITION    = "dota2cm"
-RUN_AT         = "06:00"
+RUN_TIMES      = [t.strip() for t in os.environ.get("RUN_TIMES", "06:00,14:00,22:00").split(",")]
 OPENDOTA_DELAY = 2.5
 
 # Discord scheduled events: create one once a match is this many days out or
@@ -1088,12 +1088,13 @@ if __name__ == "__main__":
     if args.run_once:
         run(skip_opendota=args.no_opendota)
     else:
-        console.print(f"[dim]Scheduling daily run at [bold]{RUN_AT}[/][/]")
-        schedule.every().day.at(RUN_AT).do(run)
+        console.print(f"[dim]Scheduling daily runs at [bold]{', '.join(RUN_TIMES)}[/] UTC[/]")
+        for _t in RUN_TIMES:
+            schedule.every().day.at(_t).do(run)
         try:
             run(skip_opendota=args.no_opendota)
         except Exception as e:
-            log.error(f"Bot cycle failed: {e} — will retry at {RUN_AT}")
+            log.error(f"Bot cycle failed: {e} — will retry at next scheduled time")
         while True:
             schedule.run_pending()
             time.sleep(60)
