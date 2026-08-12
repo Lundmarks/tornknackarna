@@ -29,19 +29,22 @@ Past meetings are frozen after first write and skipped on subsequent runs unless
 ## Project structure
 
 ```
-bot.py            Main orchestration loop
-esparven.py       E-Sparven API client and HTML scraper
-opendota.py       OpenDota API client
-gist.py           GitHub Gist storage client
-steam.py          Steam32/64 ID conversion utilities
-player_map.py     Persistent name to Steam ID cache (player_map.json)
-index.html        GitHub Pages frontend (single file, no build step)
-favicon.svg       Site favicon
-medals/           Rank medal images (herald.png through immortal.png)
-media/            Static assets
-state.json        Local run state — gist IDs, frozen flags (gitignored)
-player_map.json   Steam ID cache (gitignored)
-Dockerfile        Container definition for server deployment
+bot.py               Main orchestration loop
+esparven.py          E-Sparven API client and HTML scraper
+opendota.py          OpenDota API client
+gist.py              GitHub Gist storage client
+webhook.py           Discord webhook notifications (new match, match day, event created)
+discord_events.py    Discord Guild Scheduled Event creation/reschedule/completion
+steam.py             Steam32/64 ID conversion utilities
+player_map.py        Persistent name to Steam ID cache (player_map.json)
+index.html           GitHub Pages frontend (single file, no build step)
+favicon.svg          Site favicon
+medals/              Rank medal images (herald.png through immortal.png)
+media/               Static assets
+state.json           Local run state — gist IDs, frozen flags, Discord event IDs (gitignored)
+player_map.json      Steam ID cache (gitignored)
+Dockerfile           Container definition for server deployment
+docker-compose.yml   Compose service definition (service `scout`)
 ```
 
 ---
@@ -137,7 +140,11 @@ CURRENT_SEASON_ID = 77
 EXTRA_SEASONS     = [6, 17, 27, 43, 60, 67]  # older seasons to include; set to [] for current only
 ```
 
-After changing season, delete `state.json` and re-run to regenerate all gists.
+After changing season, **don't delete `state.json`** — it stores `index_bin_id`/`our_team_bin_id`, and deleting it mints brand-new gists that orphan the IDs hardcoded in `index.html`, breaking the live dashboard until someone updates them manually. Instead:
+
+1. Back up `state.json` and `player_map.json` (e.g. into a gitignored `backups/` folder) before making changes.
+2. Bump `CURRENT_SEASON_ID`, and move the *old* current season into `EXTRA_SEASONS` rather than dropping it, to keep historical stats intact.
+3. Clear only `state["meetings"]` (the per-meeting freeze/ticker/Discord-event cache) to drop stale data from the old season — leave `index_bin_id`/`our_team_bin_id` untouched.
 
 ---
 
@@ -158,42 +165,34 @@ Then update `.env` and `index.html` with the new gist IDs printed at the end of 
 
 ## Deployment
 
-The bot runs in Docker on a daily schedule at 06:00 UTC.
+The bot runs in Docker via Compose (`docker-compose.yml`, service `scout`, container `tornknackarna-scout-1`), twice daily at 06:00 and 18:00 UTC (`RUN_TIMES` in `bot.py`), plus once immediately whenever the container starts.
 
 ```bash
-# Build
-docker build -t tornknackarna-scouter .
-
-# Run with persistent state
-docker run -d \
-  --name tornknackarna-scouter \
-  --restart unless-stopped \
-  -v $(pwd)/state.json:/app/state.json \
-  -v $(pwd)/player_map.json:/app/player_map.json \
-  --env-file .env \
-  tornknackarna-scouter
+# Build and start (detached)
+docker compose up -d --build
 ```
+
+`state.json` and `player_map.json` are bind-mounted (see `docker-compose.yml`) so state survives rebuilds. `.env` is loaded via `env_file`, so it must exist alongside `docker-compose.yml` before starting.
 
 **Useful commands:**
 
 ```bash
 # View logs
-docker logs -f tornknackarna-scouter
+docker logs -f tornknackarna-scout-1
 
-# Run manually inside container
-docker exec tornknackarna-scouter python bot.py --run-once --no-opendota
+# Restart (e.g. after editing .env or state.json)
+docker compose restart scout
 
-# Full rebuild
-docker stop tornknackarna-scouter
-docker rm tornknackarna-scouter
-docker build -t tornknackarna-scouter .
-docker run -d --name tornknackarna-scouter --restart unless-stopped \
-  -v $(pwd)/state.json:/app/state.json \
-  -v $(pwd)/player_map.json:/app/player_map.json \
-  --env-file .env tornknackarna-scouter
+# Run manually inside the container
+docker exec tornknackarna-scout-1 python bot.py --run-once --no-opendota
+
+# Full rebuild after code changes
+docker compose up -d --build
+
+# Check whether it's actually running — restart policy is `unless-stopped`,
+# which does NOT auto-restart after a manual `docker stop`
+docker ps -a
 ```
-
-The `-v` flags are bind mounts — they link files on your host to files inside the container so that state survives rebuilds.
 
 ---
 

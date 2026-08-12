@@ -61,7 +61,7 @@ EXTRA_SEASONS     = [6, 17, 27, 43, 60, 67]  # additional seasons to include; se
 STATE_PATH     = Path(__file__).parent / "state.json"
 OUR_TEAM_ID    = ESPARVEN_TEAM_ID
 COMPETITION    = "dota2cm"
-RUN_TIMES      = [t.strip() for t in os.environ.get("RUN_TIMES", "06:00,14:00,22:00").split(",")]
+RUN_TIMES      = [t.strip() for t in os.environ.get("RUN_TIMES", "06:00,18:00").split(",")]
 OPENDOTA_DELAY = 2.5
 
 # Discord scheduled events: create one once a match is this many days out or
