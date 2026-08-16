@@ -124,9 +124,12 @@ def notify_event_created(
     Fire right after discord_events.create_match_event() succeeds for a
     newly created scheduled event (not on reschedule — that's a silent
     in-place retime, per discord_events.py's "never delete/recreate"
-    contract, so no separate announcement there). Points people at the
-    event itself rather than repeating its content, since the ready-check
-    lives there.
+    contract, so no separate announcement there). This message IS the
+    ready check — players react ✅/❌ directly on it (manually; the bot
+    does not seed reactions itself, since a bot-added ✅ would inflate the
+    apparent headcount by one on a 4-player roster). The scheduled event
+    itself is purely informational and points back here for the ready
+    check (see discord_events.create_match_event's description string).
     """
     if not _enabled():
         return
@@ -141,10 +144,12 @@ def notify_event_created(
     payload = {
         "embeds": [
             {
-                "title": f"📅  Event created — vs {opponent_name}",
+                "title": f"✅❌  Ready check — vs {opponent_name}",
                 "description": (
                     f"**{date_str}**\n\n"
-                    f"[Open the event]({event_url}) and click **Interested** to confirm you're in — that's our ready check."
+                    f"React to this message to check in:\n"
+                    f"✅ I'm in     ❌ Can't make it\n\n"
+                    f"[Open the event]({event_url})"
                 ),
                 "color": EMBED_COLOR_EVENT,
                 "footer": {

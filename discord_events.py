@@ -216,7 +216,7 @@ def create_match_event(
             f"Captain's Mode match vs {opponent_name}.\n\n"
             f"Scouting dashboard: {DASHBOARD_URL}\n"
             f"E-Sparven: {esparven_url}\n\n"
-            f"Ready check: click **Interested** above to confirm you're in."
+            f"Ready check happens on the announcement message, not here — react ✅/❌ there."
         ),
     }
 
