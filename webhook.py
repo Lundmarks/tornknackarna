@@ -19,6 +19,7 @@ log = logging.getLogger("bot")
 
 DASHBOARD_URL   = "https://lundmarks.github.io/tornknackarna/"
 WEBHOOK_URL     = os.environ.get("DISCORD_WEBHOOK_URL") or None
+ROLE_ID         = os.environ.get("DISCORD_ROLE_ID") or None
 TIMEOUT_SECONDS = 8
 
 # Ferrari red as the embed accent colour (decimal)
@@ -32,6 +33,12 @@ def _enabled() -> bool:
         log.debug("Discord webhook not configured — skipping notification")
         return False
     return True
+
+
+def _role_mention() -> str | None:
+    """<@&id> pings a role, but only from the top-level "content" field --
+    mentions inside embed text render as plain text and don't notify anyone."""
+    return f"<@&{ROLE_ID}>" if ROLE_ID else None
 
 
 def _post(payload: dict) -> None:
@@ -142,6 +149,7 @@ def notify_event_created(
         pass
 
     payload = {
+        "content": _role_mention(),
         "embeds": [
             {
                 "title": f"✅❌  Ready check — vs {opponent_name}",
@@ -178,6 +186,7 @@ def notify_match_day(
     esparven_url = f"https://esparven.se/none/Meeting/Details/{meeting_id}"
 
     payload = {
+        "content": _role_mention(),
         "embeds": [
             {
                 "title": f"⚔️  Match day — vs {opponent_name}",

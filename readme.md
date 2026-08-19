@@ -68,6 +68,7 @@ GIST_INDEX_ID=        # leave blank on first run, paste in after
 
 # Optional: Discord notifications and scheduled events — see "Discord integration" below
 DISCORD_WEBHOOK_URL=
+DISCORD_ROLE_ID=
 DISCORD_BOT_TOKEN=
 DISCORD_GUILD_ID=
 ```
@@ -119,10 +120,12 @@ Both pieces are optional and independently gated — set only `DISCORD_WEBHOOK_U
 
 **Webhook notifications** (`webhook.py`, `DISCORD_WEBHOOK_URL`) — posts to a channel via an incoming webhook:
 - New upcoming match detected, with top ban targets
-- A scheduled event was created for a match (see below), linking to it
-- Match day reminder, once per match
+- Ready check — the "event created" announcement for a match (see below), tagging `DISCORD_ROLE_ID` if set
+- Match day reminder, once per match, also tagging `DISCORD_ROLE_ID` if set
 
-**Scheduled events** (`discord_events.py`, `DISCORD_BOT_TOKEN` + `DISCORD_GUILD_ID`) — creates a native Discord Guild Scheduled Event once a match is 12 days out or closer (`DISCORD_EVENT_WINDOW_DAYS` in `bot.py`), with a cover image composited from both teams' logos when available. If E-Sparven later reschedules the match, the existing event is retimed in place — never deleted or recreated. Once the match is played, the event is marked Completed rather than left stale. **Ready check:** players confirm attendance by clicking **Interested** on the event itself — this is stated in both the event description and the webhook announcement.
+Set `DISCORD_ROLE_ID` (a role's numeric snowflake — Server Settings → Roles → right-click the role → Copy Role ID, with Developer Mode enabled) to have the ready check and match day messages @-mention that role. Leave it unset to post without a mention.
+
+**Scheduled events** (`discord_events.py`, `DISCORD_BOT_TOKEN` + `DISCORD_GUILD_ID`) — creates a native Discord Guild Scheduled Event once a match is 12 days out or closer (`DISCORD_EVENT_WINDOW_DAYS` in `bot.py`), with a cover image composited from both teams' logos when available. If E-Sparven later reschedules the match, the existing event is retimed in place — never deleted or recreated. Once the match is played, the event is marked Completed rather than left stale. **Ready check:** the scheduled event is informational only — the actual ready check is the webhook "event created" chat message, where players react ✅/❌ manually to confirm attendance (the bot doesn't seed a reaction itself, since a bot ✅ would inflate a small roster's apparent headcount).
 
 This needs a separate bot application (not the webhook above) with the **Manage Events** permission in the target server:
 1. [Discord Developer Portal](https://discord.com/developers/applications) → New Application → Bot → copy the token into `DISCORD_BOT_TOKEN`
