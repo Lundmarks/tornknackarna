@@ -15,7 +15,7 @@ Live at: **[lundmarks.github.io/tornknackarna](https://lundmarks.github.io/tornk
 Each day the bot:
 
 1. Fetches upcoming and past meetings from E-Sparven
-2. Resolves opponent Steam IDs via page scraping, with OpenDota search as fallback
+2. Updates Discord first (ready checks, events, match-day reminders), so a scouting failure can't block them
 3. Parses tournament picks, bans, and player performance from E-Sparven match data
 4. Fetches pub stats, rank, and hero pool data from OpenDota
 5. Computes draft tendencies — most picked, most banned, and draft order patterns per team
@@ -23,6 +23,8 @@ Each day the bot:
 7. Writes one secret GitHub Gist per opponent, a self-scouting Gist for Tornknäckarna, and an index Gist the frontend reads on load
 
 Past meetings are frozen after first write and skipped on subsequent runs unless `state.json` is deleted. Upcoming matches are re-scouted on every run.
+
+Automatic Steam ID lookup for new players is currently disabled because an E-Sparven page update broke the Dotabuff links it relied on. Players already in `player_map.json` keep working. See [Player ID mapping](#player-id-mapping).
 
 ---
 
@@ -33,8 +35,10 @@ bot.py               Main orchestration loop
 esparven.py          E-Sparven API client and HTML scraper
 opendota.py          OpenDota API client
 gist.py              GitHub Gist storage client
-webhook.py           Discord webhook notifications (new match, match day, event created)
+webhook.py           Discord match notifications, sent by the bot account
 discord_events.py    Discord Guild Scheduled Event creation/reschedule/completion
+ready_bot.py         Always-on Discord service: ready check buttons, alerts, slash commands
+ready_check.py       Ready check rules and SQLite storage
 steam.py             Steam32/64 ID conversion utilities
 player_map.py        Persistent name to Steam ID cache (player_map.json)
 index.html           GitHub Pages frontend (single file, no build step)
@@ -43,8 +47,9 @@ medals/              Rank medal images (herald.png through immortal.png)
 media/               Static assets
 state.json           Local run state — gist IDs, frozen flags, Discord event IDs (gitignored)
 player_map.json      Steam ID cache (gitignored)
+data/                Ready check database: votes, history, attendance (gitignored)
 Dockerfile           Container definition for server deployment
-docker-compose.yml   Compose service definition (service `scout`)
+docker-compose.yml   Compose services `scout` and `ready`
 ```
 
 ---
@@ -66,11 +71,11 @@ GITHUB_TOKEN=ghp_...
 GITHUB_USERNAME=your_github_username
 GIST_INDEX_ID=        # leave blank on first run, paste in after
 
-# Optional: Discord notifications and scheduled events — see "Discord integration" below
-DISCORD_WEBHOOK_URL=
-DISCORD_ROLE_ID=
+# Optional: Discord bot — see "Discord integration" below
 DISCORD_BOT_TOKEN=
 DISCORD_GUILD_ID=
+DISCORD_READY_CHANNEL_ID=
+DISCORD_ROLE_ID=
 ```
 
 **Creating a GitHub token:**
@@ -116,21 +121,45 @@ python bot.py --force-next-event         # admin debug: force-create a Discord e
 
 ## Discord integration
 
-Both pieces are optional and independently gated — set only `DISCORD_WEBHOOK_URL` for notifications, only `DISCORD_BOT_TOKEN`/`DISCORD_GUILD_ID` for scheduled events, or both. Leave the relevant variable(s) unset to disable.
+Everything is posted by one bot account. Set `DISCORD_BOT_TOKEN` and `DISCORD_READY_CHANNEL_ID` for the ready check and notifications, and `DISCORD_GUILD_ID` for scheduled events. Set `DISCORD_ROLE_ID` to @-mention a role. Leave a variable unset to disable that part.
 
-**Webhook notifications** (`webhook.py`, `DISCORD_WEBHOOK_URL`) — posts to a channel via an incoming webhook:
-- New upcoming match detected, with top ban targets
-- Ready check — the "event created" announcement for a match (see below), tagging `DISCORD_ROLE_ID` if set
-- Match day reminder, once per match, also tagging `DISCORD_ROLE_ID` if set
+**Match notifications** (`webhook.py`):
+- New upcoming match detected, with top ban targets when scouting data is available
+- Match day reminder, once per match, tagging the role
 
-Set `DISCORD_ROLE_ID` (a role's numeric snowflake — Server Settings → Roles → right-click the role → Copy Role ID, with Developer Mode enabled) to have the ready check and match day messages @-mention that role. Leave it unset to post without a mention.
+**Scheduled events** (`discord_events.py`) — creates a native Discord event once a match is 12 days out or closer (`DISCORD_EVENT_WINDOW_DAYS` in `bot.py`), with a cover image from both teams' logos when available. If E-Sparven reschedules the match, the event is retimed in place, never deleted or recreated. Once the match is played, the event is marked Completed. The event is informational only.
 
-**Scheduled events** (`discord_events.py`, `DISCORD_BOT_TOKEN` + `DISCORD_GUILD_ID`) — creates a native Discord Guild Scheduled Event once a match is 12 days out or closer (`DISCORD_EVENT_WINDOW_DAYS` in `bot.py`), with a cover image composited from both teams' logos when available. If E-Sparven later reschedules the match, the existing event is retimed in place — never deleted or recreated. Once the match is played, the event is marked Completed rather than left stale. **Ready check:** the scheduled event is informational only — the actual ready check is the webhook "event created" chat message, where players react ✅/❌ manually to confirm attendance (the bot doesn't seed a reaction itself, since a bot ✅ would inflate a small roster's apparent headcount).
+### Ready check
 
-This needs a separate bot application (not the webhook above) with the **Manage Events** permission in the target server:
-1. [Discord Developer Portal](https://discord.com/developers/applications) → New Application → Bot → copy the token into `DISCORD_BOT_TOKEN`
-2. OAuth2 → URL Generator → scope `bot`, permission `Manage Events` → open the generated URL to invite it to your server
-3. Enable Developer Mode in Discord (User Settings → Advanced), right-click the server icon → Copy Server ID → `DISCORD_GUILD_ID`
+`ready_bot.py` runs as the always-on `ready` service and posts a ready check when a match is within 12 days. Players click **I'm in** or **Can't make it**, and clicking their current answer clears it. Anyone who can see the message can vote, and voting closes at kick-off. **History** shows that match's audit log privately to whoever clicks it.
+
+| Event | When | What happens |
+|---|---|---|
+| Late drop | An "in" player leaves within 30 hours of kick-off | Alert after 60 seconds, cancelled if they click back in. Pings the role only if 5 or fewer were in before the drop |
+| Back in | A player with a sent alert returns | Short message, no ping |
+| Reschedule | E-Sparven reports a new time | All answers reset, and the role is pinged to vote again |
+| Short roster | Fewer than 5 are in at 48h and 24h before kick-off | The role is pinged with how many are missing |
+| Voice check | 10 minutes before kick-off | Passes silently if at least 5 "in" players are in voice. Otherwise pings those missing |
+| Attendance | At kick-off | With 5 in voice, extra players count as bench. With fewer, "in" players not in voice count as no-shows |
+
+The voice check counts any voice channel the bot can see, except the server's AFK channel. Only players who clicked **I'm in** count, so stand-ins must vote too. Reschedules are detected on the bot's 06:00 and 18:00 UTC runs.
+
+**Admin slash commands** (replies are visible only to you):
+
+```
+/readycheck-stats [season]
+/readycheck-debug [players_in] [hours_to_kickoff] [preview] [in_voice]
+```
+
+`/readycheck-stats` shows matches answered, late drops and no-shows per player. `/readycheck-debug` runs a throwaway sandbox that saves nothing and pings nobody. Set `preview` to `reschedule`, `short_roster` or `voice` to preview those alerts.
+
+### Bot setup
+
+1. [Discord Developer Portal](https://discord.com/developers/applications) → New Application → Bot → copy the token into `DISCORD_BOT_TOKEN`. No privileged intents are needed.
+2. OAuth2 → URL Generator → scopes `bot` and `applications.commands`, permission `Manage Events` → open the generated URL to invite it to your server.
+3. Enable Developer Mode in Discord (User Settings → Advanced), then copy the server ID to `DISCORD_GUILD_ID`, the channel ID to `DISCORD_READY_CHANNEL_ID`, and the role ID to `DISCORD_ROLE_ID`.
+4. In the ready channel, allow the bot **View Channel**, **Send Messages**, **Embed Links** and **Read Message History**, plus **Mention All Roles** unless the role is mentionable.
+5. Allow **View Channel** on every voice channel the team uses, or players there will look absent.
 
 ---
 
@@ -168,23 +197,33 @@ Then update `.env` and `index.html` with the new gist IDs printed at the end of 
 
 ## Deployment
 
-The bot runs in Docker via Compose (`docker-compose.yml`, service `scout`, container `tornknackarna-scout-1`), twice daily at 06:00 and 18:00 UTC (`RUN_TIMES` in `bot.py`), plus once immediately whenever the container starts.
+The bot runs in Docker via Compose with two services:
+
+- `scout` (`tornknackarna-scout-1`) runs twice daily at 06:00 and 18:00 UTC (`RUN_TIMES` in `bot.py`), plus once immediately whenever the container starts.
+- `ready` (`tornknackarna-ready-1`) stays connected to Discord and handles the ready check.
 
 ```bash
 # Build and start (detached)
 docker compose up -d --build
+
+# Update only the Discord service, without a full scouting run
+docker compose up -d --build ready
 ```
 
-`state.json` and `player_map.json` are bind-mounted (see `docker-compose.yml`) so state survives rebuilds. `.env` is loaded via `env_file`, so it must exist alongside `docker-compose.yml` before starting.
+`state.json`, `player_map.json` and `data/` are bind-mounted (see `docker-compose.yml`) so state survives rebuilds. `.env` is loaded via `env_file`, so it must exist alongside `docker-compose.yml` before starting.
 
 **Useful commands:**
 
 ```bash
 # View logs
 docker logs -f tornknackarna-scout-1
+docker logs -f tornknackarna-ready-1
 
-# Restart (e.g. after editing .env or state.json)
+# Restart (e.g. after editing state.json)
 docker compose restart scout
+
+# Apply .env changes (restart alone doesn't reload them)
+docker compose up -d
 
 # Run manually inside the container
 docker exec tornknackarna-scout-1 python bot.py --run-once --no-opendota
@@ -235,7 +274,7 @@ python3 -m http.server 8080
 
 ## Player ID mapping
 
-Steam IDs are resolved automatically where possible. For players with no numeric ID on E-Sparven, add them manually to `player_map.json`:
+Automatic lookup is currently disabled (`RESOLVE_NEW_PLAYER_IDS = False` in `bot.py`) because an E-Sparven page update broke the Dotabuff links it scraped. To add a new player, edit `player_map.json` manually:
 
 ```json
 {
