@@ -169,10 +169,6 @@ def run(skip_opendota: bool = False):
     # Snapshot which meeting IDs existed before this run so we can detect new ones
     known_meeting_ids = set(state["meetings"].keys())
 
-    _section("OpenDota: hero list")
-    heroes = opendota.get_heroes()
-    log.info(f"Loaded [bold]{len(heroes)}[/] heroes")
-
     _section("E-Sparven: upcoming meetings")
     try:
         upcoming = esp.get_upcoming_meetings(COMPETITION)
@@ -186,6 +182,67 @@ def run(skip_opendota: bool = False):
     ]
     log.info(f"Found [bold]{len(our_meetings)}[/] upcoming meeting(s) for Tornknäckarna (of {len(upcoming)} total)")
 
+    # Discord runs first so an OpenDota or gist failure can't block a ready check.
+    _section("Discord: match updates")
+    for meeting in our_meetings:
+        try:
+            _sync_meeting_discord(esp, state, meeting, known_meeting_ids)
+        except Exception as e:
+            log.error(f"Meeting {meeting.get('id')}: Discord update failed: {e}")
+    save_state(state)
+
+    top_bans: dict[int, list[dict]] = {}
+    try:
+        _run_scouting(esp, jb, state, our_meetings, top_bans, skip_opendota)
+    except Exception as e:
+        log.error(f"Scouting failed: {e} — match notifications are unaffected")
+
+    # Sent after scouting so it can include ban targets, but sent either way.
+    _send_new_match_notifications(state, our_meetings, top_bans)
+    save_state(state)
+
+
+def _sync_meeting_discord(esp, state: dict, meeting: dict, known_meeting_ids: set) -> None:
+    meeting_id   = meeting["id"]
+    meeting_date = meeting.get("matches", [{}])[0].get("matchDate", "")
+    opponent     = _find_opponent(meeting, OUR_TEAM_ID)
+    if not opponent:
+        log.warning(f"Meeting {meeting_id}: could not identify opponent, skipping")
+        return
+
+    entry = state["meetings"].setdefault(str(meeting_id), {})
+    entry["opponent"] = opponent["name"]
+    if str(meeting_id) not in known_meeting_ids:
+        entry["new_match_pending"] = True
+
+    _sync_discord_event(esp, state, meeting_id, opponent["name"], opponent["id"], meeting_date)
+
+    # Match day reminder — fires once per match on the day of the match
+    today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    if meeting_date.startswith(today_str) and not entry.get("match_day_notified", False):
+        webhook.notify_match_day(opponent_name=opponent["name"], meeting_id=meeting_id)
+        entry["match_day_notified"] = True
+
+
+def _send_new_match_notifications(state: dict, our_meetings: list, top_bans: dict) -> None:
+    for meeting in our_meetings:
+        entry = state["meetings"].get(str(meeting["id"]), {})
+        if not entry.get("new_match_pending"):
+            continue
+        webhook.notify_new_match(
+            opponent_name=entry.get("opponent", "Unknown"),
+            match_date=meeting.get("matches", [{}])[0].get("matchDate", ""),
+            meeting_id=meeting["id"],
+            top_bans=top_bans.get(meeting["id"], []),
+        )
+        del entry["new_match_pending"]
+
+
+def _run_scouting(esp, jb, state: dict, our_meetings: list, top_bans: dict, skip_opendota: bool) -> None:
+    _section("OpenDota: hero list")
+    heroes = opendota.get_heroes()
+    log.info(f"Loaded [bold]{len(heroes)}[/] heroes")
+
     index_entries = []
 
     for meeting in our_meetings:
@@ -194,28 +251,41 @@ def run(skip_opendota: bool = False):
 
         opponent = _find_opponent(meeting, OUR_TEAM_ID)
         if not opponent:
-            log.warning(f"Meeting {meeting_id}: could not identify opponent, skipping")
             continue
 
         opponent_name = opponent["name"]
         opponent_id   = opponent["id"]
 
         _section(f"Upcoming: vs {opponent_name}")
-        members = opponent.get("members", [])
-        _resolve_steam_ids(esp, meeting_id, opponent_id, members)
+        try:
+            members = opponent.get("members", [])
+            _resolve_steam_ids(esp, meeting_id, opponent_id, members)
 
-        our_contender   = _find_contender(meeting, OUR_TEAM_ID)
-        our_account_ids = _account_ids_for_members(our_contender.get("members", []) if our_contender else [])
+            our_contender   = _find_contender(meeting, OUR_TEAM_ID)
+            our_account_ids = _account_ids_for_members(our_contender.get("members", []) if our_contender else [])
 
-        scout = build_scout_data(
-            meeting, opponent, members, heroes, status="upcoming", esp=esp,
-            skip_opendota=skip_opendota, our_account_ids=our_account_ids,
-        )
+            scout = build_scout_data(
+                meeting, opponent, members, heroes, status="upcoming", esp=esp,
+                skip_opendota=skip_opendota, our_account_ids=our_account_ids,
+            )
 
-        _step("↑", f"Writing bin for [yellow]{opponent_name}[/] (upcoming)...")
-        bin_id = state["meetings"].get(str(meeting_id), {}).get("bin_id")
-        bin_id = jb.create_or_update(bin_id, scout, name=f"{opponent_name} (upcoming)")
-        _step("[green]✓[/]", f"Bin ready: [dim]{bin_id}[/]")
+            _step("↑", f"Writing bin for [yellow]{opponent_name}[/] (upcoming)...")
+            bin_id = state["meetings"].get(str(meeting_id), {}).get("bin_id")
+            bin_id = jb.create_or_update(bin_id, scout, name=f"{opponent_name} (upcoming)")
+            _step("[green]✓[/]", f"Bin ready: [dim]{bin_id}[/]")
+        except Exception as e:
+            log.error(f"Meeting {meeting_id}: scouting failed: {e}")
+            # Keep the last good scouting data listed on the dashboard.
+            bin_id = state["meetings"].get(str(meeting_id), {}).get("bin_id")
+            if bin_id:
+                index_entries.append({
+                    "meetingId": meeting_id,
+                    "gistId":     bin_id,
+                    "opponent":  opponent_name,
+                    "date":      meeting_date,
+                    "status":    "upcoming",
+                })
+            continue
 
         state["meetings"].setdefault(str(meeting_id), {})["bin_id"] = bin_id
         state["meetings"][str(meeting_id)]["opponent"] = opponent_name
@@ -226,25 +296,7 @@ def run(skip_opendota: bool = False):
             scout.get("draftTendencies", {}),
             "upcoming",
         )
-
-        # Notify Discord if this is a newly discovered match
-        if str(meeting_id) not in known_meeting_ids:
-            webhook.notify_new_match(
-                opponent_name=opponent_name,
-                match_date=meeting_date,
-                meeting_id=meeting_id,
-                top_bans=_top_bans_for_embed(scout.get("players", [])),
-            )
-
-        # Discord scheduled event -- create once the match enters the
-        # DISCORD_EVENT_WINDOW_DAYS window, then keep its time in sync with
-        # E-Sparven on every later run (reschedule handling); never deletes.
-        # State is saved once at the end of run(), not here.
-        # AGENT-RESUME: this whole block is untested against a real Discord
-        # bot/guild -- see discord_events.py's module docstring for the exact
-        # checklist to run through once DISCORD_BOT_TOKEN/DISCORD_GUILD_ID
-        # exist in .env.
-        _sync_discord_event(esp, state, meeting_id, opponent_name, opponent_id, meeting_date)
+        top_bans[meeting_id] = _top_bans_for_embed(scout.get("players", []))
 
         index_entries.append({
             "meetingId": meeting_id,
@@ -253,22 +305,6 @@ def run(skip_opendota: bool = False):
             "date":      meeting_date,
             "status":    "upcoming",
         })
-
-    # Match day reminder — fires once per match on the day of the match
-    today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    for meeting in our_meetings:
-        meeting_id   = meeting["id"]
-        meeting_date = meeting.get("matches", [{}])[0].get("matchDate", "")
-        opponent     = _find_opponent(meeting, OUR_TEAM_ID)
-        if not opponent:
-            continue
-        already_notified = state["meetings"].get(str(meeting_id), {}).get("match_day_notified", False)
-        if meeting_date.startswith(today_str) and not already_notified:
-            webhook.notify_match_day(
-                opponent_name=opponent["name"],
-                meeting_id=meeting_id,
-            )
-            state["meetings"].setdefault(str(meeting_id), {})["match_day_notified"] = True
 
     _process_past_meetings(esp, jb, state, heroes, index_entries, skip_opendota=skip_opendota)
 
@@ -362,19 +398,16 @@ def _sync_discord_event(
         log.warning(f"Meeting {meeting_id}: unparseable matchDate {meeting_date!r} -- skipping Discord event sync")
         return
 
+    days_until = (match_dt - datetime.now(timezone.utc)).days
+    # Independent of the scheduled event, so a failed event can't block it.
+    queued = _sync_ready_check(
+        meeting_id, opponent_name, match_dt, force or days_until <= DISCORD_EVENT_WINDOW_DAYS
+    )
+
     meeting_entry = state["meetings"][str(meeting_id)]
     existing_event_id = meeting_entry.get("discord_event_id")
 
     if existing_event_id:
-        if ready_check.enabled():
-            try:
-                conn = ready_check.connect()
-                try:
-                    ready_check.sync_kickoff(conn, meeting_id, int(match_dt.timestamp()))
-                finally:
-                    conn.close()
-            except Exception as e:
-                log.warning(f"Meeting {meeting_id}: ready check kick-off sync failed: {e}")
         stored_date = meeting_entry.get("discord_event_match_date")
         if stored_date != meeting_date:
             log.info(f"Meeting {meeting_id}: matchDate changed ({stored_date!r} -> {meeting_date!r}), rescheduling Discord event")
@@ -383,7 +416,6 @@ def _sync_discord_event(
             # on failure, stored_date is left untouched -- retried next run
         return
 
-    days_until = (match_dt - datetime.now(timezone.utc)).days
     if not force and days_until > DISCORD_EVENT_WINDOW_DAYS:
         return
 
@@ -403,23 +435,34 @@ def _sync_discord_event(
     if event_id:
         meeting_entry["discord_event_id"] = event_id
         meeting_entry["discord_event_match_date"] = meeting_date
-        queued = False
-        if ready_check.enabled():
-            try:
-                conn = ready_check.connect()
-                try:
-                    ready_check.register_meeting(conn, meeting_id, opponent_name, int(match_dt.timestamp()))
-                    queued = True
-                finally:
-                    conn.close()
-            except Exception as e:
-                log.warning(f"Meeting {meeting_id}: could not queue button ready check: {e}")
         if not queued:
             webhook.notify_event_created(
                 opponent_name=opponent_name,
                 match_date=meeting_date,
                 event_url=discord_events.event_url(event_id),
             )
+
+
+def _sync_ready_check(meeting_id: int, opponent_name: str, match_dt: datetime, in_window: bool) -> bool:
+    """Queue or reschedule the button ready check. Returns True if one exists."""
+    if not ready_check.enabled():
+        return False
+    try:
+        conn = ready_check.connect()
+        try:
+            kickoff = int(match_dt.timestamp())
+            if ready_check.get_meeting(conn, meeting_id):
+                ready_check.reschedule(conn, meeting_id, kickoff, int(time.time()))
+                return True
+            if in_window:
+                ready_check.register_meeting(conn, meeting_id, opponent_name, kickoff, CURRENT_SEASON_ID)
+                return True
+            return False
+        finally:
+            conn.close()
+    except Exception as e:
+        log.warning(f"Meeting {meeting_id}: ready check sync failed: {e}")
+        return False
 
 
 def force_create_next_event() -> None:
@@ -1207,12 +1250,15 @@ if __name__ == "__main__":
         run(skip_opendota=args.no_opendota)
     else:
         console.print(f"[dim]Scheduling daily runs at [bold]{', '.join(RUN_TIMES)}[/] UTC[/]")
+        def _safe_run(skip_opendota: bool = False) -> None:
+            try:
+                run(skip_opendota=skip_opendota)
+            except Exception as e:
+                log.error(f"Bot cycle failed: {e} — will retry at next scheduled time")
+
         for _t in RUN_TIMES:
-            schedule.every().day.at(_t).do(run)
-        try:
-            run(skip_opendota=args.no_opendota)
-        except Exception as e:
-            log.error(f"Bot cycle failed: {e} — will retry at next scheduled time")
+            schedule.every().day.at(_t).do(_safe_run)
+        _safe_run(skip_opendota=args.no_opendota)
         while True:
             schedule.run_pending()
             time.sleep(60)

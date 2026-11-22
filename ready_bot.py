@@ -2,20 +2,23 @@
 ready_bot.py - always-on Discord service for the button ready check.
 
 Posts ready checks queued by bot.py, handles button clicks, keeps the roster
-message up to date and sends late-withdrawal alerts. Vote rules live in
-ready_check.py.
+message up to date, and sends late-drop, reschedule, short-roster and voice
+alerts. Vote rules live in ready_check.py.
 
 Needs DISCORD_BOT_TOKEN and DISCORD_READY_CHANNEL_ID. DISCORD_ROLE_ID is
-optional. No privileged gateway intents are required.
+optional. Uses the Guilds and Voice States intents, neither of which is
+privileged.
 """
 
 import asyncio
+import json
 import logging
 import os
 import re
 import time
 from dataclasses import dataclass
 from sqlite3 import Connection
+from typing import Literal
 
 import discord
 from discord import app_commands
@@ -35,7 +38,6 @@ COLOR_WARN = 0xE6A23C
 COLOR_BACK = 0x2E9E5B
 FIELD_LIMIT = 1024
 DESCRIPTION_LIMIT = 4096
-REASON_MAX = 200
 STATE_LABELS = {rc.IN: "in", rc.OUT: "out", rc.NONE: "none"}
 
 
@@ -71,6 +73,10 @@ def _hours_before(kickoff: int, at: int) -> str:
     return f"{seconds // 3600}h"
 
 
+def _players(count: int) -> str:
+    return f"{count} more player{'' if count == 1 else 's'}"
+
+
 def build_embed(conn, meeting, label=_mention) -> discord.Embed:
     players = rc.roster(conn, meeting["meeting_id"])
     ready = len(players[rc.IN])
@@ -101,7 +107,7 @@ def build_history_embed(conn, meeting, label=_mention) -> discord.Embed:
             f"<t:{row['at']}:f> {label(row['user_id'])} "
             f"{STATE_LABELS[row['old_state']]} → {STATE_LABELS[row['new_state']]}"
         )
-        if row["notify_kind"] == "withdrawal":
+        if row["notify_kind"] == "withdrawal" and row["notify_status"] != "cancelled":
             line += f" ⚠️ {_hours_before(meeting['kickoff'], row['at'])} before"
         if row["reason"]:
             line += f"\n> {discord.utils.escape_markdown(row['reason'])}"
@@ -121,7 +127,8 @@ def build_history_embed(conn, meeting, label=_mention) -> discord.Embed:
 
 
 def build_notification(row, label=_mention) -> discord.Embed:
-    ready = f"{row['in_after']}/{rc.MATCH_SIZE}"
+    ready_now = row["ready_now"]
+    ready = f"{ready_now}/{rc.MATCH_SIZE}"
     if row["notify_kind"] == "back_in":
         return discord.Embed(
             title="✅ Player back in",
@@ -129,44 +136,78 @@ def build_notification(row, label=_mention) -> discord.Embed:
             color=COLOR_BACK,
         )
 
-    missing = max(0, rc.MATCH_SIZE - row["in_after"])
-    title = (
-        f"⚠️ Need {missing} more player{'' if missing == 1 else 's'}"
-        if missing
-        else "ℹ️ Player dropped, still enough to play"
-    )
+    missing = max(0, rc.MATCH_SIZE - ready_now)
     embed = discord.Embed(
-        title=title,
+        title=f"⚠️ Need {_players(missing)}" if missing else "ℹ️ Player dropped, still enough to play",
         description=f"{label(row['user_id'])} can't play vs **{row['opponent']}**.",
         color=COLOR_ALERT if missing else COLOR_WARN,
     )
     embed.add_field(name="Ready", value=ready, inline=True)
     embed.add_field(name="Kick-off", value=f"<t:{row['kickoff']}:R>", inline=True)
-    embed.add_field(
-        name="Reason",
-        value=f"> {discord.utils.escape_markdown(row['reason'] or '').replace(chr(10), ' ')}",
-        inline=False,
-    )
     return embed
 
 
-class ReasonModal(discord.ui.Modal):
-    reason = discord.ui.TextInput(
-        label="Why can't you play?",
-        style=discord.TextStyle.paragraph,
-        min_length=2,
-        max_length=REASON_MAX,
-        required=True,
+def build_reschedule_embed(opponent: str, old_kickoff: int, kickoff: int) -> discord.Embed:
+    embed = discord.Embed(
+        title="🕒 Match rescheduled",
+        description=f"**vs {opponent}** has moved. All answers were reset, so please vote again.",
+        color=COLOR_WARN,
     )
+    embed.add_field(name="Was", value=f"<t:{old_kickoff}:F>", inline=False)
+    embed.add_field(name="Now", value=f"<t:{kickoff}:F> · <t:{kickoff}:R>", inline=False)
+    return embed
 
-    def __init__(self, bot: "ReadyBot", meeting_id: int, target: str):
-        super().__init__(title="Leaving the ready check")
-        self.bot = bot
-        self.meeting_id = meeting_id
-        self.target = target
 
-    async def on_submit(self, interaction: discord.Interaction) -> None:
-        await self.bot.record_vote(interaction, self.meeting_id, self.target, str(self.reason))
+def build_short_roster_embed(opponent: str, kickoff: int, ready: int) -> discord.Embed:
+    embed = discord.Embed(
+        title=f"⚠️ Need {_players(rc.MATCH_SIZE - ready)}",
+        description=f"**vs {opponent}** doesn't have a full team yet. Please answer the ready check.",
+        color=COLOR_ALERT,
+    )
+    embed.add_field(name="Ready", value=f"{ready}/{rc.MATCH_SIZE}", inline=True)
+    embed.add_field(name="Kick-off", value=f"<t:{kickoff}:R>", inline=True)
+    return embed
+
+
+def build_voice_embed(
+    opponent: str, kickoff: int, present: list[int], missing: list[int], label=_mention
+) -> discord.Embed:
+    embed = discord.Embed(
+        title=f"🎙️ Need {_players(rc.MATCH_SIZE - len(present))} in voice",
+        description=f"**vs {opponent}** starts <t:{kickoff}:R>.",
+        color=COLOR_ALERT,
+    )
+    embed.add_field(name="In voice", value=f"{len(present)}/{rc.MATCH_SIZE}", inline=True)
+    if missing:
+        embed.add_field(name="Said yes, not in voice", value=_names(missing, label), inline=False)
+    return embed
+
+
+def build_stats_embed(rows, season_id: int | None, label=_mention) -> discord.Embed:
+    title = f"📊 Reliability: season {season_id}" if season_id is not None else "📊 Reliability"
+    lines = [
+        f"{label(row['user_id'])}\nAnswered **{row['answered']}** · "
+        f"Late drops **{row['late_drops']}** · No-shows **{row['no_shows']}**"
+        for row in rows
+    ]
+    text = ""
+    for index, line in enumerate(lines):
+        suffix = f"\n\n+{len(lines) - index} more"
+        if len(text) + len(line) + 2 + len(suffix) > DESCRIPTION_LIMIT:
+            text += suffix
+            break
+        text += f"\n\n{line}" if text else line
+    return discord.Embed(title=title, description=text or "No votes recorded yet.", color=COLOR)
+
+
+def voice_user_ids(guild: discord.Guild) -> set[int]:
+    """Everyone in a voice channel on the server, except the AFK channel."""
+    afk_id = guild.afk_channel.id if guild.afk_channel else None
+    users: set[int] = set()
+    for channel in guild.voice_channels:
+        if channel.id != afk_id:
+            users.update(channel.voice_states)
+    return users
 
 
 class ReadyButton(
@@ -205,11 +246,7 @@ class ReadyButton(
             return
 
         current = rc.get_state(bot.conn, self.meeting_id, interaction.user.id)
-        target = rc.next_state(current, self.action)
-        if rc.needs_reason(current, target):
-            await interaction.response.send_modal(ReasonModal(bot, self.meeting_id, target))
-            return
-        await bot.record_vote(interaction, self.meeting_id, target, None)
+        await bot.record_vote(interaction, self.meeting_id, rc.next_state(current, self.action))
 
 
 def build_view(meeting_id: int) -> discord.ui.View:
@@ -217,6 +254,18 @@ def build_view(meeting_id: int) -> discord.ui.View:
     for action in ("in", "out", "history"):
         view.add_item(ReadyButton(action, meeting_id))
     return view
+
+
+def vote_confirmation(result: rc.VoteResult) -> str:
+    text = f"You're marked as **{STATE_LABELS[result.new_state]}**."
+    if result.alert_cancelled:
+        return f"{text} The team alert was cancelled."
+    if result.notify_kind == "withdrawal":
+        return (
+            f"{text} The team will be told in {rc.WITHDRAWAL_GRACE_SECONDS} seconds "
+            "unless you click **I'm in** again."
+        )
+    return text
 
 
 DEBUG_MEETING_ID = 0
@@ -244,17 +293,8 @@ def create_debug_session(owner_id: int, owner_name: str, players_in: int, hours:
     rc.register_meeting(conn, DEBUG_MEETING_ID, "Debug Opponent", now + hours * 3600)
     rc.mark_posted(conn, DEBUG_MEETING_ID, 0, 0)
     for test_player in range(1, players_in + 1):
-        rc.apply_vote(conn, DEBUG_MEETING_ID, test_player, f"TestPlayer{test_player}", rc.IN, None, now)
+        rc.apply_vote(conn, DEBUG_MEETING_ID, test_player, f"TestPlayer{test_player}", rc.IN, now)
     return DebugSession(conn, owner_id, owner_name)
-
-
-class DebugReasonModal(ReasonModal):
-    def __init__(self, bot: "ReadyBot", session: DebugSession, target: str):
-        super().__init__(bot, DEBUG_MEETING_ID, target)
-        self.session = session
-
-    async def on_submit(self, interaction: discord.Interaction) -> None:
-        await self.bot.record_debug_vote(interaction, self.session, self.target, str(self.reason))
 
 
 class DebugButton(
@@ -293,11 +333,7 @@ class DebugButton(
             return
 
         current = rc.get_state(session.conn, DEBUG_MEETING_ID, self.owner_id)
-        target = rc.next_state(current, self.action)
-        if rc.needs_reason(current, target):
-            await interaction.response.send_modal(DebugReasonModal(bot, session, target))
-            return
-        await bot.record_debug_vote(interaction, session, target, None)
+        await bot.record_debug_vote(interaction, session, rc.next_state(current, self.action))
 
 
 def build_debug_view(owner_id: int) -> discord.ui.View:
@@ -307,10 +343,49 @@ def build_debug_view(owner_id: int) -> discord.ui.View:
     return view
 
 
+def _test_label(user_id: int) -> str:
+    return f"TestPlayer{user_id}"
+
+
+async def _send_debug_preview(
+    interaction: discord.Interaction, preview: str, players_in: int, hours: int, in_voice: int
+) -> None:
+    now = int(time.time())
+    kickoff = now + hours * 3600
+    content = None
+    embed = None
+    if preview == "reschedule":
+        content = "🧪 Reschedule preview: the real version pings the role and resets all answers."
+        embed = build_reschedule_embed("Debug Opponent", kickoff - 86400, kickoff)
+    elif preview == "short_roster":
+        if players_in >= rc.MATCH_SIZE:
+            content = f"🧪 {players_in} are in, so no short-roster warning would be posted."
+        else:
+            content = "🧪 Short-roster preview: the real version pings the role at 48h and 24h."
+            embed = build_short_roster_embed("Debug Opponent", kickoff, players_in)
+    else:
+        in_players = list(range(1, players_in + 1))
+        check = rc.evaluate_voice(in_players, set(in_players[:in_voice]))
+        if check.passed:
+            content = (
+                f"🧪 Voice check passes: {len(check.present)} of {players_in} are in voice. "
+                "No alert, and nobody is counted as a no-show."
+            )
+        else:
+            content = "🧪 Voice alert preview: the real version pings the players who are missing."
+            embed = build_voice_embed("Debug Opponent", now + 600, check.present, check.missing, _test_label)
+    kwargs = {"embed": embed} if embed else {}
+    await interaction.response.send_message(
+        content, ephemeral=True, allowed_mentions=discord.AllowedMentions.none(), **kwargs
+    )
+
+
 @app_commands.command(name="readycheck-debug", description="Admin only: try the ready check privately")
 @app_commands.describe(
     players_in="Test players already in. 4 tests a ping after you join, 5 tests no ping.",
-    hours_to_kickoff="Simulated hours until kick-off. Alerts fire at 30 or less.",
+    hours_to_kickoff="Simulated hours until kick-off. Late-drop alerts fire at 30 or less.",
+    preview="Vote in a sandbox, or preview a reschedule, short-roster or voice alert.",
+    in_voice="For the voice preview: how many of the players in are in voice.",
 )
 @app_commands.guild_only()
 @app_commands.default_permissions(administrator=True)
@@ -318,10 +393,15 @@ async def readycheck_debug(
     interaction: discord.Interaction,
     players_in: app_commands.Range[int, 0, 10] = 4,
     hours_to_kickoff: app_commands.Range[int, 1, 336] = 27,
+    preview: Literal["vote", "reschedule", "short_roster", "voice"] = "vote",
+    in_voice: app_commands.Range[int, 0, 10] = 5,
 ) -> None:
     # Server settings can override default_permissions, so enforce it here too.
     if not interaction.permissions.administrator:
         await interaction.response.send_message("Only server admins can use this.", ephemeral=True)
+        return
+    if preview != "vote":
+        await _send_debug_preview(interaction, preview, players_in, hours_to_kickoff, in_voice)
         return
     bot: ReadyBot = interaction.client  # type: ignore[assignment]
     old = bot.debug_sessions.pop(interaction.user.id, None)
@@ -339,9 +419,26 @@ async def readycheck_debug(
     )
 
 
+@app_commands.command(name="readycheck-stats", description="Admin only: player reliability for a season")
+@app_commands.describe(season="E-Sparven season ID. Defaults to the latest season.")
+@app_commands.guild_only()
+@app_commands.default_permissions(administrator=True)
+async def readycheck_stats(interaction: discord.Interaction, season: int | None = None) -> None:
+    if not interaction.permissions.administrator:
+        await interaction.response.send_message("Only server admins can use this.", ephemeral=True)
+        return
+    bot: ReadyBot = interaction.client  # type: ignore[assignment]
+    season_id = season if season is not None else rc.latest_season(bot.conn)
+    await interaction.response.send_message(
+        embed=build_stats_embed(rc.season_stats(bot.conn, season_id), season_id),
+        ephemeral=True,
+        allowed_mentions=discord.AllowedMentions.none(),
+    )
+
+
 class ReadyBot(discord.Client):
     def __init__(self, channel_id: int):
-        super().__init__(intents=discord.Intents.none())
+        super().__init__(intents=discord.Intents(guilds=True, voice_states=True))
         self.channel_id = channel_id
         self.conn = rc.connect()
         self.notify_lock = asyncio.Lock()
@@ -351,28 +448,30 @@ class ReadyBot(discord.Client):
     async def setup_hook(self) -> None:
         self.add_dynamic_items(ReadyButton, DebugButton)
         self.tree.add_command(readycheck_debug)
+        self.tree.add_command(readycheck_stats)
         try:
             await self.tree.sync()
         except discord.HTTPException:
-            log.exception("Could not register /readycheck-debug")
+            log.exception("Could not register slash commands")
         self.sync_loop.start()
 
     async def on_ready(self) -> None:
         log.info("Connected as %s", self.user)
+        guild = self._guild_for(self.channel_id)
+        if guild is None:
+            log.warning("Ready channel %s is not visible, so voice checks can't run", self.channel_id)
+        else:
+            log.info("Voice check watching %s voice channels", len(guild.voice_channels))
 
     async def record_debug_vote(
-        self, interaction: discord.Interaction, session: DebugSession, target: str, reason: str | None
+        self, interaction: discord.Interaction, session: DebugSession, target: str
     ) -> None:
         try:
             result = rc.apply_vote(
-                session.conn, DEBUG_MEETING_ID, session.owner_id, session.owner_name,
-                target, reason, int(time.time()),
+                session.conn, DEBUG_MEETING_ID, session.owner_id, session.owner_name, target, int(time.time())
             )
         except rc.VotingClosed:
             await interaction.response.send_message("The simulated match has started.", ephemeral=True)
-            return
-        except rc.ReasonRequired:
-            await interaction.response.send_message("A reason is required to leave.", ephemeral=True)
             return
 
         await interaction.response.edit_message(
@@ -388,27 +487,25 @@ class ReadyBot(discord.Client):
             )
         for row in rows:
             outcome = "would ping the role" if row["ping"] else "would post without a ping"
+            delay = (
+                f" after {rc.WITHDRAWAL_GRACE_SECONDS} seconds" if row["notify_kind"] == "withdrawal" else ""
+            )
             await interaction.followup.send(
-                content=f"🧪 Alert preview: the real version {outcome}.",
+                content=f"🧪 Alert preview: the real version {outcome}{delay}.",
                 embed=build_notification(row, session.label),
                 ephemeral=True,
                 allowed_mentions=discord.AllowedMentions.none(),
             )
             rc.mark_notification(session.conn, row["id"], "sent")
 
-    async def record_vote(
-        self, interaction: discord.Interaction, meeting_id: int, target: str, reason: str | None
-    ) -> None:
+    async def record_vote(self, interaction: discord.Interaction, meeting_id: int, target: str) -> None:
         try:
             result = rc.apply_vote(
                 self.conn, meeting_id, interaction.user.id, interaction.user.display_name,
-                target, reason, int(time.time()),
+                target, int(time.time()),
             )
         except rc.VotingClosed:
             await interaction.response.send_message("Voting closed at kick-off.", ephemeral=True)
-            return
-        except rc.ReasonRequired:
-            await interaction.response.send_message("A reason is required to leave.", ephemeral=True)
             return
 
         meeting = rc.get_meeting(self.conn, meeting_id)
@@ -417,37 +514,110 @@ class ReadyBot(discord.Client):
             view=build_view(meeting_id),
             allowed_mentions=discord.AllowedMentions.none(),
         )
-        await interaction.followup.send(
-            f"You're marked as **{STATE_LABELS[result.new_state]}**.", ephemeral=True
-        )
-        if result.notify_kind:
+        await interaction.followup.send(vote_confirmation(result), ephemeral=True)
+        if result.notify_kind == "back_in":
             await self.flush_notifications()
+
+    async def _reply(self, row, content: str | None, embed: discord.Embed, mentions: discord.AllowedMentions):
+        channel = self.get_partial_messageable(row["channel_id"])
+        await channel.get_partial_message(row["message_id"]).reply(
+            content=content, embed=embed, allowed_mentions=mentions
+        )
+
+    @staticmethod
+    def _role_mentions(role_id: int | None) -> discord.AllowedMentions:
+        return discord.AllowedMentions(
+            everyone=False,
+            users=False,
+            roles=[discord.Object(role_id)] if role_id else False,
+            replied_user=False,
+        )
 
     async def flush_notifications(self) -> None:
         async with self.notify_lock:
             role_id = _role_id()
             now = int(time.time())
-            for row in rc.pending_notifications(self.conn):
+            for row in rc.pending_notifications(self.conn, now):
                 if now >= row["kickoff"]:
                     rc.mark_notification(self.conn, row["id"], "expired")
                     continue
                 ping_role = bool(row["ping"] and role_id)
-                channel = self.get_partial_messageable(row["channel_id"])
                 try:
-                    await channel.get_partial_message(row["message_id"]).reply(
-                        content=f"<@&{role_id}>" if ping_role else None,
-                        embed=build_notification(row),
-                        allowed_mentions=discord.AllowedMentions(
-                            everyone=False,
-                            users=False,
-                            roles=[discord.Object(role_id)] if ping_role else False,
-                            replied_user=False,
-                        ),
+                    await self._reply(
+                        row,
+                        f"<@&{role_id}>" if ping_role else None,
+                        build_notification(row),
+                        self._role_mentions(role_id if ping_role else None),
                     )
                 except discord.HTTPException as e:
                     log.warning("Alert %s failed, will retry: %s", row["id"], e)
                     return
                 rc.mark_notification(self.conn, row["id"], "sent")
+
+    def _announcement_message(self, row, role_id: int | None):
+        """Returns (content, embed, mentions), or None if it no longer applies."""
+        payload = json.loads(row["payload"])
+        role_content = f"<@&{role_id}>" if role_id else None
+        if row["kind"] == "reschedule":
+            embed = build_reschedule_embed(row["opponent"], payload["old_kickoff"], row["kickoff"])
+            return role_content, embed, self._role_mentions(role_id)
+        if row["kind"].startswith("short_"):
+            ready = rc.count_in(self.conn, row["meeting_id"])
+            if ready >= rc.MATCH_SIZE:
+                return None
+            embed = build_short_roster_embed(row["opponent"], row["kickoff"], ready)
+            return role_content, embed, self._role_mentions(role_id)
+
+        missing = payload["missing"]
+        embed = build_voice_embed(row["opponent"], row["kickoff"], payload["present"], missing)
+        if missing:
+            mentions = discord.AllowedMentions(
+                everyone=False,
+                roles=False,
+                users=[discord.Object(user_id) for user_id in missing],
+                replied_user=False,
+            )
+            return " ".join(_mention(user_id) for user_id in missing), embed, mentions
+        return role_content, embed, self._role_mentions(role_id)
+
+    async def flush_announcements(self) -> None:
+        async with self.notify_lock:
+            role_id = _role_id()
+            now = int(time.time())
+            for row in rc.pending_announcements(self.conn):
+                if now >= row["kickoff"]:
+                    rc.mark_announcement(self.conn, row["id"], "expired")
+                    continue
+                message = self._announcement_message(row, role_id)
+                if message is None:
+                    rc.mark_announcement(self.conn, row["id"], "skipped")
+                    continue
+                try:
+                    await self._reply(row, *message)
+                except discord.HTTPException as e:
+                    log.warning("Announcement %s failed, will retry: %s", row["id"], e)
+                    return
+                rc.mark_announcement(self.conn, row["id"], "sent")
+
+    def _guild_for(self, channel_id: int) -> discord.Guild | None:
+        channel = self.get_channel(channel_id)
+        return getattr(channel, "guild", None)
+
+    async def run_timed_checks(self) -> None:
+        now = int(time.time())
+        rc.queue_short_roster_warnings(self.conn, now)
+        for meeting in rc.meetings_for_voice_check(self.conn, now):
+            guild = self._guild_for(meeting["channel_id"])
+            if guild is None:
+                log.warning("Voice check skipped for meeting %s: channel not visible", meeting["meeting_id"])
+                continue
+            rc.record_voice_check(self.conn, meeting, voice_user_ids(guild), now)
+        for meeting in rc.meetings_for_final_check(self.conn, now):
+            guild = self._guild_for(meeting["channel_id"])
+            if guild is None:
+                log.warning("Final check skipped for meeting %s: channel not visible", meeting["meeting_id"])
+                continue
+            rc.record_final_check(self.conn, meeting, voice_user_ids(guild), now)
 
     async def post_ready_checks(self) -> None:
         role_id = _role_id()
@@ -464,6 +634,7 @@ class ReadyBot(discord.Client):
                 ),
             )
             rc.mark_posted(self.conn, meeting["meeting_id"], self.channel_id, message.id)
+            rc.skip_reached_warning(self.conn, meeting["meeting_id"], int(time.time()))
             log.info("Posted ready check for meeting %s", meeting["meeting_id"])
 
     async def refresh_messages(self) -> None:
@@ -476,9 +647,16 @@ class ReadyBot(discord.Client):
             )
             rc.mark_rendered(self.conn, meeting["meeting_id"])
 
-    @tasks.loop(seconds=30)
+    @tasks.loop(seconds=15)
     async def sync_loop(self) -> None:
-        for step in (self.post_ready_checks, self.refresh_messages, self.flush_notifications):
+        steps = (
+            self.post_ready_checks,
+            self.refresh_messages,
+            self.run_timed_checks,
+            self.flush_notifications,
+            self.flush_announcements,
+        )
+        for step in steps:
             try:
                 await step()
             except Exception:

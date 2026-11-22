@@ -8,14 +8,19 @@ it to record votes. SQLite is shared between the two containers through the
 Rules:
   - Anyone who can see the message can vote.
   - Clicking your current answer clears it (back to "none").
-  - Leaving "in" always requires a reason.
-  - Leaving "in" within LATE_WINDOW_SECONDS of kick-off posts an alert, which
-    pings the role only if MATCH_SIZE or fewer players were in before the drop
-    (at 6+, the match can still be played after losing one).
+  - Leaving "in" within LATE_WINDOW_SECONDS of kick-off queues an alert, sent
+    after WITHDRAWAL_GRACE_SECONDS unless the player clicks back in. It pings
+    the role only if MATCH_SIZE or fewer players were in before the drop.
+  - A reschedule resets every answer and asks the team to vote again.
+  - Below MATCH_SIZE at 48h and 24h before kick-off, the role is warned.
+  - 10 minutes before kick-off, "in" players are compared with voice. Having
+    MATCH_SIZE of them in voice passes, so a sixth player is never flagged.
+  - The voice check at kick-off is what counts as a no-show in the stats.
   - Alerts are queued in the same transaction as the vote, so a crash or
     Discord outage delays them rather than losing them.
 """
 
+import json
 import os
 import sqlite3
 from dataclasses import dataclass
@@ -23,6 +28,10 @@ from pathlib import Path
 
 MATCH_SIZE = 5
 LATE_WINDOW_SECONDS = 30 * 3600
+WITHDRAWAL_GRACE_SECONDS = 60
+SHORT_ROSTER_HOURS = (48, 24)
+VOICE_CHECK_SECONDS = 10 * 60
+FINAL_CHECK_WINDOW_SECONDS = 15 * 60
 
 IN, OUT, NONE = "in", "out", "none"
 
@@ -59,17 +68,38 @@ CREATE TABLE IF NOT EXISTS history (
     ping          INTEGER NOT NULL DEFAULT 0,
     notify_status TEXT
 );
+CREATE TABLE IF NOT EXISTS announcements (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    meeting_id INTEGER NOT NULL REFERENCES meetings(meeting_id),
+    revision   INTEGER NOT NULL,
+    kind       TEXT    NOT NULL,
+    ping       INTEGER NOT NULL DEFAULT 0,
+    status     TEXT    NOT NULL,
+    payload    TEXT    NOT NULL DEFAULT '{}',
+    created_at INTEGER NOT NULL,
+    UNIQUE (meeting_id, revision, kind)
+);
+CREATE TABLE IF NOT EXISTS showups (
+    meeting_id INTEGER NOT NULL REFERENCES meetings(meeting_id),
+    revision   INTEGER NOT NULL,
+    user_id    INTEGER NOT NULL,
+    status     TEXT    NOT NULL,
+    PRIMARY KEY (meeting_id, revision, user_id)
+);
 CREATE INDEX IF NOT EXISTS history_meeting ON history(meeting_id, id);
 CREATE INDEX IF NOT EXISTS history_notify ON history(notify_status, id);
+CREATE INDEX IF NOT EXISTS announcements_status ON announcements(status, id);
 """
+
+_ADDED_COLUMNS = (
+    ("meetings", "season_id", "INTEGER"),
+    ("meetings", "revision", "INTEGER NOT NULL DEFAULT 0"),
+    ("history", "notify_after", "INTEGER"),
+)
 
 
 class VotingClosed(Exception):
     """The match has kicked off."""
-
-
-class ReasonRequired(Exception):
-    """The player is leaving "in" without giving a reason."""
 
 
 @dataclass(frozen=True)
@@ -81,6 +111,14 @@ class VoteResult:
     in_after: int
     notify_kind: str | None
     ping: bool
+    alert_cancelled: bool = False
+
+
+@dataclass(frozen=True)
+class VoiceCheck:
+    present: list[int]
+    missing: list[int]
+    passed: bool
 
 
 def enabled() -> bool:
@@ -94,14 +132,28 @@ def connect(path: str | Path | None = None) -> sqlite3.Connection:
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     conn.executescript(_SCHEMA)
+    _migrate(conn)
     return conn
+
+
+def _migrate(conn: sqlite3.Connection) -> None:
+    for table, column, declaration in _ADDED_COLUMNS:
+        existing = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
+        if column in existing:
+            continue
+        try:
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {declaration}")
+        except sqlite3.OperationalError as e:
+            # The other container can win this race on first start.
+            if "duplicate column" not in str(e):
+                raise
 
 
 def next_state(current: str, clicked: str) -> str:
     return NONE if current == clicked else clicked
 
 
-def needs_reason(old_state: str, new_state: str) -> bool:
+def is_withdrawal(old_state: str, new_state: str) -> bool:
     return old_state == IN and new_state != IN
 
 
@@ -113,21 +165,83 @@ def should_ping(in_before: int) -> bool:
     return in_before <= MATCH_SIZE
 
 
-def register_meeting(conn: sqlite3.Connection, meeting_id: int, opponent: str, kickoff: int) -> None:
+def due_short_roster(kickoff: int, now: int) -> int | None:
+    """The closest warning threshold already reached, if the match is ahead."""
+    left = kickoff - now
+    if left <= 0:
+        return None
+    reached = [hours for hours in SHORT_ROSTER_HOURS if left <= hours * 3600]
+    return min(reached) if reached else None
+
+
+def evaluate_voice(in_players: list[int], voice_ids: set[int]) -> VoiceCheck:
+    present = [user_id for user_id in in_players if user_id in voice_ids]
+    missing = [user_id for user_id in in_players if user_id not in voice_ids]
+    return VoiceCheck(present, missing, len(present) >= MATCH_SIZE)
+
+
+def register_meeting(
+    conn: sqlite3.Connection, meeting_id: int, opponent: str, kickoff: int, season_id: int | None = None
+) -> None:
     """Queue a ready check for ready_bot to post. Safe to call repeatedly."""
     conn.execute(
-        "INSERT INTO meetings (meeting_id, opponent, kickoff) VALUES (?, ?, ?) "
+        "INSERT INTO meetings (meeting_id, opponent, kickoff, season_id) VALUES (?, ?, ?, ?) "
         "ON CONFLICT(meeting_id) DO NOTHING",
-        (meeting_id, opponent, kickoff),
+        (meeting_id, opponent, kickoff, season_id),
     )
 
 
-def sync_kickoff(conn: sqlite3.Connection, meeting_id: int, kickoff: int) -> None:
-    """Apply a reschedule to an existing ready check; no-op if there isn't one."""
-    conn.execute(
-        "UPDATE meetings SET kickoff = ?, needs_render = 1 WHERE meeting_id = ? AND kickoff != ?",
-        (kickoff, meeting_id, kickoff),
-    )
+def reschedule(conn: sqlite3.Connection, meeting_id: int, kickoff: int, now: int) -> bool:
+    """Move a match, reset its answers and queue an announcement."""
+    conn.execute("BEGIN IMMEDIATE")
+    try:
+        meeting = get_meeting(conn, meeting_id)
+        if meeting is None or meeting["kickoff"] == kickoff:
+            conn.execute("COMMIT")
+            return False
+
+        in_before = _count_in(conn, meeting_id)
+        answered = conn.execute(
+            "SELECT v.user_id, v.state, "
+            "COALESCE((SELECT h.display_name FROM history h WHERE h.meeting_id = v.meeting_id "
+            "AND h.user_id = v.user_id ORDER BY h.id DESC LIMIT 1), '') AS display_name "
+            "FROM votes v WHERE v.meeting_id = ? AND v.state != ?",
+            (meeting_id, NONE),
+        ).fetchall()
+        for row in answered:
+            conn.execute(
+                "INSERT INTO history (meeting_id, user_id, display_name, old_state, new_state, "
+                "reason, at, in_before, in_after) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)",
+                (meeting_id, row["user_id"], row["display_name"], row["state"], NONE,
+                 "Match rescheduled", now, in_before),
+            )
+        conn.execute(
+            "UPDATE votes SET state = ?, updated_at = ? WHERE meeting_id = ? AND state != ?",
+            (NONE, now, meeting_id, NONE),
+        )
+        conn.execute(
+            "UPDATE history SET notify_status = 'cancelled' "
+            "WHERE meeting_id = ? AND notify_status = 'pending'",
+            (meeting_id,),
+        )
+        revision = meeting["revision"] + 1
+        conn.execute(
+            "UPDATE meetings SET kickoff = ?, revision = ?, needs_render = 1 WHERE meeting_id = ?",
+            (kickoff, revision, meeting_id),
+        )
+        if meeting["message_id"] is not None and kickoff > now:
+            conn.execute(
+                "INSERT INTO announcements (meeting_id, revision, kind, ping, status, payload, created_at) "
+                "VALUES (?, ?, 'reschedule', 1, 'pending', ?, ?)",
+                (meeting_id, revision, json.dumps({"old_kickoff": meeting["kickoff"]}), now),
+            )
+            skip_reached_warning(conn, meeting_id, now)
+        conn.execute("COMMIT")
+        return True
+    except Exception:
+        if conn.in_transaction:
+            conn.execute("ROLLBACK")
+        raise
 
 
 def get_meeting(conn: sqlite3.Connection, meeting_id: int) -> sqlite3.Row | None:
@@ -166,12 +280,17 @@ def _count_in(conn: sqlite3.Connection, meeting_id: int) -> int:
     ).fetchone()[0]
 
 
+def count_in(conn: sqlite3.Connection, meeting_id: int) -> int:
+    return _count_in(conn, meeting_id)
+
+
 def _has_open_alert(conn: sqlite3.Connection, meeting_id: int, user_id: int) -> bool:
-    """True if a withdrawal alert went out since this player was last in."""
+    """True if a withdrawal alert was sent since this player was last in."""
     row = conn.execute(
         """
         SELECT 1 FROM history
         WHERE meeting_id = :m AND user_id = :u AND notify_kind = 'withdrawal'
+          AND notify_status = 'sent'
           AND id > COALESCE(
               (SELECT MAX(id) FROM history
                WHERE meeting_id = :m AND user_id = :u AND new_state = 'in'), 0)
@@ -188,11 +307,9 @@ def apply_vote(
     user_id: int,
     display_name: str,
     new_state: str,
-    reason: str | None,
     now: int,
 ) -> VoteResult:
     """Record a vote, its audit row and any alert in one transaction."""
-    reason = (reason or "").strip() or None
     conn.execute("BEGIN IMMEDIATE")
     try:
         meeting = get_meeting(conn, meeting_id)
@@ -204,16 +321,23 @@ def apply_vote(
         if old_state == new_state:
             conn.execute("COMMIT")
             return VoteResult(False, old_state, new_state, in_before, in_before, None, False)
-        if needs_reason(old_state, new_state) and not reason:
-            raise ReasonRequired()
 
         notify_kind = None
+        alert_cancelled = False
+        if new_state == IN:
+            cancelled = conn.execute(
+                "UPDATE history SET notify_status = 'cancelled' WHERE meeting_id = ? AND user_id = ? "
+                "AND notify_kind = 'withdrawal' AND notify_status = 'pending'",
+                (meeting_id, user_id),
+            )
+            alert_cancelled = cancelled.rowcount > 0
         if is_late(meeting["kickoff"], now):
-            if needs_reason(old_state, new_state):
+            if is_withdrawal(old_state, new_state):
                 notify_kind = "withdrawal"
-            elif new_state == IN and _has_open_alert(conn, meeting_id, user_id):
+            elif new_state == IN and not alert_cancelled and _has_open_alert(conn, meeting_id, user_id):
                 notify_kind = "back_in"
         ping = notify_kind == "withdrawal" and should_ping(in_before)
+        notify_after = now + WITHDRAWAL_GRACE_SECONDS if notify_kind == "withdrawal" else now
 
         conn.execute(
             "INSERT INTO votes (meeting_id, user_id, state, updated_at) VALUES (?, ?, ?, ?) "
@@ -224,18 +348,18 @@ def apply_vote(
         in_after = _count_in(conn, meeting_id)
         conn.execute(
             "INSERT INTO history (meeting_id, user_id, display_name, old_state, new_state, "
-            "reason, at, in_before, in_after, notify_kind, ping, notify_status) "
+            "at, in_before, in_after, notify_kind, ping, notify_status, notify_after) "
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 meeting_id, user_id, display_name, old_state, new_state,
-                reason if needs_reason(old_state, new_state) else None,
                 now, in_before, in_after, notify_kind, int(ping),
                 "pending" if notify_kind else None,
+                notify_after if notify_kind else None,
             ),
         )
         conn.execute("UPDATE meetings SET needs_render = 1 WHERE meeting_id = ?", (meeting_id,))
         conn.execute("COMMIT")
-        return VoteResult(True, old_state, new_state, in_before, in_after, notify_kind, ping)
+        return VoteResult(True, old_state, new_state, in_before, in_after, notify_kind, ping, alert_cancelled)
     except Exception:
         if conn.in_transaction:
             conn.execute("ROLLBACK")
@@ -265,16 +389,154 @@ def mark_rendered(conn: sqlite3.Connection, meeting_id: int) -> None:
     conn.execute("UPDATE meetings SET needs_render = 0 WHERE meeting_id = ?", (meeting_id,))
 
 
-def pending_notifications(conn: sqlite3.Connection) -> list[sqlite3.Row]:
+def pending_notifications(conn: sqlite3.Connection, now: int | None = None) -> list[sqlite3.Row]:
+    """Queued player alerts. Pass now to leave out those still in their grace period."""
     return conn.execute(
         """
-        SELECT h.*, m.opponent, m.kickoff, m.channel_id, m.message_id
+        SELECT h.*, m.opponent, m.kickoff, m.channel_id, m.message_id,
+               (SELECT COUNT(*) FROM votes v
+                WHERE v.meeting_id = h.meeting_id AND v.state = 'in') AS ready_now
         FROM history h JOIN meetings m USING (meeting_id)
         WHERE h.notify_status = 'pending' AND m.message_id IS NOT NULL
+          AND (:now IS NULL OR h.notify_after IS NULL OR h.notify_after <= :now)
         ORDER BY h.id
-        """
+        """,
+        {"now": now},
     ).fetchall()
 
 
 def mark_notification(conn: sqlite3.Connection, history_id: int, status: str) -> None:
     conn.execute("UPDATE history SET notify_status = ? WHERE id = ?", (status, history_id))
+
+
+def _queue_announcement(
+    conn: sqlite3.Connection, meeting: sqlite3.Row, kind: str, ping: bool, status: str, payload: dict, now: int
+) -> bool:
+    cursor = conn.execute(
+        "INSERT OR IGNORE INTO announcements (meeting_id, revision, kind, ping, status, payload, created_at) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (meeting["meeting_id"], meeting["revision"], kind, int(ping), status, json.dumps(payload), now),
+    )
+    return cursor.rowcount == 1
+
+
+def skip_reached_warning(conn: sqlite3.Connection, meeting_id: int, now: int) -> None:
+    """A message that just pinged the role shouldn't be followed by a second ping."""
+    meeting = get_meeting(conn, meeting_id)
+    hours = due_short_roster(meeting["kickoff"], now)
+    if hours is not None:
+        _queue_announcement(conn, meeting, f"short_{hours}", False, "skipped", {"hours": hours}, now)
+
+
+def queue_short_roster_warnings(conn: sqlite3.Connection, now: int) -> None:
+    meetings = conn.execute(
+        "SELECT * FROM meetings WHERE message_id IS NOT NULL AND kickoff > ?", (now,)
+    ).fetchall()
+    for meeting in meetings:
+        hours = due_short_roster(meeting["kickoff"], now)
+        if hours is None:
+            continue
+        short = _count_in(conn, meeting["meeting_id"]) < MATCH_SIZE
+        _queue_announcement(
+            conn, meeting, f"short_{hours}", short, "pending" if short else "skipped", {"hours": hours}, now
+        )
+
+
+def _meetings_without(conn: sqlite3.Connection, kind: str, low: int, high: int) -> list[sqlite3.Row]:
+    return conn.execute(
+        """
+        SELECT m.* FROM meetings m
+        WHERE m.message_id IS NOT NULL AND m.kickoff > :low AND m.kickoff <= :high
+          AND NOT EXISTS (SELECT 1 FROM announcements a WHERE a.meeting_id = m.meeting_id
+                          AND a.revision = m.revision AND a.kind = :kind)
+        """,
+        {"kind": kind, "low": low, "high": high},
+    ).fetchall()
+
+
+def meetings_for_voice_check(conn: sqlite3.Connection, now: int) -> list[sqlite3.Row]:
+    return _meetings_without(conn, "voice", now, now + VOICE_CHECK_SECONDS)
+
+
+def meetings_for_final_check(conn: sqlite3.Connection, now: int) -> list[sqlite3.Row]:
+    return _meetings_without(conn, "final", now - FINAL_CHECK_WINDOW_SECONDS - 1, now)
+
+
+def record_voice_check(
+    conn: sqlite3.Connection, meeting: sqlite3.Row, voice_ids: set[int], now: int
+) -> VoiceCheck:
+    check = evaluate_voice(roster(conn, meeting["meeting_id"])[IN], voice_ids)
+    _queue_announcement(
+        conn, meeting, "voice", not check.passed, "skipped" if check.passed else "pending",
+        {"present": check.present, "missing": check.missing}, now,
+    )
+    return check
+
+
+def record_final_check(
+    conn: sqlite3.Connection, meeting: sqlite3.Row, voice_ids: set[int], now: int
+) -> VoiceCheck:
+    """Store attendance at kick-off. Extra players are bench when five are present."""
+    conn.execute("BEGIN IMMEDIATE")
+    try:
+        check = evaluate_voice(roster(conn, meeting["meeting_id"])[IN], voice_ids)
+        if _queue_announcement(conn, meeting, "final", False, "recorded", {}, now):
+            rows = [(user_id, "present") for user_id in check.present]
+            rows += [(user_id, "bench" if check.passed else "no_show") for user_id in check.missing]
+            conn.executemany(
+                "INSERT OR REPLACE INTO showups (meeting_id, revision, user_id, status) VALUES (?, ?, ?, ?)",
+                [(meeting["meeting_id"], meeting["revision"], user_id, status) for user_id, status in rows],
+            )
+        conn.execute("COMMIT")
+        return check
+    except Exception:
+        if conn.in_transaction:
+            conn.execute("ROLLBACK")
+        raise
+
+
+def pending_announcements(conn: sqlite3.Connection) -> list[sqlite3.Row]:
+    return conn.execute(
+        """
+        SELECT a.*, m.opponent, m.kickoff, m.channel_id, m.message_id
+        FROM announcements a JOIN meetings m USING (meeting_id)
+        WHERE a.status = 'pending' AND m.message_id IS NOT NULL
+        ORDER BY a.id
+        """
+    ).fetchall()
+
+
+def mark_announcement(conn: sqlite3.Connection, announcement_id: int, status: str) -> None:
+    conn.execute("UPDATE announcements SET status = ? WHERE id = ?", (status, announcement_id))
+
+
+def latest_season(conn: sqlite3.Connection) -> int | None:
+    return conn.execute("SELECT MAX(season_id) FROM meetings").fetchone()[0]
+
+
+def season_stats(conn: sqlite3.Connection, season_id: int | None) -> list[sqlite3.Row]:
+    """Per-player reliability, worst first. Reschedule resets don't count as drops."""
+    return conn.execute(
+        """
+        WITH season AS (SELECT meeting_id FROM meetings WHERE season_id IS :season),
+        players AS (
+            SELECT user_id FROM history WHERE meeting_id IN (SELECT meeting_id FROM season)
+            UNION
+            SELECT user_id FROM showups WHERE meeting_id IN (SELECT meeting_id FROM season)
+        )
+        SELECT p.user_id,
+            (SELECT COUNT(DISTINCT h.meeting_id) FROM history h
+             WHERE h.user_id = p.user_id AND h.new_state IN ('in', 'out')
+               AND h.meeting_id IN (SELECT meeting_id FROM season)) AS answered,
+            (SELECT COUNT(*) FROM history h
+             WHERE h.user_id = p.user_id AND h.notify_kind = 'withdrawal'
+               AND h.notify_status != 'cancelled'
+               AND h.meeting_id IN (SELECT meeting_id FROM season)) AS late_drops,
+            (SELECT COUNT(DISTINCT s.meeting_id) FROM showups s
+             WHERE s.user_id = p.user_id AND s.status = 'no_show'
+               AND s.meeting_id IN (SELECT meeting_id FROM season)) AS no_shows
+        FROM players p
+        ORDER BY no_shows DESC, late_drops DESC, answered DESC, p.user_id
+        """,
+        {"season": season_id},
+    ).fetchall()
