@@ -76,8 +76,6 @@ TIMEOUT_S = 8
 # this is a guess. Tune this constant, don't rearchitect around it.
 ESTIMATED_DURATION = timedelta(hours=2)
 
-DASHBOARD_URL = "https://lundmarks.github.io/tornknackarna/"
-
 # Cover image canvas -- Discord's own upload UI recommends 16:9 for event
 # covers, hence 960x540. Not a hard Discord requirement, just convention.
 _COVER_SIZE  = (960, 540)
@@ -189,15 +187,8 @@ def create_match_event(
     match_date must be tz-aware (UTC). meeting_id is used only to build the
     E-Sparven deep link, same URL pattern as webhook.py's esparven_url.
 
-    Links both the scouting dashboard and the E-Sparven meeting page:
-    entity_metadata.location carries the dashboard URL (Discord's client
-    shows this field prominently, right under the cover image, and
-    auto-linkifies it since it's a valid URL -- AGENT-RESUME: that
-    auto-linkify behavior is from training-knowledge, not verified live,
-    same caveat as the rest of this module) so that's the one-click link;
-    the description repeats both URLs as plain text, which Discord also
-    auto-linkifies as bare URLs, as a fallback in clients/contexts where
-    the location field isn't rendered as prominently.
+    entity_metadata.location is required for EXTERNAL events and carries the
+    E-Sparven meeting URL.
     """
     if not _enabled():
         return None
@@ -211,12 +202,11 @@ def create_match_event(
         "scheduled_start_time": match_date.isoformat(),
         "scheduled_end_time": end.isoformat(),
         "entity_type": 3,  # EXTERNAL
-        "entity_metadata": {"location": DASHBOARD_URL},
+        "entity_metadata": {"location": esparven_url},
         "description": (
             f"Captain's Mode match vs {opponent_name}.\n\n"
-            f"Scouting dashboard: {DASHBOARD_URL}\n"
             f"E-Sparven: {esparven_url}\n\n"
-            f"Ready check happens on the announcement message, not here — react ✅/❌ there."
+            f"Ready check happens on the announcement message in chat, not here."
         ),
     }
 

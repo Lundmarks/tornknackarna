@@ -7,7 +7,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# Persist player_map.json and state.json across container restarts
-VOLUME ["/app/player_map.json", "/app/state.json"]
-
+# Persistent files are bind-mounted per service in docker-compose.yml.
 CMD ["python", "bot.py"]

@@ -22,6 +22,7 @@ from rich.theme import Theme
 import discord_events
 import opendota
 import player_map
+import ready_check
 import steam
 import webhook
 from esparven import EsparvenClient
@@ -63,6 +64,12 @@ OUR_TEAM_ID    = ESPARVEN_TEAM_ID
 COMPETITION    = "dota2cm"
 RUN_TIMES      = [t.strip() for t in os.environ.get("RUN_TIMES", "06:00,18:00").split(",")]
 OPENDOTA_DELAY = 2.5
+
+# Disabled because E-Sparven's page update broke the player Dotabuff links.
+# The OpenDota name search is off too: without the scrape it would become the
+# only source of new IDs and could map players to the wrong accounts.
+# Already-cached players in player_map.json keep working.
+RESOLVE_NEW_PLAYER_IDS = False
 
 # Discord scheduled events: create one once a match is this many days out or
 # closer. "or closer" (<=, not ==) matters because meetings are sometimes
@@ -359,6 +366,15 @@ def _sync_discord_event(
     existing_event_id = meeting_entry.get("discord_event_id")
 
     if existing_event_id:
+        if ready_check.enabled():
+            try:
+                conn = ready_check.connect()
+                try:
+                    ready_check.sync_kickoff(conn, meeting_id, int(match_dt.timestamp()))
+                finally:
+                    conn.close()
+            except Exception as e:
+                log.warning(f"Meeting {meeting_id}: ready check kick-off sync failed: {e}")
         stored_date = meeting_entry.get("discord_event_match_date")
         if stored_date != meeting_date:
             log.info(f"Meeting {meeting_id}: matchDate changed ({stored_date!r} -> {meeting_date!r}), rescheduling Discord event")
@@ -387,11 +403,23 @@ def _sync_discord_event(
     if event_id:
         meeting_entry["discord_event_id"] = event_id
         meeting_entry["discord_event_match_date"] = meeting_date
-        webhook.notify_event_created(
-            opponent_name=opponent_name,
-            match_date=meeting_date,
-            event_url=discord_events.event_url(event_id),
-        )
+        queued = False
+        if ready_check.enabled():
+            try:
+                conn = ready_check.connect()
+                try:
+                    ready_check.register_meeting(conn, meeting_id, opponent_name, int(match_dt.timestamp()))
+                    queued = True
+                finally:
+                    conn.close()
+            except Exception as e:
+                log.warning(f"Meeting {meeting_id}: could not queue button ready check: {e}")
+        if not queued:
+            webhook.notify_event_created(
+                opponent_name=opponent_name,
+                match_date=meeting_date,
+                event_url=discord_events.event_url(event_id),
+            )
 
 
 def force_create_next_event() -> None:
@@ -666,6 +694,8 @@ def _process_past_meetings(esp, jb, state, heroes, index_entries, skip_opendota:
 
 
 def _resolve_steam_ids(esp, meeting_id, opponent_id, members):
+    if not RESOLVE_NEW_PLAYER_IDS:
+        return
     names   = [m["inGameName"] for m in members if m.get("inGameName")]
     missing = player_map.missing_players(names)
     if not missing:

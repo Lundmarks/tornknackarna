@@ -9,3 +9,12 @@ services:
       # Persist state and player map outside the container
       - ./player_map.json:/app/player_map.json
       - ./state.json:/app/state.json
+      - ./data:/app/data
+
+  ready:
+    build: .
+    command: ["python", "ready_bot.py"]
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./data:/app/data

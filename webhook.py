@@ -1,12 +1,16 @@
 """
-webhook.py - Discord webhook notifications for Tornknäckarna scouting bot.
+webhook.py - Discord channel notifications for Tornknäckarna scouting bot.
 
-Fires on two events only:
+Despite the filename, these are now sent by the bot account through Discord's
+REST API; the old incoming webhook is retired.
+
+Fires on:
   1. New upcoming match detected for the first time
   2. Match day reminder (once per match, on the morning of the match date)
+  3. Fallback reaction ready check, if the button ready check can't be queued
 
-Set DISCORD_WEBHOOK_URL in .env to enable. If the variable is absent or empty,
-all calls are silently skipped — the bot runs normally without it.
+Set DISCORD_BOT_TOKEN and DISCORD_READY_CHANNEL_ID in .env to enable. If either
+is absent or empty, all calls are silently skipped.
 """
 
 import logging
@@ -17,9 +21,7 @@ import requests
 
 log = logging.getLogger("bot")
 
-DASHBOARD_URL   = "https://lundmarks.github.io/tornknackarna/"
-WEBHOOK_URL     = os.environ.get("DISCORD_WEBHOOK_URL") or None
-ROLE_ID         = os.environ.get("DISCORD_ROLE_ID") or None
+API_BASE        = "https://discord.com/api/v10"
 TIMEOUT_SECONDS = 8
 
 # Ferrari red as the embed accent colour (decimal)
@@ -29,8 +31,8 @@ EMBED_COLOR_EVENT     = 0x5865F2  # Discord blurple — matches the platform the
 
 
 def _enabled() -> bool:
-    if not WEBHOOK_URL:
-        log.debug("Discord webhook not configured — skipping notification")
+    if not os.environ.get("DISCORD_BOT_TOKEN") or not os.environ.get("DISCORD_READY_CHANNEL_ID"):
+        log.debug("Discord bot channel not configured — skipping notification")
         return False
     return True
 
@@ -38,16 +40,29 @@ def _enabled() -> bool:
 def _role_mention() -> str | None:
     """<@&id> pings a role, but only from the top-level "content" field --
     mentions inside embed text render as plain text and don't notify anyone."""
-    return f"<@&{ROLE_ID}>" if ROLE_ID else None
+    role_id = os.environ.get("DISCORD_ROLE_ID")
+    return f"<@&{role_id}>" if role_id else None
 
 
 def _post(payload: dict) -> None:
-    """POST a webhook payload. Logs a warning on failure, never raises."""
+    """Post a channel message as the bot. Logs a warning on failure, never raises."""
+    role_id = os.environ.get("DISCORD_ROLE_ID")
+    body = {
+        **payload,
+        "allowed_mentions": {"parse": [], "roles": [role_id] if role_id and payload.get("content") else []},
+    }
     try:
-        r = requests.post(WEBHOOK_URL, json=payload, timeout=TIMEOUT_SECONDS)
+        r = requests.post(
+            f"{API_BASE}/channels/{os.environ['DISCORD_READY_CHANNEL_ID']}/messages",
+            headers={"Authorization": f"Bot {os.environ['DISCORD_BOT_TOKEN']}"},
+            json=body,
+            timeout=TIMEOUT_SECONDS,
+        )
         r.raise_for_status()
-    except Exception as e:
-        log.warning(f"Discord webhook failed: {e}")
+    except requests.RequestException as e:
+        # Not the raw exception text alone: keep the log useful without headers.
+        status = e.response.status_code if e.response is not None else "no response"
+        log.warning(f"Discord notification failed: {status}")
 
 
 def notify_new_match(
@@ -97,8 +112,8 @@ def notify_new_match(
             "inline": False,
         },
         {
-            "name": "Links",
-            "value": f"[Scouting dashboard]({DASHBOARD_URL}) · [E-Sparven]({esparven_url})",
+            "name": "Link",
+            "value": f"[E-Sparven]({esparven_url})",
             "inline": False,
         },
     ]
@@ -191,8 +206,8 @@ def notify_match_day(
             {
                 "title": f"⚔️  Match day — vs {opponent_name}",
                 "description": (
-                    "Kick-off today. Scouting report is live and up to date.\n\n"
-                    f"[Open dashboard]({DASHBOARD_URL}) · [E-Sparven]({esparven_url})"
+                    "Kick-off today.\n\n"
+                    f"[E-Sparven]({esparven_url})"
                 ),
                 "color": EMBED_COLOR_MATCHDAY,
                 "footer": {
