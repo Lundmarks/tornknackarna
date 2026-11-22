@@ -31,6 +31,7 @@ log = logging.getLogger("ready_bot")
 
 COLOR = 0x5865F2
 COLOR_ALERT = 0xCC1100
+COLOR_WARN = 0xE6A23C
 COLOR_BACK = 0x2E9E5B
 FIELD_LIMIT = 1024
 DESCRIPTION_LIMIT = 4096
@@ -47,19 +48,20 @@ def _mention(user_id: int) -> str:
     return f"<@{user_id}>"
 
 
-def _names(user_ids: list[int], label=_mention) -> str:
+def _names(user_ids: list[int], label=_mention, numbered: bool = False) -> str:
     if not user_ids:
-        return "—"
-    shown: list[str] = []
+        return "Nobody yet"
+    lines: list[str] = []
     length = 0
     for index, user_id in enumerate(user_ids):
-        mention = label(user_id)
-        suffix = f" +{len(user_ids) - index - 1} more"
-        if length + len(mention) + 2 + len(suffix) > FIELD_LIMIT:
-            return "  ".join(shown) + f" +{len(user_ids) - index} more"
-        shown.append(mention)
-        length += len(mention) + 2
-    return "  ".join(shown)
+        line = f"`{index + 1}.` {label(user_id)}" if numbered else f"• {label(user_id)}"
+        remaining = len(user_ids) - index
+        if length + len(line) + len(f"\n+{remaining} more") + 1 > FIELD_LIMIT:
+            lines.append(f"+{remaining} more")
+            break
+        lines.append(line)
+        length += len(line) + 1
+    return "\n".join(lines)
 
 
 def _hours_before(kickoff: int, at: int) -> str:
@@ -74,11 +76,20 @@ def build_embed(conn, meeting, label=_mention) -> discord.Embed:
     ready = len(players[rc.IN])
     embed = discord.Embed(
         title=f"✅❌  Ready check: vs {meeting['opponent']}",
-        description=f"<t:{meeting['kickoff']}:F> (<t:{meeting['kickoff']}:R>)\n**{ready}/{rc.MATCH_SIZE} ready**",
+        description=f"🕒 <t:{meeting['kickoff']}:F> · <t:{meeting['kickoff']}:R>",
         color=COLOR,
     )
-    embed.add_field(name=f"✅ In ({ready})", value=_names(players[rc.IN], label), inline=False)
-    embed.add_field(name=f"❌ Out ({len(players[rc.OUT])})", value=_names(players[rc.OUT], label), inline=False)
+    embed.add_field(
+        name=f"✅ In · {ready}/{rc.MATCH_SIZE}",
+        value=_names(players[rc.IN], label, numbered=True),
+        inline=False,
+    )
+    if players[rc.OUT]:
+        embed.add_field(
+            name=f"❌ Out · {len(players[rc.OUT])}",
+            value=_names(players[rc.OUT], label),
+            inline=False,
+        )
     embed.set_footer(text="Click your answer again to clear it")
     return embed
 
@@ -110,22 +121,33 @@ def build_history_embed(conn, meeting, label=_mention) -> discord.Embed:
 
 
 def build_notification(row, label=_mention) -> discord.Embed:
-    ready = f"Now {row['in_after']}/{rc.MATCH_SIZE} ready"
+    ready = f"{row['in_after']}/{rc.MATCH_SIZE}"
     if row["notify_kind"] == "back_in":
         return discord.Embed(
-            description=f"✅ {label(row['user_id'])} is back in vs {row['opponent']} · {ready}",
+            title="✅ Player back in",
+            description=f"{label(row['user_id'])} can play vs **{row['opponent']}** again.\n**{ready} ready**",
             color=COLOR_BACK,
         )
-    change = f"{STATE_LABELS[row['old_state']]} → {STATE_LABELS[row['new_state']]}"
-    reason = discord.utils.escape_markdown(row["reason"] or "")
-    return discord.Embed(
-        description=(
-            f"⚠️ {label(row['user_id'])} is no longer available vs {row['opponent']}\n"
-            f"{change} · {_hours_before(row['kickoff'], row['at'])} before kick-off · {ready}\n"
-            f"Reason: {reason}"
-        ),
-        color=COLOR_ALERT,
+
+    missing = max(0, rc.MATCH_SIZE - row["in_after"])
+    title = (
+        f"⚠️ Need {missing} more player{'' if missing == 1 else 's'}"
+        if missing
+        else "ℹ️ Player dropped, still enough to play"
     )
+    embed = discord.Embed(
+        title=title,
+        description=f"{label(row['user_id'])} can't play vs **{row['opponent']}**.",
+        color=COLOR_ALERT if missing else COLOR_WARN,
+    )
+    embed.add_field(name="Ready", value=ready, inline=True)
+    embed.add_field(name="Kick-off", value=f"<t:{row['kickoff']}:R>", inline=True)
+    embed.add_field(
+        name="Reason",
+        value=f"> {discord.utils.escape_markdown(row['reason'] or '').replace(chr(10), ' ')}",
+        inline=False,
+    )
+    return embed
 
 
 class ReasonModal(discord.ui.Modal):
