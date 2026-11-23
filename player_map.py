@@ -18,25 +18,21 @@ Schema:
 }
 """
 
-import json
 import logging
-from pathlib import Path
+
+import jsonfile
 
 log = logging.getLogger(__name__)
 
-MAP_PATH = Path(__file__).parent / "player_map.json"
+MAP_PATH = jsonfile.data_path("player_map.json")
 
 
 def load() -> dict:
-    if MAP_PATH.exists():
-        with open(MAP_PATH) as f:
-            return json.load(f)
-    return {}
+    return jsonfile.read(MAP_PATH, default=None) or {}
 
 
 def save(data: dict) -> None:
-    with open(MAP_PATH, "w") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
+    jsonfile.write(MAP_PATH, data)
     log.debug(f"Saved player_map.json ({len(data)} entries)")
 
 

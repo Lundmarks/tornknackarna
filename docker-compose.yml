@@ -6,10 +6,13 @@ services:
     restart: unless-stopped
     env_file: .env
     volumes:
-      # Persist state and player map outside the container
-      - ./player_map.json:/app/player_map.json
-      - ./state.json:/app/state.json
+      # state.json, player_map.json and the ready check database live in data/.
       - ./data:/app/data
+      # Old locations, read-only. On first start the bot copies them into
+      # data/ if they're missing there. Safe to delete these two lines (and
+      # the files) once data/state.json and data/player_map.json exist.
+      - ./state.json:/app/state.json:ro
+      - ./player_map.json:/app/player_map.json:ro
 
   ready:
     build: .

@@ -26,6 +26,7 @@ import sqlite3
 from dataclasses import dataclass
 from pathlib import Path
 
+import jsonfile
 import scout_cards
 
 MATCH_SIZE = 5
@@ -37,7 +38,7 @@ FINAL_CHECK_WINDOW_SECONDS = 15 * 60
 
 IN, OUT, NONE = "in", "out", "none"
 
-DEFAULT_DB_PATH = Path(__file__).parent / "data" / "ready_check.db"
+DEFAULT_DB_PATH = jsonfile.DATA_DIR / "ready_check.db"
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS meetings (

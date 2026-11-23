@@ -9,17 +9,21 @@ import logging
 import math
 import os
 import time
-from datetime import datetime, timezone
-from pathlib import Path
+from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
-import schedule
 from dotenv import load_dotenv
+
+# Before the project imports: some modules read settings when imported.
+load_dotenv()
+
+import schedule
 from rich.console import Console
 from rich.logging import RichHandler
 from rich.theme import Theme
 
 import discord_events
+import jsonfile
 import opendota
 import player_map
 import ready_check
@@ -29,7 +33,6 @@ import webhook
 from esparven import EsparvenClient
 from gist import GistClient
 
-load_dotenv()
 
 console = Console(theme=Theme({
     "logging.level.info":    "cyan",
@@ -60,7 +63,7 @@ INDEX_GIST_ID     = os.environ.get("GIST_INDEX_ID") or None
 CURRENT_SEASON_ID = 77  # update each season
 EXTRA_SEASONS     = [6, 17, 27, 43, 60, 67]  # additional seasons to include; set to [] for current season only
 
-STATE_PATH     = Path(__file__).parent / "state.json"
+STATE_PATH     = jsonfile.data_path("state.json")
 OUR_TEAM_ID    = ESPARVEN_TEAM_ID
 COMPETITION    = "dota2cm"
 RUN_TIMES      = [t.strip() for t in os.environ.get("RUN_TIMES", "06:00,18:00").split(",")]
@@ -95,22 +98,19 @@ DISCORD_EVENT_WINDOW_DAYS = 12
 # Discord events by 1-2h depending on DST.
 ESPARVEN_TZ = ZoneInfo("Europe/Stockholm")
 
+# Local hour from which the match-day reminder may be sent.
+MATCH_DAY_REMINDER_HOUR = 9
+
 
 def load_state() -> dict:
-    if STATE_PATH.exists():
-        with open(STATE_PATH) as f:
-            content = f.read().strip()
-            if content:
-                data = json.loads(content)
-                data.setdefault("meetings", {})
-                data.setdefault("index_bin_id", None)
-                return data
-    return {"meetings": {}, "index_bin_id": None}
+    data = jsonfile.read(STATE_PATH, default=None) or {}
+    data.setdefault("meetings", {})
+    data.setdefault("index_bin_id", None)
+    return data
 
 
 def save_state(state: dict) -> None:
-    with open(STATE_PATH, "w") as f:
-        json.dump(state, f, indent=2)
+    jsonfile.write(STATE_PATH, state)
 
 
 def _print_banner():
@@ -275,11 +275,28 @@ def _sync_meeting_discord(esp, state: dict, meeting: dict, known_meeting_ids: se
 
     _sync_discord_event(esp, state, meeting_id, opponent["name"], opponent["id"], meeting_date)
 
-    # Match day reminder — fires once per match on the day of the match
-    today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    if meeting_date.startswith(today_str) and not entry.get("match_day_notified", False):
+    if not entry.get("match_day_notified") and match_day_reminder_due(meeting_date, datetime.now(timezone.utc)):
         webhook.notify_match_day(opponent_name=opponent["name"], meeting_id=meeting_id)
         entry["match_day_notified"] = True
+
+
+def match_day_reminder_due(meeting_date: str, now: datetime) -> bool:
+    """
+    True on the match's local (Stockholm) date from MATCH_DAY_REMINDER_HOUR,
+    or from three hours before an early kick-off. The 30-minute sync would
+    otherwise send it, and ping the role, just after midnight.
+    """
+    try:
+        kickoff = datetime.fromisoformat(meeting_date)
+    except ValueError:
+        return False
+    if kickoff.tzinfo is None:
+        kickoff = kickoff.replace(tzinfo=ESPARVEN_TZ)
+    kickoff = kickoff.astimezone(ESPARVEN_TZ)
+    local_now = now.astimezone(ESPARVEN_TZ)
+    if local_now.date() != kickoff.date() or local_now >= kickoff:
+        return False
+    return local_now.hour >= MATCH_DAY_REMINDER_HOUR or kickoff - local_now <= timedelta(hours=3)
 
 
 def _send_new_match_notifications(state: dict, our_meetings: list, top_bans: dict) -> None:

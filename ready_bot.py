@@ -20,17 +20,20 @@ from dataclasses import dataclass
 from sqlite3 import Connection
 from typing import Literal
 
+from dotenv import load_dotenv
+
+# Before the project imports: some modules read settings when imported.
+load_dotenv()
+
 import discord
 from discord import app_commands
 from discord.ext import tasks
-from dotenv import load_dotenv
 
 import ready_check as rc
 import scout_cards as sc
 import scout_ui as su
 from esparven import EsparvenClient
 
-load_dotenv()
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger("ready_bot")

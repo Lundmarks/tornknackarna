@@ -17,7 +17,7 @@ import logging
 import os
 from datetime import datetime, timezone
 
-import requests
+import httpx
 
 log = logging.getLogger("bot")
 
@@ -52,17 +52,18 @@ def _post(payload: dict) -> None:
         "allowed_mentions": {"parse": [], "roles": [role_id] if role_id and payload.get("content") else []},
     }
     try:
-        r = requests.post(
+        r = httpx.post(
             f"{API_BASE}/channels/{os.environ['DISCORD_READY_CHANNEL_ID']}/messages",
             headers={"Authorization": f"Bot {os.environ['DISCORD_BOT_TOKEN']}"},
             json=body,
             timeout=TIMEOUT_SECONDS,
         )
         r.raise_for_status()
-    except requests.RequestException as e:
-        # Not the raw exception text alone: keep the log useful without headers.
-        status = e.response.status_code if e.response is not None else "no response"
-        log.warning(f"Discord notification failed: {status}")
+    except httpx.HTTPStatusError as e:
+        # Status and Discord's error text only: never the request headers.
+        log.warning(f"Discord notification failed: {e.response.status_code} {e.response.text[:200]}")
+    except httpx.HTTPError as e:
+        log.warning(f"Discord notification failed: {type(e).__name__}")
 
 
 def notify_new_match(
