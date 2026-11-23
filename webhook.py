@@ -85,7 +85,19 @@ def notify_new_match(
     """
     if not _enabled():
         return False
+    if not _post(build_new_match_payload(opponent_name, match_date, meeting_id, top_bans)):
+        return False
+    log.info(f"Discord: notified new match vs [bold]{opponent_name}[/]")
+    return True
 
+
+def build_new_match_payload(
+    opponent_name: str,
+    match_date: str,
+    meeting_id: int,
+    top_bans: list[dict],
+) -> dict:
+    """The new-match message. Also used by the private /debug preview."""
     esparven_url = f"https://esparven.se/none/Meeting/Details/{meeting_id}"
 
     # Format match date nicely if possible
@@ -136,10 +148,7 @@ def notify_new_match(
         ]
     }
 
-    if not _post(payload):
-        return False
-    log.info(f"Discord: notified new match vs [bold]{opponent_name}[/]")
-    return True
+    return payload
 
 
 def notify_event_created(

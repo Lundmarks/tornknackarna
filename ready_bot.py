@@ -33,11 +33,13 @@ import discord
 from discord import app_commands
 from discord.ext import tasks
 
+import config
 import presence
 import ready_check as rc
 import scout_cards as sc
 import scout_ui as su
 import silent
+import webhook
 from esparven import EsparvenClient
 
 
@@ -429,9 +431,11 @@ class DebugSession:
         return embed
 
 
-def create_debug_session(owner_id: int, owner_name: str, players_in: int, hours: int, now: int) -> DebugSession:
+def create_debug_session(
+    owner_id: int, owner_name: str, players_in: int, hours: int, now: int, opponent: str = "Debug Opponent"
+) -> DebugSession:
     conn = rc.connect(":memory:")
-    rc.register_meeting(conn, DEBUG_MEETING_ID, "Debug Opponent", now + hours * 3600)
+    rc.register_meeting(conn, DEBUG_MEETING_ID, opponent, now + hours * 3600)
     rc.mark_posted(conn, DEBUG_MEETING_ID, 0, 0)
     for test_player in range(1, players_in + 1):
         rc.apply_vote(conn, DEBUG_MEETING_ID, test_player, f"TestPlayer{test_player}", rc.IN, now)
@@ -753,18 +757,79 @@ async def run_silent_job(job: str, opendota: bool) -> dict:
         return json.loads(report_path.read_text(encoding="utf-8"))
 
 
-@debug_group.command(name="run", description="Run a bot job silently and list what it would do")
+PREVIEW_OPPONENT = "Example Team"
+PREVIEW_BANS = [
+    {"hero": {"name": "Hoodwink", "currentSeasonGames": 6, "currentSeasonWR": 83}, "player": "ExamplePlayer1"},
+    {"hero": {"name": "Luna", "currentSeasonGames": 4, "currentSeasonWR": 100}, "player": "ExamplePlayer2"},
+    {"hero": {"name": "Rubick", "currentSeasonGames": 2, "currentSeasonWR": 100}, "player": "ExamplePlayer1"},
+]
+
+
+async def send_new_match_preview(interaction: discord.Interaction, days_out: int) -> None:
+    """Show a new match's real messages privately. Sends nothing to the channel."""
+    bot: ReadyBot = interaction.client  # type: ignore[assignment]
+    now = int(time.time())
+    kickoff = now + days_out * 86400
+    match_date = datetime.fromtimestamp(kickoff, config.ESPARVEN_TZ).strftime("%Y-%m-%dT%H:%M:%S")
+    in_window = days_out <= config.DISCORD_EVENT_WINDOW_DAYS
+    status = presence.status_text(
+        now, {"matches": [{"meetingId": 1, "opponent": PREVIEW_OPPONENT, "kickoff": kickoff}]}, []
+    )
+    if in_window:
+        steps = (
+            "**On the next sync:** creates the Discord event and posts the ready check, which pings the role.\n"
+            "**On the next full run:** posts the new-match message, without a ping."
+        )
+    else:
+        steps = (
+            "**On the next full run:** posts the new-match message, without a ping.\n"
+            f"**Within {config.DISCORD_EVENT_WINDOW_DAYS} days of kick-off:** creates the event and posts the "
+            "ready check, which pings the role."
+        )
+    new_match = webhook.build_new_match_payload(PREVIEW_OPPONENT, match_date, DEBUG_MEETING_ID, PREVIEW_BANS)
+    await interaction.response.send_message(
+        f"🧪 **New match preview, {days_out} days out.** Only you can see this. Nothing was posted or pinged.\n"
+        f"{steps}\n**Bot status:** {status}\nThe team, ban targets and link are examples.",
+        embed=discord.Embed.from_dict(new_match["embeds"][0]),
+        ephemeral=True,
+        allowed_mentions=discord.AllowedMentions.none(),
+    )
+    if not in_window:
+        return
+
+    old = bot.debug_sessions.pop(interaction.user.id, None)
+    if old:
+        old.conn.close()
+    session = create_debug_session(
+        interaction.user.id, interaction.user.display_name, 0, days_out * 24, now, PREVIEW_OPPONENT
+    )
+    bot.debug_sessions[interaction.user.id] = session
+    await interaction.followup.send(
+        "🧪 The ready check. The real one pings the role. These buttons only change this private copy.",
+        embed=session.embed(),
+        view=build_debug_view(interaction.user.id),
+        ephemeral=True,
+        allowed_mentions=discord.AllowedMentions.none(),
+    )
+
+
+@debug_group.command(name="run", description="Run a bot job silently, or preview a new match")
 @app_commands.describe(
-    job="sync: the 30-minute sync. full: the scouting run. next_event: force the next match's event.",
+    job="sync, full or next_event run silently. new_match shows the Discord messages.",
     opendota="For the full job: include OpenDota stats. Takes several minutes.",
+    days_out="For new_match: days until kick-off. Over 12 skips the event and ready check.",
 )
 async def debug_run(
     interaction: discord.Interaction,
-    job: Literal["sync", "full", "next_event"] = "sync",
+    job: Literal["sync", "full", "next_event", "new_match"] = "sync",
     opendota: bool = False,
+    days_out: app_commands.Range[int, 1, 60] = 5,
 ) -> None:
     if not interaction.permissions.administrator:
         await interaction.response.send_message("Only server admins can use this.", ephemeral=True)
+        return
+    if job == "new_match":
+        await send_new_match_preview(interaction, days_out)
         return
     bot: ReadyBot = interaction.client  # type: ignore[assignment]
     if bot.dry_run_lock.locked():

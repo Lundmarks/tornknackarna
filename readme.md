@@ -192,7 +192,7 @@ The data comes from E-Sparven's public match page and player profiles (`/match/{
 /debug ready-check [players_in] [hours_to_kickoff] [preview] [in_voice]
 /debug scout [team] [view]
 /debug status [scenario] [players_in]
-/debug run [job] [opendota]
+/debug run [job] [opendota] [days_out]
 ```
 
 `/readycheck-stats` shows matches answered, late drops and no-shows per player. `/debug ready-check` runs a throwaway sandbox that saves nothing and pings nobody. Set `preview` to `reschedule`, `short_roster` or `voice` to preview those alerts.
@@ -201,7 +201,7 @@ The data comes from E-Sparven's public match page and player profiles (`/match/{
 
 `/debug status` shows the bot's status line right now, or previews it for a made-up countdown, match day, live match or off-season, without changing the real status.
 
-`/debug run` runs the real `sync`, `full` or `next_event` job on live data and privately lists what it would do. It works on a throwaway copy of the state files and blocks every Discord and gist write, so nothing is posted, pinged, saved or changed. The same mode is available as `python bot.py --sync-once --silent`.
+`/debug run` runs the real `sync`, `full` or `next_event` job on live data and privately lists what it would do. It works on a throwaway copy of the state files and blocks every Discord and gist write, so nothing is posted, pinged, saved or changed. The same mode is available as `python bot.py --sync-once --silent`. `job: new_match` instead shows the messages a new match would produce, privately and with example data. Set `days_out` above 12 to see a match outside the ready check window.
 
 ### Bot setup
 
