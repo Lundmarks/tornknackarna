@@ -11,8 +11,6 @@ services:
       # Old locations, read-only. On first start the bot copies them into
       # data/ if they're missing there. Safe to delete these two lines (and
       # the files) once data/state.json and data/player_map.json exist.
-      - ./state.json:/app/state.json:ro
-      - ./player_map.json:/app/player_map.json:ro
 
   ready:
     build: .
