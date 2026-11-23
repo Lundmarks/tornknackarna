@@ -56,7 +56,7 @@ Owner asked to fix audit items 1, 2, 3, 4, 6, 7, 8, 10, 11, 12, 13 on PR #2
 (branch `claude/upbeat-cannon-3i5gvk`). Progress:
 
 - [x] 1 Match-day reminder pinged right after midnight UTC (30-min sync)
-- [ ] 2 Dashboard XSS: E-Sparven names inserted as raw HTML
+- [x] 2 Dashboard XSS: E-Sparven names inserted as raw HTML
 - [x] 3 `.dockerignore` so `.env` and state aren't baked into the image
 - [x] 4 Current season read from the API instead of `CURRENT_SEASON_ID = 77`
 - [x] 6 `load_dotenv()` before modules that read env at import
@@ -75,6 +75,11 @@ Notes on what's done:
   Stockholm time.
 - Season: `EXTRA_SEASONS`/`CURRENT_SEASON_ID` constants replaced by
   `seasons.py`; `EXCLUDED_SEASONS` env (default 48,65 cups) keeps stats the same.
+- Dashboard XSS: `fetchGist()` runs `sanitizeData()` on every gist, so all
+  strings arrive HTML-escaped. Use `unescL()` for textContent and `escL()` on
+  values read back from the DOM (dataset, textContent). Gist and meeting IDs
+  used in inline onclick handlers are validated (hex / digits), because
+  entities are decoded inside attributes before the JS runs.
 - Notifications only clear their "sent" flags when Discord accepted the post.
 
 Not requested (left as is): 5 (dashboard password gate is cosmetic), 9 (legacy
