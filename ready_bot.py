@@ -16,21 +16,30 @@ import logging
 import os
 import re
 import time
+from datetime import datetime, timezone
 from dataclasses import dataclass
 from sqlite3 import Connection
 from typing import Literal
 
+from dotenv import load_dotenv
+
+# Before the project imports: some modules read settings when imported.
+load_dotenv()
+
 import discord
 from discord import app_commands
 from discord.ext import tasks
-from dotenv import load_dotenv
 
+import presence
 import ready_check as rc
+import scout_cards as sc
+import scout_ui as su
+from esparven import EsparvenClient
 
-load_dotenv()
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger("ready_bot")
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
 COLOR = 0x5865F2
 COLOR_ALERT = 0xCC1100
@@ -253,7 +262,135 @@ def build_view(meeting_id: int) -> discord.ui.View:
     view = discord.ui.View(timeout=None)
     for action in ("in", "out", "history"):
         view.add_item(ReadyButton(action, meeting_id))
+    view.add_item(ScoutButton(meeting_id))
     return view
+
+
+# ── Scouting ─────────────────────────────────────────────────────────────────
+# Source "m" is a real match (key = meeting ID, cards from the database).
+# Source "d" is a /scout-debug preview (key = admin's user ID, cards in memory).
+
+SCOUT_NOT_READY = (
+    "Scouting for this match isn't ready yet. It's built from E-Sparven within "
+    "30 minutes of the ready check being posted."
+)
+
+
+def _scout_payload(bot: "ReadyBot", source: str, key: int) -> dict | None:
+    if source == "d":
+        return bot.debug_scouts.get(key)
+    return sc.get_cards(bot.conn, key)
+
+
+def build_scout_view(source: str, key: int, payload: dict, emojis: su.RankEmojis, selected: str | None = None):
+    view = discord.ui.View(timeout=None)
+    if payload.get("players"):
+        view.add_item(ScoutSelect(source, key, su.player_options(payload, emojis, selected)))
+    if selected:
+        view.add_item(ScoutOverviewButton(source, key))
+    return view
+
+
+def overview_footer(payload: dict) -> str:
+    extra = len(payload.get("players") or []) - su.SELECT_LIMIT
+    text = "Pick a player for their full card. Only you can see this."
+    return text + (f" The dropdown shows the first {su.SELECT_LIMIT}." if extra > 0 else "")
+
+
+class ScoutButton(discord.ui.DynamicItem[discord.ui.Button], template=r"scout:(?P<meeting>[0-9]+)"):
+    def __init__(self, meeting_id: int):
+        super().__init__(discord.ui.Button(
+            label="🔎 Scout", style=discord.ButtonStyle.secondary, custom_id=f"scout:{meeting_id}"
+        ))
+        self.meeting_id = meeting_id
+
+    @classmethod
+    async def from_custom_id(cls, interaction: discord.Interaction, item, match: re.Match):
+        return cls(int(match["meeting"]))
+
+    async def callback(self, interaction: discord.Interaction) -> None:
+        bot: ReadyBot = interaction.client  # type: ignore[assignment]
+        payload = sc.get_cards(bot.conn, self.meeting_id)
+        if payload is None:
+            await interaction.response.send_message(SCOUT_NOT_READY, ephemeral=True)
+            return
+        await interaction.response.send_message(
+            embed=su.build_overview_embed(payload, bot.rank_emojis, overview_footer(payload)),
+            view=build_scout_view("m", self.meeting_id, payload, bot.rank_emojis),
+            ephemeral=True,
+            allowed_mentions=discord.AllowedMentions.none(),
+        )
+
+
+class ScoutSelect(
+    discord.ui.DynamicItem[discord.ui.Select],
+    template=r"scoutpick:(?P<source>[md]):(?P<key>[0-9]+)",
+):
+    def __init__(self, source: str, key: int, options: list[discord.SelectOption] | None = None):
+        super().__init__(discord.ui.Select(
+            custom_id=f"scoutpick:{source}:{key}",
+            placeholder="Pick a player",
+            options=options or [discord.SelectOption(label="-", value="-")],
+        ))
+        self.source = source
+        self.key = key
+
+    @classmethod
+    async def from_custom_id(cls, interaction: discord.Interaction, item, match: re.Match):
+        return cls(match["source"], int(match["key"]))
+
+    async def callback(self, interaction: discord.Interaction) -> None:
+        bot: ReadyBot = interaction.client  # type: ignore[assignment]
+        payload = _scout_payload(bot, self.source, self.key)
+        values = (interaction.data or {}).get("values") or []
+        player = su.find_player(payload, values[0]) if payload and values else None
+        if player is None:
+            await interaction.response.send_message(
+                "This scouting view is out of date. Press Scout again." if self.source == "m"
+                else "This debug preview has ended. Run `/scout-debug` again.",
+                ephemeral=True,
+            )
+            return
+        await interaction.response.edit_message(
+            embed=su.build_player_embed(payload, player, bot.rank_emojis),
+            view=build_scout_view(self.source, self.key, payload, bot.rank_emojis, selected=player["uuid"]),
+            allowed_mentions=discord.AllowedMentions.none(),
+        )
+
+
+class ScoutOverviewButton(
+    discord.ui.DynamicItem[discord.ui.Button],
+    template=r"scoutback:(?P<source>[md]):(?P<key>[0-9]+)",
+):
+    def __init__(self, source: str, key: int):
+        super().__init__(discord.ui.Button(
+            label="Back to roster", style=discord.ButtonStyle.secondary, custom_id=f"scoutback:{source}:{key}"
+        ))
+        self.source = source
+        self.key = key
+
+    @classmethod
+    async def from_custom_id(cls, interaction: discord.Interaction, item, match: re.Match):
+        return cls(match["source"], int(match["key"]))
+
+    async def callback(self, interaction: discord.Interaction) -> None:
+        bot: ReadyBot = interaction.client  # type: ignore[assignment]
+        payload = _scout_payload(bot, self.source, self.key)
+        if payload is None:
+            await interaction.response.send_message("This scouting view has ended.", ephemeral=True)
+            return
+        await interaction.response.edit_message(
+            embed=su.build_overview_embed(payload, bot.rank_emojis, overview_footer(payload)),
+            view=build_scout_view(self.source, self.key, payload, bot.rank_emojis),
+            allowed_mentions=discord.AllowedMentions.none(),
+        )
+
+
+def thread_embeds(payload: dict, emojis: su.RankEmojis) -> list[tuple[str, discord.Embed]]:
+    """(message key, embed) for every message the scouting thread should hold."""
+    embeds = [("overview", su.build_overview_embed(payload, emojis, "One card per player below"))]
+    embeds += [(p["uuid"], su.build_player_embed(payload, p, emojis)) for p in payload.get("players") or []]
+    return embeds
 
 
 def vote_confirmation(result: rc.VoteResult) -> str:
@@ -419,6 +556,167 @@ async def readycheck_debug(
     )
 
 
+_league_teams: dict = {"at": 0, "teams": []}
+
+
+def _esparven() -> EsparvenClient | None:
+    key = os.environ.get("ESPARVEN_KEY")
+    return EsparvenClient(key) if key else None
+
+
+async def _league_team_list() -> list[dict]:
+    """Active-season teams, cached for an hour, for autocomplete."""
+    if time.time() - _league_teams["at"] > 3600 or not _league_teams["teams"]:
+        esp = _esparven()
+        if esp is None:
+            return []
+        try:
+            _league_teams["teams"] = await asyncio.to_thread(esp.get_league_teams)
+            _league_teams["at"] = time.time()
+        except Exception as e:
+            log.warning("Could not list league teams: %s", e)
+    return _league_teams["teams"]
+
+
+async def _team_autocomplete(interaction: discord.Interaction, current: str) -> list[app_commands.Choice[str]]:
+    teams = await _league_team_list()
+    current = current.lower()
+    matches = [t for t in teams if current in t["name"].lower()]
+    matches.sort(key=lambda t: (t.get("currentSeries") or "", t["name"].lower()))
+    return [
+        app_commands.Choice(name=f"{t['name']} · {t.get('currentSeries') or '?'}"[:100], value=str(t["id"]))
+        for t in matches[:25]
+    ]
+
+
+@app_commands.command(name="scout-debug", description="Admin only: preview the scouting cards privately")
+@app_commands.describe(
+    team="League team to scout. Defaults to the next opponent with a ready check.",
+    view="The private Scout dropdown, or every message the scouting thread would hold.",
+)
+@app_commands.autocomplete(team=_team_autocomplete)
+@app_commands.guild_only()
+@app_commands.default_permissions(administrator=True)
+async def scout_debug(
+    interaction: discord.Interaction,
+    team: str | None = None,
+    view: Literal["dropdown", "thread"] = "dropdown",
+) -> None:
+    if not interaction.permissions.administrator:
+        await interaction.response.send_message("Only server admins can use this.", ephemeral=True)
+        return
+    bot: ReadyBot = interaction.client  # type: ignore[assignment]
+    await interaction.response.defer(ephemeral=True, thinking=True)
+
+    payload = None
+    if team is None:
+        upcoming = bot.conn.execute(
+            "SELECT meeting_id FROM meetings WHERE kickoff > ? AND meeting_id != ? ORDER BY kickoff LIMIT 1",
+            (int(time.time()), DEBUG_MEETING_ID),
+        ).fetchone()
+        payload = sc.get_cards(bot.conn, upcoming["meeting_id"]) if upcoming else None
+        if payload is None:
+            await interaction.followup.send(
+                "No upcoming match has scouting cards yet. Pick a team with the `team` option.", ephemeral=True
+            )
+            return
+    else:
+        esp = _esparven()
+        teams = {str(t["id"]): t for t in await _league_team_list()}
+        if esp is None or team not in teams:
+            await interaction.followup.send(
+                "Unknown team, or ESPARVEN_KEY isn't set for the ready service.", ephemeral=True
+            )
+            return
+        try:
+            payload = await asyncio.to_thread(sc.build_team_payload, esp, teams[team], None, None)
+        except Exception as e:
+            log.exception("scout-debug failed")
+            await interaction.followup.send(f"Building the cards failed: {e}", ephemeral=True)
+            return
+        # Use the newest season any player has, so "this season" means something.
+        seasons = [s.get("seasonId") for p in payload["players"] for s in (p.get("profile") or {}).get("seasons", [])]
+        payload["seasonId"] = max((s for s in seasons if s), default=None)
+
+    note = "🧪 Debug preview: nothing is saved or posted."
+    if view == "thread":
+        embeds = thread_embeds(payload, bot.rank_emojis)
+        await interaction.followup.send(
+            f"{note} The thread would hold these {len(embeds)} messages.", ephemeral=True
+        )
+        for _, embed in embeds:
+            await interaction.followup.send(embed=embed, ephemeral=True, allowed_mentions=discord.AllowedMentions.none())
+        return
+
+    bot.debug_scouts[interaction.user.id] = payload
+    await interaction.followup.send(
+        note,
+        embed=su.build_overview_embed(payload, bot.rank_emojis, overview_footer(payload)),
+        view=build_scout_view("d", interaction.user.id, payload, bot.rank_emojis),
+        ephemeral=True,
+        allowed_mentions=discord.AllowedMentions.none(),
+    )
+
+
+def _later_today(now: int) -> int:
+    """Two hours from now, but never past the end of today in Stockholm."""
+    local = datetime.fromtimestamp(now, timezone.utc).astimezone(presence.config.ESPARVEN_TZ)
+    end_of_day = local.replace(hour=23, minute=59, second=0, microsecond=0)
+    return min(now + 2 * 3600, max(now + 60, int(end_of_day.timestamp())))
+
+
+def live_ready_checks(conn) -> list[dict]:
+    """Posted ready checks that are still ahead or live, with their ready count."""
+    rows = conn.execute(
+        "SELECT meeting_id, opponent, kickoff FROM meetings "
+        "WHERE message_id IS NOT NULL AND meeting_id != ? AND kickoff > ?",
+        (DEBUG_MEETING_ID, int(time.time()) - presence.LIVE_HOURS * 3600),
+    ).fetchall()
+    return [
+        {"meetingId": r["meeting_id"], "opponent": r["opponent"], "kickoff": r["kickoff"],
+         "ready": rc.count_in(conn, r["meeting_id"])}
+        for r in rows
+    ]
+
+
+@app_commands.command(name="status-debug", description="Admin only: preview the bot's status line")
+@app_commands.describe(
+    scenario="The real status right now, or a made-up situation.",
+    players_in="Players who said they're in, for the countdown and match-day previews.",
+)
+@app_commands.guild_only()
+@app_commands.default_permissions(administrator=True)
+async def status_debug(
+    interaction: discord.Interaction,
+    scenario: Literal["now", "countdown", "match_day", "live", "off_season"] = "now",
+    players_in: app_commands.Range[int, 0, 10] = 3,
+) -> None:
+    if not interaction.permissions.administrator:
+        await interaction.response.send_message("Only server admins can use this.", ephemeral=True)
+        return
+    bot: ReadyBot = interaction.client  # type: ignore[assignment]
+    now = int(time.time())
+    if scenario == "now":
+        text = presence.status_text(now, presence.load_snapshot(bot.conn), live_ready_checks(bot.conn))
+        note = "The bot's status right now:"
+    else:
+        kickoff = {
+            "countdown": now + 3 * 86400,
+            "match_day": _later_today(now),
+            "live": now - 30 * 60,
+            "off_season": None,
+        }[scenario]
+        snapshot = {"nextSeason": {"name": "Next season", "start": "2099-01-17", "signupOpen": True}}
+        checks = [] if kickoff is None else [
+            {"meetingId": 1, "opponent": "Debug Opponent", "kickoff": kickoff, "ready": players_in}
+        ]
+        text = presence.status_text(now, snapshot, checks)
+        note = "🧪 Preview only, the real status is unchanged:"
+    await interaction.response.send_message(
+        f"{note}\n> {text or '(no status)'}", ephemeral=True, allowed_mentions=discord.AllowedMentions.none()
+    )
+
+
 @app_commands.command(name="readycheck-stats", description="Admin only: player reliability for a season")
 @app_commands.describe(season="E-Sparven season ID. Defaults to the latest season.")
 @app_commands.guild_only()
@@ -443,12 +741,25 @@ class ReadyBot(discord.Client):
         self.conn = rc.connect()
         self.notify_lock = asyncio.Lock()
         self.debug_sessions: dict[int, DebugSession] = {}
+        self.debug_scouts: dict[int, dict] = {}
+        self.rank_emojis = su.RankEmojis()
+        self.thread_retry_at: dict[int, float] = {}
+        self.status_text: str | None = None
+        self.status_shown = False
         self.tree = app_commands.CommandTree(self)
 
     async def setup_hook(self) -> None:
-        self.add_dynamic_items(ReadyButton, DebugButton)
+        self.add_dynamic_items(ReadyButton, DebugButton, ScoutButton, ScoutSelect, ScoutOverviewButton)
         self.tree.add_command(readycheck_debug)
         self.tree.add_command(readycheck_stats)
+        self.tree.add_command(scout_debug)
+        self.tree.add_command(status_debug)
+        await self.rank_emojis.load(self)
+        # Re-render open ready checks so older messages get the Scout button.
+        self.conn.execute(
+            "UPDATE meetings SET needs_render = 1 WHERE message_id IS NOT NULL AND kickoff > ?",
+            (int(time.time()),),
+        )
         try:
             await self.tree.sync()
         except discord.HTTPException:
@@ -457,6 +768,7 @@ class ReadyBot(discord.Client):
 
     async def on_ready(self) -> None:
         log.info("Connected as %s", self.user)
+        self.status_shown = False  # a fresh connection starts without our status
         guild = self._guild_for(self.channel_id)
         if guild is None:
             log.warning("Ready channel %s is not visible, so voice checks can't run", self.channel_id)
@@ -647,11 +959,78 @@ class ReadyBot(discord.Client):
             )
             rc.mark_rendered(self.conn, meeting["meeting_id"])
 
+    async def _scout_thread(self, row) -> discord.Thread:
+        """The match's scouting thread, created on the ready check message if missing."""
+        if row["thread_id"]:
+            try:
+                thread = self.get_channel(row["thread_id"]) or await self.fetch_channel(row["thread_id"])
+                if isinstance(thread, discord.Thread):
+                    if thread.archived:
+                        await thread.edit(archived=False)
+                    return thread
+            except discord.NotFound:
+                log.info("Scouting thread for meeting %s was deleted, creating a new one", row["meeting_id"])
+        message = self.get_partial_messageable(row["channel_id"]).get_partial_message(row["message_id"])
+        thread = await message.create_thread(
+            name=f"🔎 Scouting: vs {row['opponent']}"[:100], auto_archive_duration=10080
+        )
+        sc.save_thread(self.conn, row["meeting_id"], thread.id, {}, None)
+        return thread
+
+    async def sync_scout_threads(self) -> None:
+        now = int(time.time())
+        for row in sc.threads_to_sync(self.conn, now):
+            meeting_id = row["meeting_id"]
+            if self.thread_retry_at.get(meeting_id, 0) > now:
+                continue
+            payload = sc.get_cards(self.conn, meeting_id)
+            try:
+                thread = await self._scout_thread(row)
+                current = sc.get_thread(self.conn, meeting_id)
+                messages = json.loads(current["messages"]) if current and current["thread_id"] == thread.id else {}
+                wanted = thread_embeds(payload, self.rank_emojis)
+                for key, embed in wanted:
+                    if key in messages:
+                        try:
+                            await thread.get_partial_message(messages[key]).edit(
+                                embed=embed, allowed_mentions=discord.AllowedMentions.none()
+                            )
+                            continue
+                        except discord.NotFound:
+                            pass
+                    sent = await thread.send(embed=embed, allowed_mentions=discord.AllowedMentions.none())
+                    messages[key] = sent.id
+                    sc.save_thread(self.conn, meeting_id, thread.id, messages, None)
+                for key in set(messages) - {key for key, _ in wanted}:
+                    try:
+                        await thread.get_partial_message(messages.pop(key)).delete()
+                    except discord.NotFound:
+                        pass
+                sc.save_thread(self.conn, meeting_id, thread.id, messages, row["card_digest"])
+                self.thread_retry_at.pop(meeting_id, None)
+                log.info("Scouting thread for meeting %s is up to date", meeting_id)
+            except discord.HTTPException as e:
+                # Usually missing thread permissions. Don't retry every 15 seconds.
+                self.thread_retry_at[meeting_id] = now + 600
+                log.warning("Scouting thread for meeting %s failed, retrying in 10 min: %s", meeting_id, e)
+
+    async def update_status(self) -> None:
+        """Show presence.status_text() as the bot's status, only when it changes."""
+        text = presence.status_text(int(time.time()), presence.load_snapshot(self.conn), live_ready_checks(self.conn))
+        if self.status_shown and text == self.status_text:
+            return
+        activity = discord.CustomActivity(name=text[:128]) if text else None  # Discord's limit
+        await self.change_presence(activity=activity)
+        self.status_text, self.status_shown = text, True
+        log.info("Status: %s", text or "(cleared)")
+
     @tasks.loop(seconds=15)
     async def sync_loop(self) -> None:
         steps = (
+            self.update_status,
             self.post_ready_checks,
             self.refresh_messages,
+            self.sync_scout_threads,
             self.run_timed_checks,
             self.flush_notifications,
             self.flush_announcements,

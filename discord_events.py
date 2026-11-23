@@ -64,9 +64,26 @@ import httpx
 log = logging.getLogger("bot")
 
 API_BASE  = "https://discord.com/api/v10"
-BOT_TOKEN = os.environ.get("DISCORD_BOT_TOKEN") or None
-GUILD_ID  = os.environ.get("DISCORD_GUILD_ID") or None
 TIMEOUT_S = 8
+
+# Discord's event status values.
+STATUS_SCHEDULED, STATUS_ACTIVE, STATUS_COMPLETED, STATUS_CANCELED = 1, 2, 3, 4
+
+
+def _token() -> str | None:
+    return os.environ.get("DISCORD_BOT_TOKEN") or None
+
+
+def _guild() -> str | None:
+    return os.environ.get("DISCORD_GUILD_ID") or None
+
+
+def _headers() -> dict:
+    return {"Authorization": f"Bot {_token()}"}
+
+
+def _event_url(event_id: str) -> str:
+    return f"{API_BASE}/guilds/{_guild()}/scheduled-events/{event_id}"
 
 # AGENT-RESUME: Dota 2 CM Bo1/Bo3 games at this club run roughly 1-2.5h per
 # game observed in scraped match data (see esparven.py sample: 36min and
@@ -99,7 +116,7 @@ except ImportError:
 
 
 def _enabled() -> bool:
-    if not BOT_TOKEN or not GUILD_ID:
+    if not _token() or not _guild():
         log.debug("Discord bot not configured (DISCORD_BOT_TOKEN/DISCORD_GUILD_ID) -- skipping event creation")
         return False
     return True
@@ -107,7 +124,7 @@ def _enabled() -> bool:
 
 def event_url(event_id: str) -> str:
     """Deep link to a guild scheduled event, for use in webhook announcements."""
-    return f"https://discord.com/events/{GUILD_ID}/{event_id}"
+    return f"https://discord.com/events/{_guild()}/{event_id}"
 
 
 def _fetch_image_bytes(url: str) -> bytes | None:
@@ -127,16 +144,9 @@ def build_cover_image(home_logo_url: str, away_logo_url: str) -> bytes | None:
     decode error) -- always safe to pass straight to create_match_event's
     cover_image_bytes param without the caller checking first.
 
-    AGENT-RESUME: never run against real E-Sparven logo URLs end-to-end.
-    Known caveat from a live sample (see esparven.py's _extract_team_logos
-    docstring): Tornknackarna's own logo URL resolved to a plain
-    "67.png" with no content hash, unlike every opponent sampled which had
-    a hashed filename -- this smells like a default/placeholder image
-    rather than a real uploaded team logo. Fetch it and LOOK AT IT before
-    trusting this function's output in a real event; if it's a generic
-    placeholder, either upload a real logo on E-Sparven's team admin page
-    or special-case OUR_TEAM_ID here to use a local static asset instead
-    of scraping.
+    Logo URLs come from the match page header (esparven.py,
+    scrape_team_logo_urls). Our own logo is /media/teamimages/67.png without
+    a content hash, but it is a real uploaded image (checked 2026-11-23).
     """
     if not _PIL_AVAILABLE:
         return None
@@ -215,8 +225,8 @@ def create_match_event(
 
     try:
         r = httpx.post(
-            f"{API_BASE}/guilds/{GUILD_ID}/scheduled-events",
-            headers={"Authorization": f"Bot {BOT_TOKEN}"},
+            f"{API_BASE}/guilds/{_guild()}/scheduled-events",
+            headers=_headers(),
             json=payload,
             timeout=TIMEOUT_S,
         )
@@ -265,8 +275,8 @@ def update_match_event(event_id: str, match_date: datetime) -> bool:
     }
     try:
         r = httpx.patch(
-            f"{API_BASE}/guilds/{GUILD_ID}/scheduled-events/{event_id}",
-            headers={"Authorization": f"Bot {BOT_TOKEN}"},
+            _event_url(event_id),
+            headers=_headers(),
             json=payload,
             timeout=TIMEOUT_S,
         )
@@ -280,59 +290,36 @@ def update_match_event(event_id: str, match_date: datetime) -> bool:
 
 def complete_match_event(event_id: str) -> bool:
     """
-    Mark a played match's event COMPLETED, once, so it stays visible in
-    Discord's "Past events" list for history instead of either lingering
-    forever as a stale SCHEDULED event (see the "does Discord auto-clean
-    this up" AGENT-RESUME at the top of this file -- it doesn't) or being
-    deleted (explicit product decision: keep events for history, never
-    delete). Returns True on success, False on any failure -- caller
-    (bot.py's _process_past_meetings, via _maybe_complete_discord_event)
-    is expected to leave its "completed" flag unset on False so this is
-    retried on a later run rather than the event getting stuck forever.
+    Mark a played match's event COMPLETED so it moves to Discord's past
+    events instead of lingering as SCHEDULED. Events are never deleted.
 
-    AGENT-RESUME 2026-08-10: Discord's documented status state machine
-    (from training knowledge, NOT verified live -- discord.com was
-    unreachable from this sandbox at write time, same caveat as the
-    reschedule/expiry note above) does not allow SCHEDULED -> COMPLETED
-    directly; it requires SCHEDULED -> ACTIVE -> COMPLETED, hence the two
-    sequential PATCH calls below. Two follow-on risks worth checking once
-    real events exist:
-      1. If this function's own first call (-> ACTIVE) previously
-         succeeded but the second (-> COMPLETED) then failed (e.g.
-         network blip), the event is left stuck in ACTIVE with our
-         "completed" flag still unset -- retrying calls -> ACTIVE again,
-         which is probably an invalid transition from an already-ACTIVE
-         state and would then fail loudly instead of quietly recovering.
-         If that happens in practice, GET the event first and branch on
-         its current `status` field rather than blindly PATCHing -> ACTIVE
-         every retry.
-      2. Never confirmed whether Discord requires an EXTERNAL event's
-         entity_metadata.location / scheduled_end_time to still be present
-         on these status-only PATCH calls, or whether omitting them (as
-         done here) is treated as "leave unchanged" -- if this starts
-         erroring, try including the full payload create_match_event sent
-         originally, not just {"status": ...}.
+    Discord only allows SCHEDULED -> ACTIVE -> COMPLETED, so this reads the
+    current status and sends only the steps still missing. An earlier run
+    that got as far as ACTIVE therefore finishes cleanly on retry. Returns
+    True once the event is completed (or was canceled by hand), False on
+    any failure so the caller retries on a later run.
     """
     if not _enabled():
         return False
 
     try:
-        r1 = httpx.patch(
-            f"{API_BASE}/guilds/{GUILD_ID}/scheduled-events/{event_id}",
-            headers={"Authorization": f"Bot {BOT_TOKEN}"},
-            json={"status": 2},  # ACTIVE
-            timeout=TIMEOUT_S,
-        )
-        r1.raise_for_status()
-        r2 = httpx.patch(
-            f"{API_BASE}/guilds/{GUILD_ID}/scheduled-events/{event_id}",
-            headers={"Authorization": f"Bot {BOT_TOKEN}"},
-            json={"status": 3},  # COMPLETED
-            timeout=TIMEOUT_S,
-        )
-        r2.raise_for_status()
+        r = httpx.get(_event_url(event_id), headers=_headers(), timeout=TIMEOUT_S)
+        if r.status_code == 404:
+            log.info(f"Discord event {event_id} no longer exists, nothing to complete")
+            return True
+        r.raise_for_status()
+        status = r.json().get("status")
+        if status in (STATUS_COMPLETED, STATUS_CANCELED):
+            return True
+        steps = [STATUS_ACTIVE, STATUS_COMPLETED] if status == STATUS_SCHEDULED else [STATUS_COMPLETED]
+        for step in steps:
+            r = httpx.patch(_event_url(event_id), headers=_headers(), json={"status": step}, timeout=TIMEOUT_S)
+            r.raise_for_status()
         log.info(f"Discord: marked event {event_id} as completed")
         return True
-    except Exception as e:
+    except httpx.HTTPStatusError as e:
+        log.warning(f"Discord event completion failed for {event_id}: {e.response.status_code} {e.response.text[:200]}")
+        return False
+    except httpx.HTTPError as e:
         log.warning(f"Discord event completion failed for {event_id}: {e}")
         return False

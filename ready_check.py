@@ -26,6 +26,10 @@ import sqlite3
 from dataclasses import dataclass
 from pathlib import Path
 
+import jsonfile
+import presence
+import scout_cards
+
 MATCH_SIZE = 5
 LATE_WINDOW_SECONDS = 30 * 3600
 WITHDRAWAL_GRACE_SECONDS = 60
@@ -35,7 +39,7 @@ FINAL_CHECK_WINDOW_SECONDS = 15 * 60
 
 IN, OUT, NONE = "in", "out", "none"
 
-DEFAULT_DB_PATH = Path(__file__).parent / "data" / "ready_check.db"
+DEFAULT_DB_PATH = jsonfile.DATA_DIR / "ready_check.db"
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS meetings (
@@ -132,6 +136,8 @@ def connect(path: str | Path | None = None) -> sqlite3.Connection:
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     conn.executescript(_SCHEMA)
+    scout_cards.ensure_schema(conn)
+    presence.ensure_schema(conn)
     _migrate(conn)
     return conn
 

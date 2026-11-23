@@ -1,0 +1,22 @@
+# Secrets and runtime state are mounted by docker-compose.yml, never baked in.
+.env
+.env.*
+!.env.example
+state.json
+player_map.json
+data/
+backups/
+**.backup
+
+# Not needed in the image
+.git
+.github
+.venv
+__pycache__/
+**/__pycache__/
+.pytest_cache/
+tests/
+media/
+index.html
+favicon.svg
+*.md

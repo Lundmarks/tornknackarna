@@ -17,7 +17,7 @@ import logging
 import os
 from datetime import datetime, timezone
 
-import requests
+import httpx
 
 log = logging.getLogger("bot")
 
@@ -44,7 +44,7 @@ def _role_mention() -> str | None:
     return f"<@&{role_id}>" if role_id else None
 
 
-def _post(payload: dict) -> None:
+def _post(payload: dict) -> bool:
     """Post a channel message as the bot. Logs a warning on failure, never raises."""
     role_id = os.environ.get("DISCORD_ROLE_ID")
     body = {
@@ -52,17 +52,20 @@ def _post(payload: dict) -> None:
         "allowed_mentions": {"parse": [], "roles": [role_id] if role_id and payload.get("content") else []},
     }
     try:
-        r = requests.post(
+        r = httpx.post(
             f"{API_BASE}/channels/{os.environ['DISCORD_READY_CHANNEL_ID']}/messages",
             headers={"Authorization": f"Bot {os.environ['DISCORD_BOT_TOKEN']}"},
             json=body,
             timeout=TIMEOUT_SECONDS,
         )
         r.raise_for_status()
-    except requests.RequestException as e:
-        # Not the raw exception text alone: keep the log useful without headers.
-        status = e.response.status_code if e.response is not None else "no response"
-        log.warning(f"Discord notification failed: {status}")
+        return True
+    except httpx.HTTPStatusError as e:
+        # Status and Discord's error text only: never the request headers.
+        log.warning(f"Discord notification failed: {e.response.status_code} {e.response.text[:200]}")
+    except httpx.HTTPError as e:
+        log.warning(f"Discord notification failed: {type(e).__name__}")
+    return False
 
 
 def notify_new_match(
@@ -70,7 +73,7 @@ def notify_new_match(
     match_date: str,
     meeting_id: int,
     top_bans: list[dict],
-) -> None:
+) -> bool:
     """
     Fire when a meeting_id is seen for the first time in an upcoming state.
 
@@ -81,7 +84,7 @@ def notify_new_match(
     Pass an empty list if no CM data is available yet.
     """
     if not _enabled():
-        return
+        return False
 
     esparven_url = f"https://esparven.se/none/Meeting/Details/{meeting_id}"
 
@@ -133,15 +136,17 @@ def notify_new_match(
         ]
     }
 
-    _post(payload)
+    if not _post(payload):
+        return False
     log.info(f"Discord: notified new match vs [bold]{opponent_name}[/]")
+    return True
 
 
 def notify_event_created(
     opponent_name: str,
     match_date: str,
     event_url: str,
-) -> None:
+) -> bool:
     """
     Fire right after discord_events.create_match_event() succeeds for a
     newly created scheduled event (not on reschedule — that's a silent
@@ -154,7 +159,7 @@ def notify_event_created(
     check (see discord_events.create_match_event's description string).
     """
     if not _enabled():
-        return
+        return False
 
     date_str = match_date
     try:
@@ -183,20 +188,22 @@ def notify_event_created(
         ]
     }
 
-    _post(payload)
+    if not _post(payload):
+        return False
     log.info(f"Discord: notified event creation for [bold]{opponent_name}[/]")
+    return True
 
 
 def notify_match_day(
     opponent_name: str,
     meeting_id: int,
-) -> None:
+) -> bool:
     """
     Fire on the morning run of the actual match date.
     Fires at most once per meeting (caller is responsible for the flag check).
     """
     if not _enabled():
-        return
+        return False
 
     esparven_url = f"https://esparven.se/none/Meeting/Details/{meeting_id}"
 
@@ -218,5 +225,7 @@ def notify_match_day(
         ]
     }
 
-    _post(payload)
+    if not _post(payload):
+        return False
     log.info(f"Discord: match day reminder sent for [bold]{opponent_name}[/]")
+    return True
