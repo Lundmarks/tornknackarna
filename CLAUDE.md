@@ -57,8 +57,8 @@ its pages, save a fresh copy there and update the parser and the tests.
 - `matchDate` strings from E-Sparven are Europe/Stockholm wall time without an
   offset.
 - Never commit `.env`, `state.json`, `player_map.json` or `data/`.
-- Work on the branch the session is told to use; PR into `main`. GitHub Pages
-  serves `index.html` from `main`.
+- Commit directly to `main` with a message. Never push, because the owner
+  pushes. No feature branches. GitHub Pages serves `index.html` from `main`.
 
 ## Status of the code audit (Nov 2026)
 
@@ -72,8 +72,8 @@ completion retries, 10 player map keyed by ID, 11 `bot.py` split, 12 tests,
 
 Notes on what's done:
 - State files moved to `data/` (`jsonfile.data_path`) because atomic rename
-  fails on single-file bind mounts. Old files are copied over once; compose
-  still mounts them read-only for that migration.
+  fails on single-file bind mounts. Old files were copied over once, and the
+  read-only compose mounts for that migration have been removed.
 - Match-day reminder: `discord_sync.match_day_reminder_due()`, from 09:00
   Stockholm time.
 - Season: `EXTRA_SEASONS`/`CURRENT_SEASON_ID` constants replaced by
