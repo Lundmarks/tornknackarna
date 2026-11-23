@@ -35,6 +35,7 @@ bot.py               Entry point of the scout service: full run, light sync, sch
 config.py            Settings from .env
 seasons.py           Current season from E-Sparven; which seasons count for stats
 discord_sync.py      Discord events, ready check queueing, reminders, scouting cards
+presence.py          The bot's status line: countdown, ready count, live, next season
 scouting.py          Full scouting run: one gist per opponent, our team and the index
 players.py           Steam ID lookup and per-player data (OpenDota, league heroes, career)
 analysis.py          Stats from E-Sparven match data: draft tendencies, hero pools, history
@@ -63,7 +64,7 @@ Everything the bot remembers lives in `data/`:
 
 - `state.json`: gist IDs, frozen flags and Discord event IDs per match
 - `player_map.json`: Steam IDs per player
-- `ready_check.db`: votes, history, attendance and scouting cards
+- `ready_check.db`: votes, history, attendance, scouting cards and the status snapshot
 
 Files are written by writing a temporary file and renaming it, so a crash can't leave a half-written file behind.
 
@@ -160,6 +161,19 @@ Everything is posted by one bot account. Set `DISCORD_BOT_TOKEN` and `DISCORD_RE
 
 The voice check counts any voice channel the bot can see, except the server's AFK channel. Only players who clicked **I'm in** count, so stand-ins must vote too. Reschedules are detected within 30 minutes by the light sync.
 
+### Bot status
+
+The bot's status line under its name in the member list shows what's coming up, updated within 15 seconds:
+
+| When | Status |
+|---|---|
+| From kick-off for 3 hours | 🔴 Live vs Team BIGMAN |
+| On match day | Match day: vs Team BIGMAN at 19:00 |
+| Before that | Next: vs Team BIGMAN · Sun 19:00 |
+| No matches scheduled | Next season starts 17 Jan · sign-ups open |
+
+While a ready check is posted and fewer than five have said they're in, the countdown adds the count, e.g. "· 3/5 ready". E-Sparven fills in results afterwards, so "Live" is the time window, not a score. The `scout` service stores the upcoming matches and the next season's start (from E-Sparven's season page) on every sync, and the `ready` service shows them.
+
 ### Scouting cards
 
 Every ready check has a **Scout** button, and the scouting lives behind it so the channel gets no extra messages:
@@ -177,11 +191,14 @@ The data comes from E-Sparven's public match page and player profiles (`/match/{
 /readycheck-stats [season]
 /readycheck-debug [players_in] [hours_to_kickoff] [preview] [in_voice]
 /scout-debug [team] [view]
+/status-debug [scenario] [players_in]
 ```
 
 `/readycheck-stats` shows matches answered, late drops and no-shows per player. `/readycheck-debug` runs a throwaway sandbox that saves nothing and pings nobody. Set `preview` to `reschedule`, `short_roster` or `voice` to preview those alerts.
 
 `/scout-debug` builds scouting cards live for any team in the league (the `team` option autocompletes) and shows them privately. Without `team` it shows the next opponent's stored cards. `view: dropdown` (default) is the Scout button's view, and `view: thread` shows every message the scouting thread would hold. Nothing is saved or posted. Building a team takes about 10 seconds.
+
+`/status-debug` shows the bot's status line right now, or previews it for a made-up countdown, match day, live match or off-season, without changing the real status.
 
 ### Bot setup
 

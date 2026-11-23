@@ -28,8 +28,9 @@ prediction. Player profiles (/spelare/{uuid}) give a career summary and one
 block per season. Parsing lives in the _parse_* functions at the bottom.
 """
 
-import re
 import logging
+import re
+from datetime import date
 import httpx
 from bs4 import BeautifulSoup
 
@@ -50,6 +51,9 @@ _RECORD_RE     = re.compile(r"(\d+)\s+match(?:er)?\s*·\s*(\d+)\s*[–-]\s*(\d+)
 _HERO_TITLE_RE = re.compile(r"(\d+)\s+match(?:er)?,\s*(\d+)\s+vinst")
 _PLACE_RE      = re.compile(r"(\d+)")
 _LEAGUE_NAME   = "Captain's Mode"
+_START_RE      = re.compile(r"(\d{1,2})\s+([a-zåäö]+)\s+(\d{4})", re.IGNORECASE)
+_SV_MONTHS     = ["januari", "februari", "mars", "april", "maj", "juni", "juli",
+                  "augusti", "september", "oktober", "november", "december"]
 
 
 class EsparvenClient:
@@ -173,6 +177,11 @@ class EsparvenClient:
         if len(logos) != 2:
             log.warning(f"Expected 2 team logos on match page {meeting_id}, found {len(logos)}")
         return logos
+
+    def season_list(self, season_id: int) -> list[dict]:
+        """The league's seasons from a season page's switcher (_parse_season_list), [] on failure."""
+        html = self._fetch_page(f"{BASE_URL}/sasong/{season_id}")
+        return _parse_season_list(html) if html else []
 
     def player_profile(self, uuid: str) -> dict | None:
         """Parsed /spelare/{uuid} page (see _parse_player_profile), or None."""
@@ -417,3 +426,35 @@ def _parse_player_profile(html: str) -> dict:
     if not profile["seasons"] and profile["career"]:
         log.warning("Player profile has a career but no seasons -- structure may have changed")
     return profile
+
+
+def _parse_season_list(html: str) -> list[dict]:
+    """
+    The season switcher on any /sasong/{id} page:
+        [ {"seasonId", "name", "start": date | None, "signupOpen": bool,
+           "current": bool, "finished": bool} ]
+    "Aktuella" holds the running season and any upcoming one; their rows
+    read "Startar 17 januari 2027" plus an "Anmälan öppen" badge while teams
+    can sign up.
+    """
+    soup = BeautifulSoup(html, "html.parser")
+    seasons = []
+    for row in soup.select(".ss-row"):
+        name = row.select_one(".ss-name")
+        meta = row.select_one(".ss-meta")
+        start = None
+        m = _START_RE.search(meta.get_text(" ", strip=True)) if meta else None
+        if m and m[2].lower() in _SV_MONTHS:
+            start = date(int(m[3]), _SV_MONTHS.index(m[2].lower()) + 1, int(m[1]))
+        link = row.get("href", "")
+        season_match = _SEASON_ID_RE.search(link)
+        badge = (row.select_one(".status-badge") or row).get_text(" ", strip=True)
+        seasons.append({
+            "seasonId":   int(season_match.group(1)) if season_match else None,
+            "name":       name.get_text(strip=True) if name else "",
+            "start":      start,
+            "signupOpen": "Anmälan öppen" in badge,
+            "current":    "is-here" in (row.get("class") or []),
+            "finished":   "Avslutad" in badge,
+        })
+    return seasons

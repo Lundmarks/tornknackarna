@@ -16,6 +16,7 @@ import logging
 import os
 import re
 import time
+from datetime import datetime, timezone
 from dataclasses import dataclass
 from sqlite3 import Connection
 from typing import Literal
@@ -29,6 +30,7 @@ import discord
 from discord import app_commands
 from discord.ext import tasks
 
+import presence
 import ready_check as rc
 import scout_cards as sc
 import scout_ui as su
@@ -656,6 +658,65 @@ async def scout_debug(
     )
 
 
+def _later_today(now: int) -> int:
+    """Two hours from now, but never past the end of today in Stockholm."""
+    local = datetime.fromtimestamp(now, timezone.utc).astimezone(presence.config.ESPARVEN_TZ)
+    end_of_day = local.replace(hour=23, minute=59, second=0, microsecond=0)
+    return min(now + 2 * 3600, max(now + 60, int(end_of_day.timestamp())))
+
+
+def live_ready_checks(conn) -> list[dict]:
+    """Posted ready checks that are still ahead or live, with their ready count."""
+    rows = conn.execute(
+        "SELECT meeting_id, opponent, kickoff FROM meetings "
+        "WHERE message_id IS NOT NULL AND meeting_id != ? AND kickoff > ?",
+        (DEBUG_MEETING_ID, int(time.time()) - presence.LIVE_HOURS * 3600),
+    ).fetchall()
+    return [
+        {"meetingId": r["meeting_id"], "opponent": r["opponent"], "kickoff": r["kickoff"],
+         "ready": rc.count_in(conn, r["meeting_id"])}
+        for r in rows
+    ]
+
+
+@app_commands.command(name="status-debug", description="Admin only: preview the bot's status line")
+@app_commands.describe(
+    scenario="The real status right now, or a made-up situation.",
+    players_in="Players who said they're in, for the countdown and match-day previews.",
+)
+@app_commands.guild_only()
+@app_commands.default_permissions(administrator=True)
+async def status_debug(
+    interaction: discord.Interaction,
+    scenario: Literal["now", "countdown", "match_day", "live", "off_season"] = "now",
+    players_in: app_commands.Range[int, 0, 10] = 3,
+) -> None:
+    if not interaction.permissions.administrator:
+        await interaction.response.send_message("Only server admins can use this.", ephemeral=True)
+        return
+    bot: ReadyBot = interaction.client  # type: ignore[assignment]
+    now = int(time.time())
+    if scenario == "now":
+        text = presence.status_text(now, presence.load_snapshot(bot.conn), live_ready_checks(bot.conn))
+        note = "The bot's status right now:"
+    else:
+        kickoff = {
+            "countdown": now + 3 * 86400,
+            "match_day": _later_today(now),
+            "live": now - 30 * 60,
+            "off_season": None,
+        }[scenario]
+        snapshot = {"nextSeason": {"name": "Next season", "start": "2099-01-17", "signupOpen": True}}
+        checks = [] if kickoff is None else [
+            {"meetingId": 1, "opponent": "Debug Opponent", "kickoff": kickoff, "ready": players_in}
+        ]
+        text = presence.status_text(now, snapshot, checks)
+        note = "🧪 Preview only, the real status is unchanged:"
+    await interaction.response.send_message(
+        f"{note}\n> {text or '(no status)'}", ephemeral=True, allowed_mentions=discord.AllowedMentions.none()
+    )
+
+
 @app_commands.command(name="readycheck-stats", description="Admin only: player reliability for a season")
 @app_commands.describe(season="E-Sparven season ID. Defaults to the latest season.")
 @app_commands.guild_only()
@@ -683,6 +744,8 @@ class ReadyBot(discord.Client):
         self.debug_scouts: dict[int, dict] = {}
         self.rank_emojis = su.RankEmojis()
         self.thread_retry_at: dict[int, float] = {}
+        self.status_text: str | None = None
+        self.status_shown = False
         self.tree = app_commands.CommandTree(self)
 
     async def setup_hook(self) -> None:
@@ -690,6 +753,7 @@ class ReadyBot(discord.Client):
         self.tree.add_command(readycheck_debug)
         self.tree.add_command(readycheck_stats)
         self.tree.add_command(scout_debug)
+        self.tree.add_command(status_debug)
         await self.rank_emojis.load(self)
         # Re-render open ready checks so older messages get the Scout button.
         self.conn.execute(
@@ -704,6 +768,7 @@ class ReadyBot(discord.Client):
 
     async def on_ready(self) -> None:
         log.info("Connected as %s", self.user)
+        self.status_shown = False  # a fresh connection starts without our status
         guild = self._guild_for(self.channel_id)
         if guild is None:
             log.warning("Ready channel %s is not visible, so voice checks can't run", self.channel_id)
@@ -949,9 +1014,20 @@ class ReadyBot(discord.Client):
                 self.thread_retry_at[meeting_id] = now + 600
                 log.warning("Scouting thread for meeting %s failed, retrying in 10 min: %s", meeting_id, e)
 
+    async def update_status(self) -> None:
+        """Show presence.status_text() as the bot's status, only when it changes."""
+        text = presence.status_text(int(time.time()), presence.load_snapshot(self.conn), live_ready_checks(self.conn))
+        if self.status_shown and text == self.status_text:
+            return
+        activity = discord.CustomActivity(name=text[:128]) if text else None  # Discord's limit
+        await self.change_presence(activity=activity)
+        self.status_text, self.status_shown = text, True
+        log.info("Status: %s", text or "(cleared)")
+
     @tasks.loop(seconds=15)
     async def sync_loop(self) -> None:
         steps = (
+            self.update_status,
             self.post_ready_checks,
             self.refresh_messages,
             self.sync_scout_threads,

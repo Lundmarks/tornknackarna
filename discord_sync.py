@@ -10,11 +10,12 @@ Callers save state afterwards.
 
 import logging
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 
 import analysis
 import config
 import discord_events
+import presence
 import ready_check
 import scout_cards
 import webhook
@@ -217,3 +218,33 @@ def send_new_match_notifications(state: dict, our_meetings: list[dict], top_bans
         )
         if sent:
             del entry["new_match_pending"]
+
+
+def update_presence_snapshot(esp, our_meetings: list[dict], season_id: int | None) -> None:
+    """
+    Store what the ready bot's status line needs: our upcoming matches at
+    any distance, and the next season's start (refreshed every 12 hours).
+    """
+    if not ready_check.enabled():
+        return
+    conn = ready_check.connect()
+    try:
+        snapshot = presence.load_snapshot(conn)
+        matches = []
+        for meeting in our_meetings:
+            opponent = analysis.find_opponent(meeting, config.OUR_TEAM_ID)
+            kickoff = parse_kickoff(analysis.match_date(meeting))
+            if opponent and kickoff:
+                matches.append({"meetingId": meeting["id"], "opponent": opponent["name"],
+                                "kickoff": int(kickoff.timestamp())})
+        snapshot["matches"] = matches
+
+        now = int(time.time())
+        if season_id and now - snapshot.get("seasonCheckedAt", 0) > presence.SEASON_REFRESH_SECONDS:
+            seasons = esp.season_list(season_id)
+            if seasons:
+                snapshot["nextSeason"] = presence.next_season(seasons, date.today())
+                snapshot["seasonCheckedAt"] = now
+        presence.save_snapshot(conn, snapshot)
+    finally:
+        conn.close()

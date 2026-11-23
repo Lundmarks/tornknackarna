@@ -23,7 +23,10 @@ are bind-mounted and gitignored. See `readme.md` for user-facing docs.
 - `bot.py` entry point: `run()` (full), `sync()` (light), scheduler, CLI flags
 - `config.py` settings from env; `required()` for secrets
 - `seasons.py` current season from E-Sparven; cups excluded from stats
-- `discord_sync.py` events, ready check queueing, reminders, scouting cards
+- `discord_sync.py` events, ready check queueing, reminders, scouting cards,
+  and `update_presence_snapshot()` for the status line
+- `presence.py` bot status text (pure `status_text()`); snapshot in the
+  `bot_status` table, written by scout, read by ready every 15 s
 - `scouting.py` gist pipeline (`Scouting` context dataclass)
 - `players.py` Steam ID resolution and the one `build_players()`
 - `analysis.py` pure stats from jsonMatchData (draft, heroes, history)
@@ -83,6 +86,11 @@ Notes on what's done:
 - Ticker lines only come from matches listed on the dashboard, so the old
   season's lines disappear without clearing state by hand.
 - Notifications only clear their "sent" flags when Discord accepted the post.
+
+Bot status line (Nov 2026, after the audit): countdown, ready count only
+while fewer than 5 are in, "Live" for 3 h from kick-off (no score: E-Sparven
+results come in afterwards), next season off-season. Not wanted: a result
+line after matches, and reading members' presence (no Presence intent).
 
 Still open, not requested yet: 5 (dashboard password gate is cosmetic), 9 (legacy
 reaction ready check fallback), 14-20 (stale comments, dead code, old

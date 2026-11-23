@@ -63,14 +63,20 @@ def _our_upcoming(esp) -> list[dict] | None:
     return [m for m in upcoming if analysis.find_contender(m, config.OUR_TEAM_ID)]
 
 
-def _sync_discord(esp, state: dict, our_meetings: list[dict], known_meeting_ids: set) -> None:
+def _sync_discord(
+    esp, state: dict, our_meetings: list[dict], known_meeting_ids: set, season_id: int | None
+) -> None:
     discord_sync.sync_meetings(esp, state, our_meetings, known_meeting_ids)
     # Saved before the cards, so a scraping failure can't lose event IDs.
     save_state(state)
-    try:
-        discord_sync.refresh_scout_cards(esp, our_meetings)
-    except Exception as e:
-        log.error(f"Scouting cards failed: {e}")
+    for step, name in (
+        (lambda: discord_sync.refresh_scout_cards(esp, our_meetings), "Scouting cards"),
+        (lambda: discord_sync.update_presence_snapshot(esp, our_meetings, season_id), "Status snapshot"),
+    ):
+        try:
+            step()
+        except Exception as e:
+            log.error(f"{name} failed: {e}")
 
 
 def run(skip_opendota: bool = False) -> None:
@@ -88,7 +94,7 @@ def run(skip_opendota: bool = False) -> None:
     log.info(f"Found [bold]{len(our_meetings)}[/] upcoming meeting(s) for Tornknäckarna, season {season_id}")
 
     # Discord first, so an OpenDota or gist failure can't block a ready check.
-    _sync_discord(esp, state, our_meetings, known_meeting_ids)
+    _sync_discord(esp, state, our_meetings, known_meeting_ids, season_id)
 
     top_bans: dict[int, list[dict]] = {}
     ctx = scouting.Scouting(
@@ -120,7 +126,8 @@ def sync() -> None:
     known_meeting_ids = set(state["meetings"])
     our_meetings = _our_upcoming(esp)
     if our_meetings is not None:
-        _sync_discord(esp, state, our_meetings, known_meeting_ids)
+        season_id = seasons.current_season_id(esp, our_meetings)
+        _sync_discord(esp, state, our_meetings, known_meeting_ids, season_id)
 
 
 def force_create_next_event() -> None:

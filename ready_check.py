@@ -27,6 +27,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import jsonfile
+import presence
 import scout_cards
 
 MATCH_SIZE = 5
@@ -136,6 +137,7 @@ def connect(path: str | Path | None = None) -> sqlite3.Connection:
     conn.execute("PRAGMA foreign_keys = ON")
     conn.executescript(_SCHEMA)
     scout_cards.ensure_schema(conn)
+    presence.ensure_schema(conn)
     _migrate(conn)
     return conn
 
