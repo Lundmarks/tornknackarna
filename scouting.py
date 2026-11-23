@@ -55,7 +55,13 @@ def run(ctx: Scouting, our_meetings: list[dict], top_bans: dict) -> None:
         log.error(f"Failed to update our team gist: {e}")
 
     section("Gist: writing index")
-    ticker = [s for ref in ctx.state["meetings"].values() for s in ref.get("tickerSnippets", [])]
+    # Only matches on the dashboard, so last season's lines drop out by themselves.
+    listed = {str(e["meetingId"]) for e in index_entries}
+    ticker = [
+        line
+        for key, ref in ctx.state["meetings"].items() if key in listed
+        for line in ref.get("tickerSnippets", [])
+    ]
     index_data = {
         "updatedAt":      datetime.now(timezone.utc).isoformat(),
         "matches":        index_entries,

@@ -59,20 +59,13 @@ its pages, save a fresh copy there and update the parser and the tests.
 
 ## Status of the code audit (Nov 2026)
 
-Owner asked to fix audit items 1, 2, 3, 4, 6, 7, 8, 10, 11, 12, 13 on PR #2
-(branch `claude/upbeat-cannon-3i5gvk`). Progress:
+Audit items 1, 2, 3, 4, 6, 7, 8, 10, 11, 12 and 13 are done on PR #2
+(branch `claude/upbeat-cannon-3i5gvk`):
 
-- [x] 1 Match-day reminder pinged right after midnight UTC (30-min sync)
-- [x] 2 Dashboard XSS: E-Sparven names inserted as raw HTML
-- [x] 3 `.dockerignore` so `.env` and state aren't baked into the image
-- [x] 4 Current season read from the API instead of `CURRENT_SEASON_ID = 77`
-- [x] 6 `load_dotenv()` before modules that read env at import
-- [x] 7 Atomic writes for `state.json` and `player_map.json`
-- [x] 8 `complete_match_event` checks status first (no stuck ACTIVE)
-- [x] 10 `player_map.json` keyed by applicationUserID, migrating name keys
-- [x] 11 Split `bot.py` (analytics, Discord sync, shared player builder)
-- [x] 12 pytest suite (`tests/`)
-- [x] 13 Drop `requests`, use `httpx` everywhere
+1 night-time match-day ping, 2 dashboard XSS, 3 `.dockerignore`, 4 season
+from the API, 6 `load_dotenv()` order, 7 atomic state writes, 8 event
+completion retries, 10 player map keyed by ID, 11 `bot.py` split, 12 tests,
+13 `httpx` only.
 
 Notes on what's done:
 - State files moved to `data/` (`jsonfile.data_path`) because atomic rename
@@ -87,8 +80,10 @@ Notes on what's done:
   values read back from the DOM (dataset, textContent). Gist and meeting IDs
   used in inline onclick handlers are validated (hex / digits), because
   entities are decoded inside attributes before the JS runs.
+- Ticker lines only come from matches listed on the dashboard, so the old
+  season's lines disappear without clearing state by hand.
 - Notifications only clear their "sent" flags when Discord accepted the post.
 
-Not requested (left as is): 5 (dashboard password gate is cosmetic), 9 (legacy
+Still open, not requested yet: 5 (dashboard password gate is cosmetic), 9 (legacy
 reaction ready check fallback), 14-20 (stale comments, dead code, old
 E-Sparven URLs, User-Agent, naming, container user/WAL, minified index.html).
