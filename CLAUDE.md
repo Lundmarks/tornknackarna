@@ -36,6 +36,13 @@ are bind-mounted and gitignored. See `readme.md` for user-facing docs.
 - `scout_cards.py`, `scout_ui.py` scouting card data and Discord views
 - `index.html` dashboard (GitHub Pages, from `main`)
 
+## Tests
+
+`pip install -r requirements-dev.txt`, then `python -m pytest`. No network:
+E-Sparven pages are saved in `tests/fixtures/` (trimmed to `<main>`), and
+`tests/conftest.py` points `DATA_DIR` at a temp folder. When E-Sparven changes
+its pages, save a fresh copy there and update the parser and the tests.
+
 ## Conventions
 
 - User-facing text (Discord, readme) in plain English, no em dashes, no emojis
@@ -64,7 +71,7 @@ Owner asked to fix audit items 1, 2, 3, 4, 6, 7, 8, 10, 11, 12, 13 on PR #2
 - [x] 8 `complete_match_event` checks status first (no stuck ACTIVE)
 - [x] 10 `player_map.json` keyed by applicationUserID, migrating name keys
 - [x] 11 Split `bot.py` (analytics, Discord sync, shared player builder)
-- [ ] 12 pytest suite (`tests/`)
+- [x] 12 pytest suite (`tests/`)
 - [x] 13 Drop `requests`, use `httpx` everywhere
 
 Notes on what's done:
