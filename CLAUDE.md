@@ -15,8 +15,8 @@ E-Sparven, team ID 67). Two Docker Compose services on the owner's home server:
 - `ready` runs `ready_bot.py`: always-on Discord bot (button ready check,
   alerts, Scout button and thread, admin slash commands).
 
-They share SQLite at `data/ready_check.db`. `state.json` and `player_map.json`
-are bind-mounted and gitignored. See `readme.md` for user-facing docs.
+They share the bind-mounted, gitignored `data/` folder: `ready_check.db`,
+`state.json` and `player_map.json`. See `readme.md` for user-facing docs.
 
 ## Module map
 
