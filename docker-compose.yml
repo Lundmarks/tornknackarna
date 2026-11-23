@@ -3,6 +3,8 @@ name: tornknackarna
 services:
   scout:
     build: .
+    # Rebuild from this checkout on every `docker compose up`.
+    pull_policy: build
     restart: unless-stopped
     env_file: .env
     volumes:
@@ -11,6 +13,8 @@ services:
 
   ready:
     build: .
+    # Rebuild from this checkout on every `docker compose up`.
+    pull_policy: build
     command: ["python", "ready_bot.py"]
     restart: unless-stopped
     env_file: .env

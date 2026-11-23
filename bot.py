@@ -14,12 +14,19 @@ players.py (per-player data) and analysis.py (stats from match data).
 
 import argparse
 import logging
+import sys
 import time
 
 from dotenv import load_dotenv
 
 # Before the project imports: config.py reads the environment when imported.
 load_dotenv()
+
+import silent  # noqa: E402
+
+# Also before the project imports, so they resolve data/ to the throwaway copy.
+if "--silent" in sys.argv:
+    silent.activate()
 
 import schedule  # noqa: E402
 
@@ -175,21 +182,31 @@ def _safely(job, name: str):
 
 def main() -> None:
     setup_logging()
-    parser = argparse.ArgumentParser()
+    # No abbreviations: "--sil" must not look silent while running for real.
+    parser = argparse.ArgumentParser(allow_abbrev=False)
+    parser.add_argument("--silent",           action="store_true", help="With --run-once, --sync-once or --force-next-event: post, ping, save and change nothing, and list what would have happened")
     parser.add_argument("--run-once",         action="store_true", help="Run once then exit")
     parser.add_argument("--sync-once",        action="store_true", help="Run the light match/reschedule sync once then exit")
     parser.add_argument("--no-opendota",      action="store_true", help="Skip OpenDota API calls (fast debug mode — pub stats will be blank)")
     parser.add_argument("--force-next-event", action="store_true", help="Admin debug: force-create a Discord scheduled event for the soonest upcoming meeting, bypassing the 12-day window, then exit")
     args = parser.parse_args()
 
+    job = None
     if args.force_next_event:
-        force_create_next_event()
-        return
-    if args.sync_once:
-        sync()
-        return
-    if args.run_once:
-        run(skip_opendota=args.no_opendota)
+        job = force_create_next_event
+    elif args.sync_once:
+        job = sync
+    elif args.run_once:
+        job = lambda: run(skip_opendota=args.no_opendota)
+
+    if args.silent and job is None:
+        parser.error("--silent needs --run-once, --sync-once or --force-next-event")
+    if job is not None:
+        if args.silent:
+            silent.begin()
+        job()
+        if args.silent:
+            console.print(silent.format_report("cli", silent.finish()), markup=False)
         return
 
     console.print(f"[dim]Scheduling daily runs at [bold]{', '.join(config.RUN_TIMES)}[/] UTC[/]")

@@ -36,6 +36,8 @@ They share the bind-mounted, gitignored `data/` folder: `ready_check.db`,
 - `webhook.py` channel posts via bot REST (returns bool: sent or not)
 - `discord_events.py` scheduled events
 - `ready_bot.py`, `ready_check.py` button ready check service and rules
+- `silent.py` dry runs (`bot.py --silent`, `/debug run`): throwaway data copy,
+  all non-read HTTP blocked. Must activate before project imports
 - `scout_cards.py`, `scout_ui.py` scouting card data and Discord views
 - `index.html` dashboard (GitHub Pages, from `main`)
 

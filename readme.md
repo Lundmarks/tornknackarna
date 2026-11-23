@@ -189,16 +189,19 @@ The data comes from E-Sparven's public match page and player profiles (`/match/{
 
 ```
 /readycheck-stats [season]
-/readycheck-debug [players_in] [hours_to_kickoff] [preview] [in_voice]
-/scout-debug [team] [view]
-/status-debug [scenario] [players_in]
+/debug ready-check [players_in] [hours_to_kickoff] [preview] [in_voice]
+/debug scout [team] [view]
+/debug status [scenario] [players_in]
+/debug run [job] [opendota]
 ```
 
-`/readycheck-stats` shows matches answered, late drops and no-shows per player. `/readycheck-debug` runs a throwaway sandbox that saves nothing and pings nobody. Set `preview` to `reschedule`, `short_roster` or `voice` to preview those alerts.
+`/readycheck-stats` shows matches answered, late drops and no-shows per player. `/debug ready-check` runs a throwaway sandbox that saves nothing and pings nobody. Set `preview` to `reschedule`, `short_roster` or `voice` to preview those alerts.
 
-`/scout-debug` builds scouting cards live for any team in the league (the `team` option autocompletes) and shows them privately. Without `team` it shows the next opponent's stored cards. `view: dropdown` (default) is the Scout button's view, and `view: thread` shows every message the scouting thread would hold. Nothing is saved or posted. Building a team takes about 10 seconds.
+`/debug scout` builds scouting cards live for any team in the league (the `team` option autocompletes) and shows them privately. Without `team` it shows the next opponent's stored cards. `view: dropdown` (default) is the Scout button's view, and `view: thread` shows every message the scouting thread would hold. Nothing is saved or posted. Building a team takes about 10 seconds.
 
-`/status-debug` shows the bot's status line right now, or previews it for a made-up countdown, match day, live match or off-season, without changing the real status.
+`/debug status` shows the bot's status line right now, or previews it for a made-up countdown, match day, live match or off-season, without changing the real status.
+
+`/debug run` runs the real `sync`, `full` or `next_event` job on live data and privately lists what it would do. It works on a throwaway copy of the state files and blocks every Discord and gist write, so nothing is posted, pinged, saved or changed. The same mode is available as `python bot.py --sync-once --silent`.
 
 ### Bot setup
 
@@ -256,7 +259,7 @@ docker compose up -d --build ready
 
 `data/` is bind-mounted (see `docker-compose.yml`), so state survives rebuilds. `.env` is loaded via `env_file`, so it must exist alongside `docker-compose.yml` before starting. `.dockerignore` keeps `.env` and all state out of the image itself.
 
-**Upgrading from the old layout:** `state.json` and `player_map.json` used to live next to the code. On its first start, the bot copies them into `data/` if they aren't there yet. The compose file still mounts the old files read-only for that copy. Once `data/state.json` and `data/player_map.json` exist, you can remove those two lines from `docker-compose.yml` and keep the old files as a backup.
+**Upgrading from the old layout:** `state.json` and `player_map.json` used to live next to the code. On its first start, the bot copies them into `data/` if they aren't there yet. Add read-only mounts for the old files to `docker-compose.yml` if you still need that copy. Once `data/state.json` and `data/player_map.json` exist, the old files are only a backup.
 
 **Useful commands:**
 
@@ -274,8 +277,8 @@ docker compose up -d
 # Run manually inside the container
 docker exec tornknackarna-scout-1 python bot.py --run-once --no-opendota
 
-# Full rebuild after code changes
-docker compose up -d --build
+# Rebuild and start after code changes
+docker compose up -d
 
 # Check whether it's actually running — restart policy is `unless-stopped`,
 # which does NOT auto-restart after a manual `docker stop`

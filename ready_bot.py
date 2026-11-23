@@ -15,9 +15,12 @@ import json
 import logging
 import os
 import re
+import sys
+import tempfile
 import time
 from datetime import datetime, timezone
 from dataclasses import dataclass
+from pathlib import Path
 from sqlite3 import Connection
 from typing import Literal
 
@@ -34,6 +37,7 @@ import presence
 import ready_check as rc
 import scout_cards as sc
 import scout_ui as su
+import silent
 from esparven import EsparvenClient
 
 
@@ -268,7 +272,7 @@ def build_view(meeting_id: int) -> discord.ui.View:
 
 # ── Scouting ─────────────────────────────────────────────────────────────────
 # Source "m" is a real match (key = meeting ID, cards from the database).
-# Source "d" is a /scout-debug preview (key = admin's user ID, cards in memory).
+# Source "d" is a /debug scout preview (key = admin's user ID, cards in memory).
 
 SCOUT_NOT_READY = (
     "Scouting for this match isn't ready yet. It's built from E-Sparven within "
@@ -347,7 +351,7 @@ class ScoutSelect(
         if player is None:
             await interaction.response.send_message(
                 "This scouting view is out of date. Press Scout again." if self.source == "m"
-                else "This debug preview has ended. Run `/scout-debug` again.",
+                else "This debug preview has ended. Run `/debug scout` again.",
                 ephemeral=True,
             )
             return
@@ -457,7 +461,7 @@ class DebugButton(
         session = bot.debug_sessions.get(self.owner_id)
         if session is None or interaction.user.id != self.owner_id:
             await interaction.response.send_message(
-                "This debug session has ended. Run `/readycheck-debug` again.", ephemeral=True
+                "This debug session has ended. Run `/debug ready-check` again.", ephemeral=True
             )
             return
         if self.action == "history":
@@ -517,15 +521,21 @@ async def _send_debug_preview(
     )
 
 
-@app_commands.command(name="readycheck-debug", description="Admin only: try the ready check privately")
+debug_group = app_commands.Group(
+    name="debug",
+    description="Admin only: test the bot privately, without posting or pinging",
+    guild_only=True,
+    default_permissions=discord.Permissions(administrator=True),
+)
+
+
+@debug_group.command(name="ready-check", description="Try the ready check and its alerts privately")
 @app_commands.describe(
     players_in="Test players already in. 4 tests a ping after you join, 5 tests no ping.",
     hours_to_kickoff="Simulated hours until kick-off. Late-drop alerts fire at 30 or less.",
     preview="Vote in a sandbox, or preview a reschedule, short-roster or voice alert.",
     in_voice="For the voice preview: how many of the players in are in voice.",
 )
-@app_commands.guild_only()
-@app_commands.default_permissions(administrator=True)
 async def readycheck_debug(
     interaction: discord.Interaction,
     players_in: app_commands.Range[int, 0, 10] = 4,
@@ -589,14 +599,12 @@ async def _team_autocomplete(interaction: discord.Interaction, current: str) -> 
     ]
 
 
-@app_commands.command(name="scout-debug", description="Admin only: preview the scouting cards privately")
+@debug_group.command(name="scout", description="Preview the scouting cards privately")
 @app_commands.describe(
     team="League team to scout. Defaults to the next opponent with a ready check.",
     view="The private Scout dropdown, or every message the scouting thread would hold.",
 )
 @app_commands.autocomplete(team=_team_autocomplete)
-@app_commands.guild_only()
-@app_commands.default_permissions(administrator=True)
 async def scout_debug(
     interaction: discord.Interaction,
     team: str | None = None,
@@ -631,7 +639,7 @@ async def scout_debug(
         try:
             payload = await asyncio.to_thread(sc.build_team_payload, esp, teams[team], None, None)
         except Exception as e:
-            log.exception("scout-debug failed")
+            log.exception("/debug scout failed")
             await interaction.followup.send(f"Building the cards failed: {e}", ephemeral=True)
             return
         # Use the newest season any player has, so "this season" means something.
@@ -679,13 +687,11 @@ def live_ready_checks(conn) -> list[dict]:
     ]
 
 
-@app_commands.command(name="status-debug", description="Admin only: preview the bot's status line")
+@debug_group.command(name="status", description="Preview the bot's status line")
 @app_commands.describe(
     scenario="The real status right now, or a made-up situation.",
     players_in="Players who said they're in, for the countdown and match-day previews.",
 )
-@app_commands.guild_only()
-@app_commands.default_permissions(administrator=True)
 async def status_debug(
     interaction: discord.Interaction,
     scenario: Literal["now", "countdown", "match_day", "live", "off_season"] = "now",
@@ -717,6 +723,60 @@ async def status_debug(
     )
 
 
+DRY_RUN_TIMEOUT_SECONDS = 13 * 60  # Discord's follow-up token lasts 15 minutes
+DRY_RUN_FLAGS = {"sync": "--sync-once", "full": "--run-once", "next_event": "--force-next-event"}
+
+
+async def run_silent_job(job: str, opendota: bool) -> dict:
+    """Run a bot job in its own process, so its write guard can't affect this bot."""
+    args = [sys.executable, "bot.py", DRY_RUN_FLAGS[job], "--silent"]
+    if job == "full" and not opendota:
+        args.append("--no-opendota")
+    with tempfile.TemporaryDirectory(prefix="tornknackarna-dry-run-") as work:
+        process = await asyncio.create_subprocess_exec(
+            *args,
+            cwd=Path(__file__).parent,
+            env={**os.environ, "SILENT_WORK_DIR": work},
+            stdout=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        try:
+            _, stderr = await asyncio.wait_for(process.communicate(), DRY_RUN_TIMEOUT_SECONDS)
+        except TimeoutError:
+            process.kill()
+            await process.wait()
+            return {"problems": [f"ERROR: stopped after {DRY_RUN_TIMEOUT_SECONDS // 60} minutes"]}
+        report_path = Path(work) / silent.REPORT_NAME
+        if process.returncode != 0 or not report_path.exists():
+            log.error("/debug run %s failed: %s", job, stderr.decode(errors="replace")[-1500:])
+            return {"problems": [f"ERROR: the job exited with code {process.returncode}. See the ready service log."]}
+        return json.loads(report_path.read_text(encoding="utf-8"))
+
+
+@debug_group.command(name="run", description="Run a bot job silently and list what it would do")
+@app_commands.describe(
+    job="sync: the 30-minute sync. full: the scouting run. next_event: force the next match's event.",
+    opendota="For the full job: include OpenDota stats. Takes several minutes.",
+)
+async def debug_run(
+    interaction: discord.Interaction,
+    job: Literal["sync", "full", "next_event"] = "sync",
+    opendota: bool = False,
+) -> None:
+    if not interaction.permissions.administrator:
+        await interaction.response.send_message("Only server admins can use this.", ephemeral=True)
+        return
+    bot: ReadyBot = interaction.client  # type: ignore[assignment]
+    if bot.dry_run_lock.locked():
+        await interaction.response.send_message("A dry run is already going. Try again when it ends.", ephemeral=True)
+        return
+    async with bot.dry_run_lock:
+        await interaction.response.defer(ephemeral=True, thinking=True)
+        report = await run_silent_job(job, opendota)
+    embed = discord.Embed(title=f"🧪 Dry run: {job}", description=silent.format_report(job, report), color=COLOR)
+    await interaction.followup.send(embed=embed, ephemeral=True, allowed_mentions=discord.AllowedMentions.none())
+
+
 @app_commands.command(name="readycheck-stats", description="Admin only: player reliability for a season")
 @app_commands.describe(season="E-Sparven season ID. Defaults to the latest season.")
 @app_commands.guild_only()
@@ -740,6 +800,7 @@ class ReadyBot(discord.Client):
         self.channel_id = channel_id
         self.conn = rc.connect()
         self.notify_lock = asyncio.Lock()
+        self.dry_run_lock = asyncio.Lock()
         self.debug_sessions: dict[int, DebugSession] = {}
         self.debug_scouts: dict[int, dict] = {}
         self.rank_emojis = su.RankEmojis()
@@ -750,10 +811,8 @@ class ReadyBot(discord.Client):
 
     async def setup_hook(self) -> None:
         self.add_dynamic_items(ReadyButton, DebugButton, ScoutButton, ScoutSelect, ScoutOverviewButton)
-        self.tree.add_command(readycheck_debug)
+        self.tree.add_command(debug_group)
         self.tree.add_command(readycheck_stats)
-        self.tree.add_command(scout_debug)
-        self.tree.add_command(status_debug)
         await self.rank_emojis.load(self)
         # Re-render open ready checks so older messages get the Scout button.
         self.conn.execute(
