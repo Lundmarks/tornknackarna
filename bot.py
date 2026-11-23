@@ -23,6 +23,7 @@ import discord_events
 import opendota
 import player_map
 import ready_check
+import scout_cards
 import steam
 import webhook
 from esparven import EsparvenClient
@@ -63,13 +64,17 @@ STATE_PATH     = Path(__file__).parent / "state.json"
 OUR_TEAM_ID    = ESPARVEN_TEAM_ID
 COMPETITION    = "dota2cm"
 RUN_TIMES      = [t.strip() for t in os.environ.get("RUN_TIMES", "06:00,18:00").split(",")]
+# Between full runs, a light sync checks E-Sparven for new matches and
+# reschedules and refreshes the Discord scouting cards. 0 turns it off.
+SYNC_INTERVAL_MINUTES = int(os.environ.get("SYNC_INTERVAL_MINUTES", "30"))
 OPENDOTA_DELAY = 2.5
 
-# Disabled because E-Sparven's page update broke the player Dotabuff links.
-# The OpenDota name search is off too: without the scrape it would become the
-# only source of new IDs and could map players to the wrong accounts.
-# Already-cached players in player_map.json keep working.
-RESOLVE_NEW_PLAYER_IDS = False
+# New players get their Steam ID from the public match page, joined on
+# applicationUserID (see esparven.py). Turn off to rely on player_map.json only.
+RESOLVE_NEW_PLAYER_IDS = True
+# Falling back to an OpenDota name search can map players to the wrong
+# account, so it stays off. Matches it finds are saved unconfirmed.
+OPENDOTA_NAME_SEARCH = False
 
 # Discord scheduled events: create one once a match is this many days out or
 # closer. "or closer" (<=, not ==) matters because meetings are sometimes
@@ -170,26 +175,13 @@ def run(skip_opendota: bool = False):
     known_meeting_ids = set(state["meetings"].keys())
 
     _section("E-Sparven: upcoming meetings")
-    try:
-        upcoming = esp.get_upcoming_meetings(COMPETITION)
-    except Exception as e:
-        log.error(f"Failed to fetch upcoming meetings: {e}")
+    our_meetings = _fetch_our_upcoming(esp)
+    if our_meetings is None:
         return
-
-    our_meetings = [
-        m for m in upcoming
-        if any(c["id"] == OUR_TEAM_ID for c in m.get("meetingContenders", []))
-    ]
-    log.info(f"Found [bold]{len(our_meetings)}[/] upcoming meeting(s) for Tornknäckarna (of {len(upcoming)} total)")
+    log.info(f"Found [bold]{len(our_meetings)}[/] upcoming meeting(s) for Tornknäckarna")
 
     # Discord runs first so an OpenDota or gist failure can't block a ready check.
-    _section("Discord: match updates")
-    for meeting in our_meetings:
-        try:
-            _sync_meeting_discord(esp, state, meeting, known_meeting_ids)
-        except Exception as e:
-            log.error(f"Meeting {meeting.get('id')}: Discord update failed: {e}")
-    save_state(state)
+    _sync_discord(esp, state, our_meetings, known_meeting_ids)
 
     top_bans: dict[int, list[dict]] = {}
     try:
@@ -200,6 +192,72 @@ def run(skip_opendota: bool = False):
     # Sent after scouting so it can include ban targets, but sent either way.
     _send_new_match_notifications(state, our_meetings, top_bans)
     save_state(state)
+
+
+def _fetch_our_upcoming(esp) -> list[dict] | None:
+    try:
+        upcoming = esp.get_upcoming_meetings(COMPETITION)
+    except Exception as e:
+        log.error(f"Failed to fetch upcoming meetings: {e}")
+        return None
+    return [
+        m for m in upcoming
+        if any(c["id"] == OUR_TEAM_ID for c in m.get("meetingContenders", []))
+    ]
+
+
+def _sync_discord(esp, state: dict, our_meetings: list, known_meeting_ids: set) -> None:
+    """Discord events, ready checks, reschedules and scouting cards."""
+    _section("Discord: match updates")
+    for meeting in our_meetings:
+        try:
+            _sync_meeting_discord(esp, state, meeting, known_meeting_ids)
+        except Exception as e:
+            log.error(f"Meeting {meeting.get('id')}: Discord update failed: {e}")
+    save_state(state)
+    try:
+        _refresh_scout_cards(esp, our_meetings)
+    except Exception as e:
+        log.error(f"Scouting cards failed: {e}")
+
+
+def _refresh_scout_cards(esp, our_meetings: list) -> None:
+    """Rebuild opponent player cards for matches that have a ready check."""
+    if not ready_check.enabled():
+        return
+    conn = ready_check.connect()
+    try:
+        for meeting in our_meetings:
+            rc_meeting = ready_check.get_meeting(conn, meeting["id"])
+            opponent = _find_opponent(meeting, OUR_TEAM_ID)
+            if rc_meeting is None or opponent is None:
+                continue
+            payload = scout_cards.build_team_payload(
+                esp, opponent,
+                meeting_id=meeting["id"],
+                season_id=meeting.get("seasonID"),
+                kickoff=rc_meeting["kickoff"],
+                conn=conn,
+            )
+            if scout_cards.save_cards(conn, meeting["id"], payload):
+                _step("[green]✓[/]", f"Scouting cards updated: vs {opponent['name']} ({len(payload['players'])} players)")
+    finally:
+        conn.close()
+
+
+def sync() -> None:
+    """
+    Light cycle between full runs: new matches, reschedules, Discord events,
+    ready checks and scouting cards. No OpenDota and no gists. New-match
+    announcements wait for the next full run so they can include ban targets.
+    """
+    state = load_state()
+    esp   = EsparvenClient(ESPARVEN_KEY)
+    known_meeting_ids = set(state["meetings"].keys())
+    our_meetings = _fetch_our_upcoming(esp)
+    if our_meetings is None:
+        return
+    _sync_discord(esp, state, our_meetings, known_meeting_ids)
 
 
 def _sync_meeting_discord(esp, state: dict, meeting: dict, known_meeting_ids: set) -> None:
@@ -583,7 +641,8 @@ def _update_our_team_bin(esp, jb, state, heroes, skip_opendota: bool = False):
     members = our_contender.get("members", [])
     log.info(f"Self-scouting [bold]{len(members)}[/] player(s) on Tornknäckarna")
 
-    for meeting in our_past[:1]:
+    # The newest meeting lists whoever played most recently.
+    for meeting in sorted(our_past, key=lambda m: m["id"])[-1:]:
         _resolve_steam_ids(esp, meeting["id"], OUR_TEAM_ID, members)
 
     all_parsed = []
@@ -624,6 +683,7 @@ def _update_our_team_bin(esp, jb, state, heroes, skip_opendota: bool = False):
             _step("   [dim]–[/]", f"[dim]OpenDota skipped[/]")
         players.append(player_data)
 
+    _add_league_data(esp, OUR_TEAM_ID, members, players, CURRENT_SEASON_ID)
     history = _build_history_from_data(all_parsed, opponent_account_ids=set())
 
     our_account_ids = _account_ids_for_members(members)
@@ -740,24 +800,28 @@ def _resolve_steam_ids(esp, meeting_id, opponent_id, members):
     if not RESOLVE_NEW_PLAYER_IDS:
         return
     names   = [m["inGameName"] for m in members if m.get("inGameName")]
-    missing = player_map.missing_players(names)
+    missing = set(player_map.missing_players(names))
     if not missing:
         log.info(f"Steam IDs: all {len(names)} players already cached")
         return
     log.info(f"Steam IDs: resolving {len(missing)} new player(s)")
     scraped = esp.scrape_player_ids_from_meeting(meeting_id)
-    for name in missing:
-        if name not in scraped:
+    for member in members:
+        name = member.get("inGameName")
+        uuid = (member.get("applicationUserID") or "").lower()
+        if name not in missing or uuid not in scraped:
             continue
-        account_id = scraped[name]
+        account_id = scraped[uuid]
         if account_id is not None:
             steam64 = str(steam.steam32_to_64(account_id))
             player_map.upsert(name, account_id, steam64, confirmed=False, source="scraped")
             _step("[green]✓[/]", f"[white]{name}[/] [dim]→ {account_id}[/]")
         else:
             _step("[yellow]⚠[/]", f"[white]{name}[/] [dim]has no numeric ID on E-Sparven[/]")
-    still_missing = player_map.missing_players(missing)
-    for name in still_missing:
+    if not OPENDOTA_NAME_SEARCH:
+        log.info(f"Player map: [dim]{player_map.summary()}[/]")
+        return
+    for name in player_map.missing_players(sorted(missing)):
         results = _try_opendota_search(name)
         if results:
             best       = results[0]
@@ -1126,6 +1190,7 @@ def build_scout_data(
             _step("   [dim]–[/]", f"[dim]OpenDota skipped[/]")
         players.append(player_data)
 
+    _add_league_data(esp, opponent_id, members, players, meeting.get("seasonID") or CURRENT_SEASON_ID)
     history = _build_history_from_data(parsed_matches, opponent_account_ids, our_account_ids)
     tendencies = _draft_tendencies(parsed_matches, opponent_account_ids)
 
@@ -1196,6 +1261,46 @@ def _fetch_player_data(
     }
 
 
+def _add_league_data(esp, team_id: int, members: list, players: list[dict], season_id: int | None) -> None:
+    """
+    Attach each player's E-Sparven career (dashboard "League" section) and
+    use E-Sparven's rank when OpenDota has none. Best-effort: a failed
+    profile fetch just leaves the section out.
+    """
+    if esp is None:
+        return
+    by_name = {m.get("inGameName"): m for m in members}
+    # Meeting rosters leave tier empty; the team endpoint fills it in.
+    tiers: dict[str, str] = {}
+    try:
+        for m in (esp.get_team(team_id) or {}).get("members", []):
+            tiers[(m.get("applicationUserID") or "").lower()] = m.get("tier") or ""
+    except Exception as e:
+        log.warning(f"Could not fetch ranks for team {team_id}: {e}")
+    conn = ready_check.connect() if ready_check.enabled() else None
+    try:
+        for player in players:
+            member = by_name.get(player["name"]) or {}
+            uuid = (member.get("applicationUserID") or "").lower()
+            tier = member.get("tier") or tiers.get(uuid)
+            tier = tier if tier in scout_cards.RANK_ORDER else None
+            player["esparvenTier"] = tier
+            if tier and not player.get("rankMedal"):
+                player["rankMedal"] = tier
+                player["rankLabel"] = tier
+            if not uuid:
+                continue
+            try:
+                profile = scout_cards.profile_for(esp, conn, uuid)
+            except Exception as e:
+                log.warning(f"League profile for {player['name']!r} failed: {e}")
+                continue
+            player["league"] = scout_cards.league_summary(profile, season_id, uuid)
+    finally:
+        if conn is not None:
+            conn.close()
+
+
 def _find_opponent(meeting: dict, our_team_id: int) -> dict | None:
     for contender in meeting.get("meetingContenders", []):
         if contender["id"] != our_team_id:
@@ -1241,11 +1346,14 @@ def _calc_winrate(profile: dict) -> int | None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--run-once",         action="store_true", help="Run once then exit")
+    parser.add_argument("--sync-once",        action="store_true", help="Run the light match/reschedule sync once then exit")
     parser.add_argument("--no-opendota",      action="store_true", help="Skip OpenDota API calls (fast debug mode — pub stats will be blank)")
     parser.add_argument("--force-next-event", action="store_true", help="Admin debug: force-create a Discord scheduled event for the soonest upcoming meeting, bypassing the 12-day window, then exit")
     args = parser.parse_args()
     if args.force_next_event:
         force_create_next_event()
+    elif args.sync_once:
+        sync()
     elif args.run_once:
         run(skip_opendota=args.no_opendota)
     else:
@@ -1256,8 +1364,17 @@ if __name__ == "__main__":
             except Exception as e:
                 log.error(f"Bot cycle failed: {e} — will retry at next scheduled time")
 
+        def _safe_sync() -> None:
+            try:
+                sync()
+            except Exception as e:
+                log.error(f"Sync failed: {e} — will retry in {SYNC_INTERVAL_MINUTES} minutes")
+
         for _t in RUN_TIMES:
             schedule.every().day.at(_t).do(_safe_run)
+        if SYNC_INTERVAL_MINUTES > 0:
+            console.print(f"[dim]Syncing matches and reschedules every [bold]{SYNC_INTERVAL_MINUTES}[/] minutes[/]")
+            schedule.every(SYNC_INTERVAL_MINUTES).minutes.do(_safe_sync)
         _safe_run(skip_opendota=args.no_opendota)
         while True:
             schedule.run_pending()

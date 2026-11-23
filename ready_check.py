@@ -26,6 +26,8 @@ import sqlite3
 from dataclasses import dataclass
 from pathlib import Path
 
+import scout_cards
+
 MATCH_SIZE = 5
 LATE_WINDOW_SECONDS = 30 * 3600
 WITHDRAWAL_GRACE_SECONDS = 60
@@ -132,6 +134,7 @@ def connect(path: str | Path | None = None) -> sqlite3.Connection:
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     conn.executescript(_SCHEMA)
+    scout_cards.ensure_schema(conn)
     _migrate(conn)
     return conn
 

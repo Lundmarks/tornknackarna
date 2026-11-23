@@ -24,7 +24,7 @@ Each day the bot:
 
 Past meetings are frozen after first write and skipped on subsequent runs unless `state.json` is deleted. Upcoming matches are re-scouted on every run.
 
-Automatic Steam ID lookup for new players is currently disabled because an E-Sparven page update broke the Dotabuff links it relied on. Players already in `player_map.json` keep working. See [Player ID mapping](#player-id-mapping).
+Between those runs, a light sync every 30 minutes (`SYNC_INTERVAL_MINUTES`) checks E-Sparven for new matches and reschedules, updates Discord events and ready checks, and refreshes the Discord scouting cards. It makes no OpenDota calls and writes no gists.
 
 ---
 
@@ -39,6 +39,8 @@ webhook.py           Discord match notifications, sent by the bot account
 discord_events.py    Discord Guild Scheduled Event creation/reschedule/completion
 ready_bot.py         Always-on Discord service: ready check buttons, alerts, slash commands
 ready_check.py       Ready check rules and SQLite storage
+scout_cards.py       Opponent player cards from E-Sparven profiles, cached in the ready check database
+scout_ui.py          Discord embeds, dropdown and rank emojis for the scouting cards
 steam.py             Steam32/64 ID conversion utilities
 player_map.py        Persistent name to Steam ID cache (player_map.json)
 index.html           GitHub Pages frontend (single file, no build step)
@@ -109,6 +111,7 @@ Push `index.html` to GitHub to deploy.
 
 ```bash
 python bot.py --run-once                 # run once then exit
+python bot.py --sync-once                # light match/reschedule/scouting-card sync, then exit
 python bot.py --run-once --no-opendota   # skip OpenDota API calls (fast debug mode)
 python bot.py --force-next-event         # admin debug: force-create a Discord event for the soonest upcoming match, then exit
 ```
@@ -142,23 +145,37 @@ Everything is posted by one bot account. Set `DISCORD_BOT_TOKEN` and `DISCORD_RE
 | Voice check | 10 minutes before kick-off | Passes silently if at least 5 "in" players are in voice. Otherwise pings those missing |
 | Attendance | At kick-off | With 5 in voice, extra players count as bench. With fewer, "in" players not in voice count as no-shows |
 
-The voice check counts any voice channel the bot can see, except the server's AFK channel. Only players who clicked **I'm in** count, so stand-ins must vote too. Reschedules are detected on the bot's 06:00 and 18:00 UTC runs.
+The voice check counts any voice channel the bot can see, except the server's AFK channel. Only players who clicked **I'm in** count, so stand-ins must vote too. Reschedules are detected within 30 minutes by the light sync.
+
+### Scouting cards
+
+Every ready check has a **Scout** button, and the scouting lives behind it so the channel gets no extra messages:
+
+- **Scout** shows the opponent roster privately: rank badge, record and KDA this season, and main position per player, plus E-Sparven's win prediction when it shows one. A dropdown below opens any player's full card, also private.
+- A **thread** on the ready check message holds the roster and one card per player for anyone who wants to read them together. The bot edits these messages when the data changes, so the thread doesn't grow.
+
+A card shows rank, league career (games, record, seasons), this season's record, table placing, playoffs, K/D/A, GPM, XPM, kill participation, positions and heroes, the player's most played heroes across all seasons, their three previous seasons, and links to E-Sparven, OpenDota and Stratz.
+
+The data comes from E-Sparven's public match page and player profiles (`/match/{id}`, `/spelare/{id}`), built by the `scout` service on its 30-minute sync and stored in the ready check database. Profiles are cached for 6 hours. Rank badges in the dropdown and roster are application emojis that the bot uploads from `medals/` the first time it starts. The large badge on each card is E-Sparven's own image (`RANK_BADGE_URL` to change it).
 
 **Admin slash commands** (replies are visible only to you):
 
 ```
 /readycheck-stats [season]
 /readycheck-debug [players_in] [hours_to_kickoff] [preview] [in_voice]
+/scout-debug [team] [view]
 ```
 
 `/readycheck-stats` shows matches answered, late drops and no-shows per player. `/readycheck-debug` runs a throwaway sandbox that saves nothing and pings nobody. Set `preview` to `reschedule`, `short_roster` or `voice` to preview those alerts.
+
+`/scout-debug` builds scouting cards live for any team in the league (the `team` option autocompletes) and shows them privately. Without `team` it shows the next opponent's stored cards. `view: dropdown` (default) is the Scout button's view, and `view: thread` shows every message the scouting thread would hold. Nothing is saved or posted. Building a team takes about 10 seconds.
 
 ### Bot setup
 
 1. [Discord Developer Portal](https://discord.com/developers/applications) → New Application → Bot → copy the token into `DISCORD_BOT_TOKEN`. No privileged intents are needed.
 2. OAuth2 → URL Generator → scopes `bot` and `applications.commands`, permission `Manage Events` → open the generated URL to invite it to your server.
 3. Enable Developer Mode in Discord (User Settings → Advanced), then copy the server ID to `DISCORD_GUILD_ID`, the channel ID to `DISCORD_READY_CHANNEL_ID`, and the role ID to `DISCORD_ROLE_ID`.
-4. In the ready channel, allow the bot **View Channel**, **Send Messages**, **Embed Links** and **Read Message History**, plus **Mention All Roles** unless the role is mentionable.
+4. In the ready channel, allow the bot **View Channel**, **Send Messages**, **Embed Links** and **Read Message History**, plus **Mention All Roles** unless the role is mentionable. For the scouting thread, also allow **Create Public Threads** and **Send Messages in Threads**.
 5. Allow **View Channel** on every voice channel the team uses, or players there will look absent.
 
 ---
@@ -199,7 +216,7 @@ Then update `.env` and `index.html` with the new gist IDs printed at the end of 
 
 The bot runs in Docker via Compose with two services:
 
-- `scout` (`tornknackarna-scout-1`) runs twice daily at 06:00 and 18:00 UTC (`RUN_TIMES` in `bot.py`), plus once immediately whenever the container starts.
+- `scout` (`tornknackarna-scout-1`) runs twice daily at 06:00 and 18:00 UTC (`RUN_TIMES` in `bot.py`), plus once immediately whenever the container starts. A light sync runs every 30 minutes in between (`SYNC_INTERVAL_MINUTES`, `0` turns it off).
 - `ready` (`tornknackarna-ready-1`) stays connected to Discord and handles the ready check.
 
 ```bash
@@ -251,6 +268,7 @@ The dashboard is a single `index.html` with no build step or dependencies. All d
 
 **Match panel:**
 - Opponent roster with rank medals, pub winrate, recent form, and CM hero pool
+- League career from E-Sparven on each player card: record, seasons played, and the last four seasons with placing, KDA and main position. Players without OpenDota data use E-Sparven's rank
 - Ban suggestions scored by CM winrate, games played, delta vs pub winrate, and recency — grouped into Priority, Moderate, and Situational tiers
 - Draft presence: most picked and most banned heroes overall
 - Draft order tendencies: first ban and first pick spotlights, plus full slot-by-slot breakdown
@@ -274,7 +292,9 @@ python3 -m http.server 8080
 
 ## Player ID mapping
 
-Automatic lookup is currently disabled (`RESOLVE_NEW_PLAYER_IDS = False` in `bot.py`) because an E-Sparven page update broke the Dotabuff links it scraped. To add a new player, edit `player_map.json` manually:
+New players get their Steam ID automatically. The API's roster gives each player an `applicationUserID`, and E-Sparven's public match page (`/match/{id}`) links each player's profile by that same ID next to their OpenDota link. The bot joins the two, so it never has to match names. Players who haven't registered a numeric ID on E-Sparven stay unknown.
+
+Found IDs are saved to `player_map.json` as unconfirmed. Entries marked `"confirmed": true` are never overwritten, so you can still fix a player by hand:
 
 ```json
 {
@@ -282,7 +302,7 @@ Automatic lookup is currently disabled (`RESOLVE_NEW_PLAYER_IDS = False` in `bot
 }
 ```
 
-`player_map.json` is gitignored — back it up alongside `state.json`.
+`RESOLVE_NEW_PLAYER_IDS` in `bot.py` turns the lookup off. The old OpenDota name search fallback stays off (`OPENDOTA_NAME_SEARCH`), since it can pick the wrong account. `player_map.json` is gitignored, so back it up alongside `state.json`.
 
 ---
 

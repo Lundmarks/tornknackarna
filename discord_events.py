@@ -127,16 +127,9 @@ def build_cover_image(home_logo_url: str, away_logo_url: str) -> bytes | None:
     decode error) -- always safe to pass straight to create_match_event's
     cover_image_bytes param without the caller checking first.
 
-    AGENT-RESUME: never run against real E-Sparven logo URLs end-to-end.
-    Known caveat from a live sample (see esparven.py's _extract_team_logos
-    docstring): Tornknackarna's own logo URL resolved to a plain
-    "67.png" with no content hash, unlike every opponent sampled which had
-    a hashed filename -- this smells like a default/placeholder image
-    rather than a real uploaded team logo. Fetch it and LOOK AT IT before
-    trusting this function's output in a real event; if it's a generic
-    placeholder, either upload a real logo on E-Sparven's team admin page
-    or special-case OUR_TEAM_ID here to use a local static asset instead
-    of scraping.
+    Logo URLs come from the match page header (esparven.py,
+    scrape_team_logo_urls). Our own logo is /media/teamimages/67.png without
+    a content hash, but it is a real uploaded image (checked 2026-11-23).
     """
     if not _PIL_AVAILABLE:
         return None
