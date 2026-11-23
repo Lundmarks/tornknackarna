@@ -81,6 +81,15 @@ class EsparvenClient:
             "Expand": "true",
         })
 
+    def get_active_season_id(self, competition_code: str = "dota2cm") -> int | None:
+        """The season E-Sparven currently marks as active for this league."""
+        meetings = self._get(f"{API_PREFIX}/meeting", params={
+            "CompetitionCode": competition_code,
+            "ActiveSeason": "true",
+            "Limit": 1,
+        })
+        return meetings[0].get("seasonID") if meetings else None
+
     def get_team_past_meetings(
         self, team_id: int, competition_code: str = "dota2cm"
     ) -> list[dict]:
