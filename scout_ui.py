@@ -30,9 +30,11 @@ SELECT_LIMIT = 25
 MEDALS_DIR = Path(__file__).parent / "medals"
 EMOJI_PREFIX = "rank_"
 PROFILE_URL = "https://esparven.se/spelare/{uuid}"
-# E-Sparven's own 256px badges. Set RANK_BADGE_URL to host them elsewhere,
-# with {rank} for the lower-case rank name.
-RANK_BADGE_URL = os.environ.get("RANK_BADGE_URL", "https://esparven.se/img/game/dota2/ranklogos/{rank}.png")
+# Card thumbnails use the bot's own rank emoji image (from medals/). Set
+# RANK_BADGE_URL, with {rank} for the lower-case rank name, to use other
+# images instead. E-Sparven's badges are the fallback if emojis didn't load.
+RANK_BADGE_URL = os.environ.get("RANK_BADGE_URL")
+FALLBACK_BADGE_URL = "https://esparven.se/img/game/dota2/ranklogos/{rank}.png"
 
 # ── Rank emojis ──────────────────────────────────────────────────────────────
 
@@ -162,8 +164,13 @@ def links_text(player: dict) -> str:
     return " · ".join(links)
 
 
-def badge_url(rank: str) -> str | None:
-    return RANK_BADGE_URL.format(rank=rank.lower()) if rank else None
+def badge_url(rank: str, emojis: "RankEmojis") -> str | None:
+    if not rank:
+        return None
+    if RANK_BADGE_URL:
+        return RANK_BADGE_URL.format(rank=rank.lower())
+    emoji = emojis.get(rank)
+    return emoji.url if emoji else FALLBACK_BADGE_URL.format(rank=rank.lower())
 
 
 # ── Embeds ───────────────────────────────────────────────────────────────────
@@ -180,8 +187,9 @@ def build_player_embed(payload: dict, player: dict, emojis: RankEmojis = NO_EMOJ
     if payload.get("division"):
         author += f" · {payload['division']}"
     embed.set_author(name=author[:256])
-    if badge_url(player.get("rank")):
-        embed.set_thumbnail(url=badge_url(player["rank"]))
+    thumbnail = badge_url(player.get("rank"), emojis)
+    if thumbnail:
+        embed.set_thumbnail(url=thumbnail)
 
     lines = [f"**Rank** {player.get('rank') or 'Unknown'}" + (" · Contact person" if player.get("contact") else "")]
     if career:

@@ -156,7 +156,7 @@ Every ready check has a **Scout** button, and the scouting lives behind it so th
 
 A card shows rank, league career (games, record, seasons), this season's record, table placing, playoffs, K/D/A, GPM, XPM, kill participation, positions and heroes, the player's most played heroes across all seasons, their three previous seasons, and links to E-Sparven, OpenDota and Stratz.
 
-The data comes from E-Sparven's public match page and player profiles (`/match/{id}`, `/spelare/{id}`), built by the `scout` service on its 30-minute sync and stored in the ready check database. Profiles are cached for 6 hours. Rank badges in the dropdown and roster are application emojis that the bot uploads from `medals/` the first time it starts. The large badge on each card is E-Sparven's own image (`RANK_BADGE_URL` to change it).
+The data comes from E-Sparven's public match page and player profiles (`/match/{id}`, `/spelare/{id}`), built by the `scout` service on its 30-minute sync and stored in the ready check database. Profiles are cached for 6 hours. Rank badges are application emojis that the bot uploads from `medals/` the first time it starts, so there's nothing to upload by hand. The same images are used in the dropdown, the roster lines and each card's thumbnail. `RANK_BADGE_URL` overrides the thumbnail.
 
 **Admin slash commands** (replies are visible only to you):
 
