@@ -40,12 +40,6 @@ def test_short_roster_thresholds():
     assert rc.due_short_roster(KICKOFF, KICKOFF + 1) is None
 
 
-def test_voice_check_passes_with_five_and_ignores_sixth():
-    check = rc.evaluate_voice([1, 2, 3, 4, 5, 6], {1, 2, 3, 4, 5})
-    assert check.passed and check.missing == [6]
-    assert not rc.evaluate_voice([1, 2, 3, 4, 5], {1, 2, 3, 4}).passed
-
-
 def test_early_drop_has_no_alert(conn):
     vote(conn, 1, rc.IN, KICKOFF - 5 * 24 * HOUR)
     result = vote(conn, 1, rc.OUT, KICKOFF - 4 * 24 * HOUR)
@@ -104,12 +98,9 @@ def test_reschedule_resets_answers_and_announces(conn):
     assert not rc.reschedule(conn, 1, KICKOFF + 24 * HOUR, now + 20)  # same time: no-op
 
 
-def test_attendance_and_season_stats(conn):
+def test_season_stats(conn):
     for user in range(1, 7):
         vote(conn, user, rc.IN, KICKOFF - 100 * HOUR)
-    meeting = rc.get_meeting(conn, 1)
-    # Only four of six are in voice: the two missing count as no-shows.
-    rc.record_final_check(conn, meeting, {1, 2, 3, 4}, KICKOFF)
     stats = {row["user_id"]: row for row in rc.season_stats(conn, 77)}
-    assert stats[5]["no_shows"] == 1 and stats[1]["no_shows"] == 0
-    assert stats[1]["answered"] == 1
+    assert stats[1]["answered"] == 1 and stats[1]["late_drops"] == 0
+    assert "no_shows" not in stats[1].keys()

@@ -156,10 +156,8 @@ Everything is posted by one bot account. Set `DISCORD_BOT_TOKEN` and `DISCORD_RE
 | Back in | A player with a sent alert returns | Short message, no ping |
 | Reschedule | E-Sparven reports a new time | All answers reset, and the role is pinged to vote again |
 | Short roster | Fewer than 5 are in at 48h and 24h before kick-off | The role is pinged with how many are missing |
-| Voice check | 10 minutes before kick-off | Passes silently if at least 5 "in" players are in voice. Otherwise pings those missing |
-| Attendance | At kick-off | With 5 in voice, extra players count as bench. With fewer, "in" players not in voice count as no-shows |
 
-The voice check counts any voice channel the bot can see, except the server's AFK channel. Only players who clicked **I'm in** count, so stand-ins must vote too. Reschedules are detected within 30 minutes by the light sync.
+Reschedules are detected within 30 minutes by the light sync.
 
 ### Bot status
 
@@ -176,10 +174,10 @@ While a ready check is posted and fewer than five have said they're in, the coun
 
 ### Scouting cards
 
-Every ready check has a **Scout** button, and the scouting lives behind it so the channel gets no extra messages:
+Every ready check has a **Scout opponent** button and a line explaining it. The bot never posts scouting on its own:
 
-- **Scout** shows the opponent roster privately: rank badge, record and KDA this season, and main position per player, plus E-Sparven's win prediction when it shows one. A dropdown below opens any player's full card, also private.
-- A **thread** on the ready check message holds the roster and one card per player for anyone who wants to read them together. The bot edits these messages when the data changes, so the thread doesn't grow.
+- **Scout opponent** shows the opponent roster privately: rank badge, record and KDA this season, and main position per player, plus E-Sparven's win prediction when it shows one. A dropdown below opens any player's full card, also private.
+- **Post in thread for everyone**, in that private view, opens a thread on the ready check message with the roster and one card per player. It posts without a ping. Once opened, the bot edits those messages when the data changes, so the thread doesn't grow.
 
 A card shows rank, league career (games, record, seasons), this season's record, table placing, playoffs, K/D/A, GPM, XPM, kill participation, positions and heroes, the player's most played heroes across all seasons, their three previous seasons, and links to E-Sparven, OpenDota and Stratz.
 
@@ -189,13 +187,13 @@ The data comes from E-Sparven's public match page and player profiles (`/match/{
 
 ```
 /readycheck-stats [season]
-/debug ready-check [players_in] [hours_to_kickoff] [preview] [in_voice]
+/debug ready-check [players_in] [hours_to_kickoff] [preview]
 /debug scout [team] [view]
 /debug status [scenario] [players_in]
 /debug run [job] [opendota] [days_out]
 ```
 
-`/readycheck-stats` shows matches answered, late drops and no-shows per player. `/debug ready-check` runs a throwaway sandbox that saves nothing and pings nobody. Set `preview` to `reschedule`, `short_roster` or `voice` to preview those alerts.
+`/readycheck-stats` shows matches answered and late drops per player. `/debug ready-check` runs a throwaway sandbox that saves nothing and pings nobody. Set `preview` to `reschedule` or `short_roster` to preview those alerts.
 
 `/debug scout` builds scouting cards live for any team in the league (the `team` option autocompletes) and shows them privately. Without `team` it shows the next opponent's stored cards. `view: dropdown` (default) is the Scout button's view, and `view: thread` shows every message the scouting thread would hold. Nothing is saved or posted. Building a team takes about 10 seconds.
 
@@ -209,7 +207,6 @@ The data comes from E-Sparven's public match page and player profiles (`/match/{
 2. OAuth2 → URL Generator → scopes `bot` and `applications.commands`, permission `Manage Events` → open the generated URL to invite it to your server.
 3. Enable Developer Mode in Discord (User Settings → Advanced), then copy the server ID to `DISCORD_GUILD_ID`, the channel ID to `DISCORD_READY_CHANNEL_ID`, and the role ID to `DISCORD_ROLE_ID`.
 4. In the ready channel, allow the bot **View Channel**, **Send Messages**, **Embed Links** and **Read Message History**, plus **Mention All Roles** unless the role is mentionable. For the scouting thread, also allow **Create Public Threads** and **Send Messages in Threads**.
-5. Allow **View Channel** on every voice channel the team uses, or players there will look absent.
 
 ---
 

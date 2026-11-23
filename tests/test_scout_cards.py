@@ -67,9 +67,14 @@ def test_save_cards_reports_changes_and_threads_follow(payload):
     rc.mark_posted(conn, 7979, 1, 2)
     assert sc.save_cards(conn, 7979, payload)
     assert not sc.save_cards(conn, 7979, {**payload, "updatedAt": "later"})  # timestamp alone isn't a change
-    (row,) = sc.threads_to_sync(conn, int(time.time()))
+    now = int(time.time())
+    assert sc.threads_to_sync(conn, now) == []  # no automatic first thread
+    row = sc.thread_row(conn, 7979, now)
+    assert row["thread_id"] is None
+    sc.save_thread(conn, 7979, 555, {"overview": 1}, "older cards")
+    assert [r["thread_id"] for r in sc.threads_to_sync(conn, now)] == [555]  # opened threads stay current
     sc.save_thread(conn, 7979, 555, {"overview": 1}, row["card_digest"])
-    assert sc.threads_to_sync(conn, int(time.time())) == []
+    assert sc.threads_to_sync(conn, now) == []
 
 
 def test_translations():

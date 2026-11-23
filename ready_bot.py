@@ -2,11 +2,11 @@
 ready_bot.py - always-on Discord service for the button ready check.
 
 Posts ready checks queued by bot.py, handles button clicks, keeps the roster
-message up to date, and sends late-drop, reschedule, short-roster and voice
+message up to date, and sends late-drop, reschedule and short-roster
 alerts. Vote rules live in ready_check.py.
 
 Needs DISCORD_BOT_TOKEN and DISCORD_READY_CHANNEL_ID. DISCORD_ROLE_ID is
-optional. Uses the Guilds and Voice States intents, neither of which is
+optional. Uses only the Guilds intent, which is not
 privileged.
 """
 
@@ -97,7 +97,10 @@ def build_embed(conn, meeting, label=_mention) -> discord.Embed:
     ready = len(players[rc.IN])
     embed = discord.Embed(
         title=f"✅❌  Ready check: vs {meeting['opponent']}",
-        description=f"🕒 <t:{meeting['kickoff']}:F> · <t:{meeting['kickoff']}:R>",
+        description=(
+            f"🕒 <t:{meeting['kickoff']}:F> · <t:{meeting['kickoff']}:R>\n"
+            "🔎 Press **Scout opponent** to see their roster and player cards. Only you will see it."
+        ),
         color=COLOR,
     )
     embed.add_field(
@@ -184,25 +187,11 @@ def build_short_roster_embed(opponent: str, kickoff: int, ready: int) -> discord
     return embed
 
 
-def build_voice_embed(
-    opponent: str, kickoff: int, present: list[int], missing: list[int], label=_mention
-) -> discord.Embed:
-    embed = discord.Embed(
-        title=f"🎙️ Need {_players(rc.MATCH_SIZE - len(present))} in voice",
-        description=f"**vs {opponent}** starts <t:{kickoff}:R>.",
-        color=COLOR_ALERT,
-    )
-    embed.add_field(name="In voice", value=f"{len(present)}/{rc.MATCH_SIZE}", inline=True)
-    if missing:
-        embed.add_field(name="Said yes, not in voice", value=_names(missing, label), inline=False)
-    return embed
-
-
 def build_stats_embed(rows, season_id: int | None, label=_mention) -> discord.Embed:
     title = f"📊 Reliability: season {season_id}" if season_id is not None else "📊 Reliability"
     lines = [
         f"{label(row['user_id'])}\nAnswered **{row['answered']}** · "
-        f"Late drops **{row['late_drops']}** · No-shows **{row['no_shows']}**"
+        f"Late drops **{row['late_drops']}**"
         for row in rows
     ]
     text = ""
@@ -213,16 +202,6 @@ def build_stats_embed(rows, season_id: int | None, label=_mention) -> discord.Em
             break
         text += f"\n\n{line}" if text else line
     return discord.Embed(title=title, description=text or "No votes recorded yet.", color=COLOR)
-
-
-def voice_user_ids(guild: discord.Guild) -> set[int]:
-    """Everyone in a voice channel on the server, except the AFK channel."""
-    afk_id = guild.afk_channel.id if guild.afk_channel else None
-    users: set[int] = set()
-    for channel in guild.voice_channels:
-        if channel.id != afk_id:
-            users.update(channel.voice_states)
-    return users
 
 
 class ReadyButton(
@@ -294,6 +273,8 @@ def build_scout_view(source: str, key: int, payload: dict, emojis: su.RankEmojis
         view.add_item(ScoutSelect(source, key, su.player_options(payload, emojis, selected)))
     if selected:
         view.add_item(ScoutOverviewButton(source, key))
+    if source == "m":
+        view.add_item(ScoutThreadButton(key))
     return view
 
 
@@ -306,7 +287,7 @@ def overview_footer(payload: dict) -> str:
 class ScoutButton(discord.ui.DynamicItem[discord.ui.Button], template=r"scout:(?P<meeting>[0-9]+)"):
     def __init__(self, meeting_id: int):
         super().__init__(discord.ui.Button(
-            label="🔎 Scout", style=discord.ButtonStyle.secondary, custom_id=f"scout:{meeting_id}"
+            label="🔎 Scout opponent", style=discord.ButtonStyle.primary, custom_id=f"scout:{meeting_id}"
         ))
         self.meeting_id = meeting_id
 
@@ -390,6 +371,31 @@ class ScoutOverviewButton(
             view=build_scout_view(self.source, self.key, payload, bot.rank_emojis),
             allowed_mentions=discord.AllowedMentions.none(),
         )
+
+
+class ScoutThreadButton(discord.ui.DynamicItem[discord.ui.Button], template=r"scoutthread:(?P<meeting>[0-9]+)"):
+    def __init__(self, meeting_id: int):
+        super().__init__(discord.ui.Button(
+            label="Post in thread for everyone", style=discord.ButtonStyle.secondary,
+            custom_id=f"scoutthread:{meeting_id}",
+        ))
+        self.meeting_id = meeting_id
+
+    @classmethod
+    async def from_custom_id(cls, interaction: discord.Interaction, item, match: re.Match):
+        return cls(int(match["meeting"]))
+
+    async def callback(self, interaction: discord.Interaction) -> None:
+        bot: ReadyBot = interaction.client  # type: ignore[assignment]
+        await interaction.response.defer(ephemeral=True, thinking=True)
+        try:
+            thread = await bot.open_scout_thread(self.meeting_id)
+        except discord.HTTPException as e:
+            log.warning("Scouting thread for meeting %s failed: %s", self.meeting_id, e)
+            await interaction.followup.send("Couldn't open the thread. Check the bot's thread permissions.", ephemeral=True)
+            return
+        text = f"Scouting thread: {thread.mention}" if thread else "Scouting threads close at kick-off."
+        await interaction.followup.send(text, ephemeral=True, allowed_mentions=discord.AllowedMentions.none())
 
 
 def thread_embeds(payload: dict, emojis: su.RankEmojis) -> list[tuple[str, discord.Embed]]:
@@ -485,15 +491,12 @@ def build_debug_view(owner_id: int) -> discord.ui.View:
     view = discord.ui.View(timeout=None)
     for action in ("in", "out", "history"):
         view.add_item(DebugButton(action, owner_id))
+    view.add_item(discord.ui.Button(label="🔎 Scout opponent", style=discord.ButtonStyle.primary, disabled=True))
     return view
 
 
-def _test_label(user_id: int) -> str:
-    return f"TestPlayer{user_id}"
-
-
 async def _send_debug_preview(
-    interaction: discord.Interaction, preview: str, players_in: int, hours: int, in_voice: int
+    interaction: discord.Interaction, preview: str, players_in: int, hours: int
 ) -> None:
     now = int(time.time())
     kickoff = now + hours * 3600
@@ -508,17 +511,6 @@ async def _send_debug_preview(
         else:
             content = "🧪 Short-roster preview: the real version pings the role at 48h and 24h."
             embed = build_short_roster_embed("Debug Opponent", kickoff, players_in)
-    else:
-        in_players = list(range(1, players_in + 1))
-        check = rc.evaluate_voice(in_players, set(in_players[:in_voice]))
-        if check.passed:
-            content = (
-                f"🧪 Voice check passes: {len(check.present)} of {players_in} are in voice. "
-                "No alert, and nobody is counted as a no-show."
-            )
-        else:
-            content = "🧪 Voice alert preview: the real version pings the players who are missing."
-            embed = build_voice_embed("Debug Opponent", now + 600, check.present, check.missing, _test_label)
     kwargs = {"embed": embed} if embed else {}
     await interaction.response.send_message(
         content, ephemeral=True, allowed_mentions=discord.AllowedMentions.none(), **kwargs
@@ -537,22 +529,20 @@ debug_group = app_commands.Group(
 @app_commands.describe(
     players_in="Test players already in. 4 tests a ping after you join, 5 tests no ping.",
     hours_to_kickoff="Simulated hours until kick-off. Late-drop alerts fire at 30 or less.",
-    preview="Vote in a sandbox, or preview a reschedule, short-roster or voice alert.",
-    in_voice="For the voice preview: how many of the players in are in voice.",
+    preview="Vote in a sandbox, or preview a reschedule or short-roster alert.",
 )
 async def readycheck_debug(
     interaction: discord.Interaction,
     players_in: app_commands.Range[int, 0, 10] = 4,
     hours_to_kickoff: app_commands.Range[int, 1, 336] = 27,
-    preview: Literal["vote", "reschedule", "short_roster", "voice"] = "vote",
-    in_voice: app_commands.Range[int, 0, 10] = 5,
+    preview: Literal["vote", "reschedule", "short_roster"] = "vote",
 ) -> None:
     # Server settings can override default_permissions, so enforce it here too.
     if not interaction.permissions.administrator:
         await interaction.response.send_message("Only server admins can use this.", ephemeral=True)
         return
     if preview != "vote":
-        await _send_debug_preview(interaction, preview, players_in, hours_to_kickoff, in_voice)
+        await _send_debug_preview(interaction, preview, players_in, hours_to_kickoff)
         return
     bot: ReadyBot = interaction.client  # type: ignore[assignment]
     old = bot.debug_sessions.pop(interaction.user.id, None)
@@ -861,11 +851,12 @@ async def readycheck_stats(interaction: discord.Interaction, season: int | None 
 
 class ReadyBot(discord.Client):
     def __init__(self, channel_id: int):
-        super().__init__(intents=discord.Intents(guilds=True, voice_states=True))
+        super().__init__(intents=discord.Intents(guilds=True))
         self.channel_id = channel_id
         self.conn = rc.connect()
         self.notify_lock = asyncio.Lock()
         self.dry_run_lock = asyncio.Lock()
+        self.thread_lock = asyncio.Lock()
         self.debug_sessions: dict[int, DebugSession] = {}
         self.debug_scouts: dict[int, dict] = {}
         self.rank_emojis = su.RankEmojis()
@@ -875,7 +866,7 @@ class ReadyBot(discord.Client):
         self.tree = app_commands.CommandTree(self)
 
     async def setup_hook(self) -> None:
-        self.add_dynamic_items(ReadyButton, DebugButton, ScoutButton, ScoutSelect, ScoutOverviewButton)
+        self.add_dynamic_items(ReadyButton, DebugButton, ScoutButton, ScoutSelect, ScoutOverviewButton, ScoutThreadButton)
         self.tree.add_command(debug_group)
         self.tree.add_command(readycheck_stats)
         await self.rank_emojis.load(self)
@@ -893,11 +884,6 @@ class ReadyBot(discord.Client):
     async def on_ready(self) -> None:
         log.info("Connected as %s", self.user)
         self.status_shown = False  # a fresh connection starts without our status
-        guild = self._guild_for(self.channel_id)
-        if guild is None:
-            log.warning("Ready channel %s is not visible, so voice checks can't run", self.channel_id)
-        else:
-            log.info("Voice check watching %s voice channels", len(guild.voice_channels))
 
     async def record_debug_vote(
         self, interaction: discord.Interaction, session: DebugSession, target: str
@@ -1004,17 +990,7 @@ class ReadyBot(discord.Client):
             embed = build_short_roster_embed(row["opponent"], row["kickoff"], ready)
             return role_content, embed, self._role_mentions(role_id)
 
-        missing = payload["missing"]
-        embed = build_voice_embed(row["opponent"], row["kickoff"], payload["present"], missing)
-        if missing:
-            mentions = discord.AllowedMentions(
-                everyone=False,
-                roles=False,
-                users=[discord.Object(user_id) for user_id in missing],
-                replied_user=False,
-            )
-            return " ".join(_mention(user_id) for user_id in missing), embed, mentions
-        return role_content, embed, self._role_mentions(role_id)
+        return None  # a retired alert type
 
     async def flush_announcements(self) -> None:
         async with self.notify_lock:
@@ -1035,25 +1011,9 @@ class ReadyBot(discord.Client):
                     return
                 rc.mark_announcement(self.conn, row["id"], "sent")
 
-    def _guild_for(self, channel_id: int) -> discord.Guild | None:
-        channel = self.get_channel(channel_id)
-        return getattr(channel, "guild", None)
-
     async def run_timed_checks(self) -> None:
         now = int(time.time())
         rc.queue_short_roster_warnings(self.conn, now)
-        for meeting in rc.meetings_for_voice_check(self.conn, now):
-            guild = self._guild_for(meeting["channel_id"])
-            if guild is None:
-                log.warning("Voice check skipped for meeting %s: channel not visible", meeting["meeting_id"])
-                continue
-            rc.record_voice_check(self.conn, meeting, voice_user_ids(guild), now)
-        for meeting in rc.meetings_for_final_check(self.conn, now):
-            guild = self._guild_for(meeting["channel_id"])
-            if guild is None:
-                log.warning("Final check skipped for meeting %s: channel not visible", meeting["meeting_id"])
-                continue
-            rc.record_final_check(self.conn, meeting, voice_user_ids(guild), now)
 
     async def post_ready_checks(self) -> None:
         role_id = _role_id()
@@ -1101,42 +1061,57 @@ class ReadyBot(discord.Client):
         sc.save_thread(self.conn, row["meeting_id"], thread.id, {}, None)
         return thread
 
-    async def sync_scout_threads(self) -> None:
-        now = int(time.time())
-        for row in sc.threads_to_sync(self.conn, now):
-            meeting_id = row["meeting_id"]
-            if self.thread_retry_at.get(meeting_id, 0) > now:
-                continue
-            payload = sc.get_cards(self.conn, meeting_id)
+    async def _write_scout_thread(self, row) -> discord.Thread:
+        meeting_id = row["meeting_id"]
+        thread = await self._scout_thread(row)
+        current = sc.get_thread(self.conn, meeting_id)
+        if current and current["thread_id"] == thread.id and current["digest"] == row["card_digest"]:
+            return thread
+        payload = sc.get_cards(self.conn, meeting_id)
+        messages = json.loads(current["messages"]) if current and current["thread_id"] == thread.id else {}
+        wanted = thread_embeds(payload, self.rank_emojis)
+        for key, embed in wanted:
+            if key in messages:
+                try:
+                    await thread.get_partial_message(messages[key]).edit(
+                        embed=embed, allowed_mentions=discord.AllowedMentions.none()
+                    )
+                    continue
+                except discord.NotFound:
+                    pass
+            sent = await thread.send(embed=embed, allowed_mentions=discord.AllowedMentions.none())
+            messages[key] = sent.id
+            sc.save_thread(self.conn, meeting_id, thread.id, messages, None)
+        for key in set(messages) - {key for key, _ in wanted}:
             try:
-                thread = await self._scout_thread(row)
-                current = sc.get_thread(self.conn, meeting_id)
-                messages = json.loads(current["messages"]) if current and current["thread_id"] == thread.id else {}
-                wanted = thread_embeds(payload, self.rank_emojis)
-                for key, embed in wanted:
-                    if key in messages:
-                        try:
-                            await thread.get_partial_message(messages[key]).edit(
-                                embed=embed, allowed_mentions=discord.AllowedMentions.none()
-                            )
-                            continue
-                        except discord.NotFound:
-                            pass
-                    sent = await thread.send(embed=embed, allowed_mentions=discord.AllowedMentions.none())
-                    messages[key] = sent.id
-                    sc.save_thread(self.conn, meeting_id, thread.id, messages, None)
-                for key in set(messages) - {key for key, _ in wanted}:
-                    try:
-                        await thread.get_partial_message(messages.pop(key)).delete()
-                    except discord.NotFound:
-                        pass
-                sc.save_thread(self.conn, meeting_id, thread.id, messages, row["card_digest"])
-                self.thread_retry_at.pop(meeting_id, None)
-                log.info("Scouting thread for meeting %s is up to date", meeting_id)
-            except discord.HTTPException as e:
-                # Usually missing thread permissions. Don't retry every 15 seconds.
-                self.thread_retry_at[meeting_id] = now + 600
-                log.warning("Scouting thread for meeting %s failed, retrying in 10 min: %s", meeting_id, e)
+                await thread.get_partial_message(messages.pop(key)).delete()
+            except discord.NotFound:
+                pass
+        sc.save_thread(self.conn, meeting_id, thread.id, messages, row["card_digest"])
+        log.info("Scouting thread for meeting %s is up to date", meeting_id)
+        return thread
+
+    async def open_scout_thread(self, meeting_id: int) -> discord.Thread | None:
+        """Create or refresh the thread when a player asks for it."""
+        async with self.thread_lock:
+            row = sc.thread_row(self.conn, meeting_id, int(time.time()))
+            return await self._write_scout_thread(row) if row else None
+
+    async def sync_scout_threads(self) -> None:
+        """Keep threads that players opened current. Never creates a first one."""
+        now = int(time.time())
+        async with self.thread_lock:
+            for row in sc.threads_to_sync(self.conn, now):
+                meeting_id = row["meeting_id"]
+                if self.thread_retry_at.get(meeting_id, 0) > now:
+                    continue
+                try:
+                    await self._write_scout_thread(row)
+                    self.thread_retry_at.pop(meeting_id, None)
+                except discord.HTTPException as e:
+                    # Usually missing thread permissions. Don't retry every 15 seconds.
+                    self.thread_retry_at[meeting_id] = now + 600
+                    log.warning("Scouting thread for meeting %s failed, retrying in 10 min: %s", meeting_id, e)
 
     async def update_status(self) -> None:
         """Show presence.status_text() as the bot's status, only when it changes."""

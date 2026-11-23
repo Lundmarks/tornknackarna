@@ -13,9 +13,6 @@ Rules:
     the role only if MATCH_SIZE or fewer players were in before the drop.
   - A reschedule resets every answer and asks the team to vote again.
   - Below MATCH_SIZE at 48h and 24h before kick-off, the role is warned.
-  - 10 minutes before kick-off, "in" players are compared with voice. Having
-    MATCH_SIZE of them in voice passes, so a sixth player is never flagged.
-  - The voice check at kick-off is what counts as a no-show in the stats.
   - Alerts are queued in the same transaction as the vote, so a crash or
     Discord outage delays them rather than losing them.
 """
@@ -34,8 +31,6 @@ MATCH_SIZE = 5
 LATE_WINDOW_SECONDS = 30 * 3600
 WITHDRAWAL_GRACE_SECONDS = 60
 SHORT_ROSTER_HOURS = (48, 24)
-VOICE_CHECK_SECONDS = 10 * 60
-FINAL_CHECK_WINDOW_SECONDS = 15 * 60
 
 IN, OUT, NONE = "in", "out", "none"
 
@@ -83,13 +78,6 @@ CREATE TABLE IF NOT EXISTS announcements (
     created_at INTEGER NOT NULL,
     UNIQUE (meeting_id, revision, kind)
 );
-CREATE TABLE IF NOT EXISTS showups (
-    meeting_id INTEGER NOT NULL REFERENCES meetings(meeting_id),
-    revision   INTEGER NOT NULL,
-    user_id    INTEGER NOT NULL,
-    status     TEXT    NOT NULL,
-    PRIMARY KEY (meeting_id, revision, user_id)
-);
 CREATE INDEX IF NOT EXISTS history_meeting ON history(meeting_id, id);
 CREATE INDEX IF NOT EXISTS history_notify ON history(notify_status, id);
 CREATE INDEX IF NOT EXISTS announcements_status ON announcements(status, id);
@@ -116,13 +104,6 @@ class VoteResult:
     notify_kind: str | None
     ping: bool
     alert_cancelled: bool = False
-
-
-@dataclass(frozen=True)
-class VoiceCheck:
-    present: list[int]
-    missing: list[int]
-    passed: bool
 
 
 def enabled() -> bool:
@@ -178,12 +159,6 @@ def due_short_roster(kickoff: int, now: int) -> int | None:
         return None
     reached = [hours for hours in SHORT_ROSTER_HOURS if left <= hours * 3600]
     return min(reached) if reached else None
-
-
-def evaluate_voice(in_players: list[int], voice_ids: set[int]) -> VoiceCheck:
-    present = [user_id for user_id in in_players if user_id in voice_ids]
-    missing = [user_id for user_id in in_players if user_id not in voice_ids]
-    return VoiceCheck(present, missing, len(present) >= MATCH_SIZE)
 
 
 def register_meeting(
@@ -448,59 +423,6 @@ def queue_short_roster_warnings(conn: sqlite3.Connection, now: int) -> None:
         )
 
 
-def _meetings_without(conn: sqlite3.Connection, kind: str, low: int, high: int) -> list[sqlite3.Row]:
-    return conn.execute(
-        """
-        SELECT m.* FROM meetings m
-        WHERE m.message_id IS NOT NULL AND m.kickoff > :low AND m.kickoff <= :high
-          AND NOT EXISTS (SELECT 1 FROM announcements a WHERE a.meeting_id = m.meeting_id
-                          AND a.revision = m.revision AND a.kind = :kind)
-        """,
-        {"kind": kind, "low": low, "high": high},
-    ).fetchall()
-
-
-def meetings_for_voice_check(conn: sqlite3.Connection, now: int) -> list[sqlite3.Row]:
-    return _meetings_without(conn, "voice", now, now + VOICE_CHECK_SECONDS)
-
-
-def meetings_for_final_check(conn: sqlite3.Connection, now: int) -> list[sqlite3.Row]:
-    return _meetings_without(conn, "final", now - FINAL_CHECK_WINDOW_SECONDS - 1, now)
-
-
-def record_voice_check(
-    conn: sqlite3.Connection, meeting: sqlite3.Row, voice_ids: set[int], now: int
-) -> VoiceCheck:
-    check = evaluate_voice(roster(conn, meeting["meeting_id"])[IN], voice_ids)
-    _queue_announcement(
-        conn, meeting, "voice", not check.passed, "skipped" if check.passed else "pending",
-        {"present": check.present, "missing": check.missing}, now,
-    )
-    return check
-
-
-def record_final_check(
-    conn: sqlite3.Connection, meeting: sqlite3.Row, voice_ids: set[int], now: int
-) -> VoiceCheck:
-    """Store attendance at kick-off. Extra players are bench when five are present."""
-    conn.execute("BEGIN IMMEDIATE")
-    try:
-        check = evaluate_voice(roster(conn, meeting["meeting_id"])[IN], voice_ids)
-        if _queue_announcement(conn, meeting, "final", False, "recorded", {}, now):
-            rows = [(user_id, "present") for user_id in check.present]
-            rows += [(user_id, "bench" if check.passed else "no_show") for user_id in check.missing]
-            conn.executemany(
-                "INSERT OR REPLACE INTO showups (meeting_id, revision, user_id, status) VALUES (?, ?, ?, ?)",
-                [(meeting["meeting_id"], meeting["revision"], user_id, status) for user_id, status in rows],
-            )
-        conn.execute("COMMIT")
-        return check
-    except Exception:
-        if conn.in_transaction:
-            conn.execute("ROLLBACK")
-        raise
-
-
 def pending_announcements(conn: sqlite3.Connection) -> list[sqlite3.Row]:
     return conn.execute(
         """
@@ -526,9 +448,7 @@ def season_stats(conn: sqlite3.Connection, season_id: int | None) -> list[sqlite
         """
         WITH season AS (SELECT meeting_id FROM meetings WHERE season_id IS :season),
         players AS (
-            SELECT user_id FROM history WHERE meeting_id IN (SELECT meeting_id FROM season)
-            UNION
-            SELECT user_id FROM showups WHERE meeting_id IN (SELECT meeting_id FROM season)
+            SELECT DISTINCT user_id FROM history WHERE meeting_id IN (SELECT meeting_id FROM season)
         )
         SELECT p.user_id,
             (SELECT COUNT(DISTINCT h.meeting_id) FROM history h
@@ -537,12 +457,9 @@ def season_stats(conn: sqlite3.Connection, season_id: int | None) -> list[sqlite
             (SELECT COUNT(*) FROM history h
              WHERE h.user_id = p.user_id AND h.notify_kind = 'withdrawal'
                AND h.notify_status != 'cancelled'
-               AND h.meeting_id IN (SELECT meeting_id FROM season)) AS late_drops,
-            (SELECT COUNT(DISTINCT s.meeting_id) FROM showups s
-             WHERE s.user_id = p.user_id AND s.status = 'no_show'
-               AND s.meeting_id IN (SELECT meeting_id FROM season)) AS no_shows
+               AND h.meeting_id IN (SELECT meeting_id FROM season)) AS late_drops
         FROM players p
-        ORDER BY no_shows DESC, late_drops DESC, answered DESC, p.user_id
+        ORDER BY late_drops DESC, answered DESC, p.user_id
         """,
         {"season": season_id},
     ).fetchall()

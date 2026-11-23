@@ -1,12 +1,12 @@
 """
 scout_ui.py - Discord presentation of the opponent scouting cards.
 
-Three ways to see them, none of which add messages to the ready channel:
-  - Scout button on the ready check: a private overview plus a dropdown,
-    where picking a player shows their card, also privately.
-  - A thread on the ready check message with the overview and one message
-    per player, kept up to date by ready_bot.py.
-  - /scout-debug, the same private view for any league team.
+Three ways to see them:
+  - Scout opponent button on the ready check: a private overview plus a
+    dropdown, where picking a player shows their card, also privately.
+  - A thread on the ready check message, only if a player chooses to post it
+    from that private view. ready_bot.py then keeps it up to date.
+  - /debug scout, the same private view for any league team.
 
 Card data comes from scout_cards.py. Rank badges are application emojis the
 bot uploads from medals/ on start-up, plus a larger badge image on each card.

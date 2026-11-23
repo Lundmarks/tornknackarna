@@ -13,7 +13,7 @@ E-Sparven, team ID 67). Two Docker Compose services on the owner's home server:
   every 30 minutes (new matches, reschedules, Discord events, ready checks,
   scouting cards).
 - `ready` runs `ready_bot.py`: always-on Discord bot (button ready check,
-  alerts, Scout button and thread, admin slash commands).
+  alerts, Scout opponent button, on-request thread, admin slash commands).
 
 They share the bind-mounted, gitignored `data/` folder: `ready_check.db`,
 `state.json` and `player_map.json`. See `readme.md` for user-facing docs.
@@ -61,6 +61,13 @@ its pages, save a fresh copy there and update the parser and the tests.
 - Never commit `.env`, `state.json`, `player_map.json` or `data/`.
 - Commit directly to `main` with a message. Never push, because the owner
   pushes. No feature branches. GitHub Pages serves `index.html` from `main`.
+
+## Product decisions
+
+- Voice checks and attendance/no-show tracking were removed at the owner's
+  request (2026-11-23) because they pinged too eagerly. Don't re-add them.
+- The bot never creates a scouting thread by itself. A player opens it from the
+  private Scout opponent view.
 
 ## Status of the code audit (Nov 2026)
 

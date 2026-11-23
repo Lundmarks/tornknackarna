@@ -45,3 +45,19 @@ def test_preview_outside_window_has_no_ready_check(ready_bot):
     assert_private(i.response.send_message.await_args, ready_bot.discord)
     i.followup.send.assert_not_awaited()
     assert i.client.debug_sessions == {}
+
+
+def test_ready_check_points_to_scout_and_voice_is_gone(ready_bot):
+    async def labels():
+        ready = [item.item.label for item in ready_bot.build_view(1).children]
+        real = [item.item.label for item in ready_bot.build_scout_view("m", 1, {}, None).children]
+        debug = ready_bot.build_scout_view("d", 1, {}, None).children
+        return ready, real, debug
+
+    ready, real, debug = asyncio.run(labels())
+    assert "🔎 Scout opponent" in ready
+    assert real == ["Post in thread for everyone"]  # a choice, never automatic
+    assert debug == []
+    command = next(c for c in ready_bot.debug_group.commands if c.name == "ready-check")
+    assert "in_voice" not in [p.name for p in command.parameters]
+    assert not hasattr(ready_bot, "voice_user_ids")

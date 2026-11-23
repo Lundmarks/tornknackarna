@@ -3,7 +3,7 @@ scout_cards.py - opponent player cards for Discord, built from E-Sparven.
 
 No Discord imports. bot.py builds the cards for upcoming matches on its sync
 cycle and stores them in the ready check database, which ready_bot.py reads
-to answer the Scout button and keep each match's scouting thread current.
+to answer the Scout button and keep any scouting thread a player opened current.
 
 A card combines three sources, joined on applicationUserID (the uuid in
 /spelare/{uuid} links):
@@ -294,20 +294,31 @@ def save_thread(
     )
 
 
+_THREAD_COLUMNS = """
+    SELECT m.meeting_id, m.opponent, m.kickoff, m.channel_id, m.message_id,
+           c.digest AS card_digest, t.thread_id, t.messages, t.digest AS thread_digest
+    FROM meetings m
+    JOIN scout_cards c USING (meeting_id)
+"""
+
+
 def threads_to_sync(conn: sqlite3.Connection, now: int) -> list[sqlite3.Row]:
-    """
-    Posted ready checks whose cards exist and differ from what the thread
-    shows (or that have no thread yet). Stops at kick-off.
-    """
+    """Threads a player opened whose cards changed. Stops at kick-off."""
     return conn.execute(
-        """
-        SELECT m.meeting_id, m.opponent, m.kickoff, m.channel_id, m.message_id,
-               c.digest AS card_digest, t.thread_id, t.messages, t.digest AS thread_digest
-        FROM meetings m
-        JOIN scout_cards c USING (meeting_id)
-        LEFT JOIN scout_threads t USING (meeting_id)
-        WHERE m.message_id IS NOT NULL AND m.kickoff > ?
-          AND (t.thread_id IS NULL OR t.digest IS NOT c.digest)
+        _THREAD_COLUMNS + """
+        JOIN scout_threads t USING (meeting_id)
+        WHERE m.message_id IS NOT NULL AND m.kickoff > ? AND t.digest IS NOT c.digest
         """,
         (now,),
     ).fetchall()
+
+
+def thread_row(conn: sqlite3.Connection, meeting_id: int, now: int) -> sqlite3.Row | None:
+    """A posted match with cards, whether or not it has a thread yet."""
+    return conn.execute(
+        _THREAD_COLUMNS + """
+        LEFT JOIN scout_threads t USING (meeting_id)
+        WHERE m.meeting_id = ? AND m.message_id IS NOT NULL AND m.kickoff > ?
+        """,
+        (meeting_id, now),
+    ).fetchone()
